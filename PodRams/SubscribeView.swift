@@ -50,6 +50,18 @@ struct SubscribeView: View {
                                         DownloadButton(episode: episode)
                                     }
                                     .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedPodcast = podcast
+                                        if let index = podcast.episodes.firstIndex(where: { $0.id == episode.id }) {
+                                            audioPlayer.playAudio(url: episode.url)
+                                            if let localURL = DownloadManager.shared.localURL(for: episode) {
+                                                audioPlayer.playAudio(url: localURL)
+                                            } else {
+                                                audioPlayer.playAudio(url: episode.url)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         } label: {

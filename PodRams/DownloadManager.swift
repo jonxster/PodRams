@@ -53,10 +53,13 @@ class DownloadManager: ObservableObject {
         let downloadsDir = documentsURL.appendingPathComponent("Downloads", isDirectory: true)
         
         // Create the Downloads directory if it doesn't exist
-        do {
-            try fileManager.createDirectory(at: downloadsDir, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            print("Error creating Downloads directory: \(error)")
+        if !fileManager.fileExists(atPath: downloadsDir.path) {
+            do {
+                try fileManager.createDirectory(at: downloadsDir, withIntermediateDirectories: true, attributes: nil)
+                print("Created Downloads directory at: \(downloadsDir.path)")
+            } catch {
+                print("Error creating Downloads directory: \(error)")
+            }
         }
         
         // Use SHA256 hash of the URL as the file name to ensure it's valid and unique
@@ -91,30 +94,55 @@ class DownloadManager: ObservableObject {
                 guard let self = self else { return }
                 if let error = error {
                     print("Download error for episode '\(episode.title)': \(error)")
-                    // Set to .none explicitly
                     self.downloadStates[key] = DownloadManager.DownloadState.none
                     return
                 }
                 guard let tempURL = tempURL else {
                     print("No file URL for downloaded episode '\(episode.title)'")
-                    // Set to .none explicitly
                     self.downloadStates[key] = DownloadManager.DownloadState.none
                     return
                 }
+                
                 let destinationURL = self.localFileURL(for: episode)
+                
+                // Ensure the Downloads directory exists
+                let downloadsDir = destinationURL.deletingLastPathComponent()
+                if !self.fileManager.fileExists(atPath: downloadsDir.path) {
+                    do {
+                        try self.fileManager.createDirectory(at: downloadsDir, withIntermediateDirectories: true, attributes: nil)
+                        print("Created Downloads directory at: \(downloadsDir.path)")
+                    } catch {
+                        print("Error creating Downloads directory: \(error)")
+                        self.downloadStates[key] = DownloadManager.DownloadState.none
+                        return
+                    }
+                }
+                
                 do {
                     // Check if the destination file already exists and remove it
                     if self.fileManager.fileExists(atPath: destinationURL.path) {
                         try self.fileManager.removeItem(at: destinationURL)
                     }
+                    
                     // Move the downloaded file to the destination
                     try self.fileManager.moveItem(at: tempURL, to: destinationURL)
                     self.downloadStates[key] = .downloaded(destinationURL)
                     print("Episode '\(episode.title)' downloaded to: \(destinationURL.path)")
                 } catch {
                     print("Error moving file for episode '\(episode.title)': \(error)")
-                    // Set to .none explicitly
-                    self.downloadStates[key] = DownloadManager.DownloadState.none
+                    print("Temp URL: \(tempURL.path)")
+                    print("Destination URL: \(destinationURL.path)")
+                    
+                    // Try copying instead of moving as a fallback
+                    do {
+                        let data = try Data(contentsOf: tempURL)
+                        try data.write(to: destinationURL)
+                        self.downloadStates[key] = .downloaded(destinationURL)
+                        print("Successfully copied episode '\(episode.title)' instead of moving")
+                    } catch {
+                        print("Fallback copy also failed: \(error)")
+                        self.downloadStates[key] = DownloadManager.DownloadState.none
+                    }
                 }
             }
         }
