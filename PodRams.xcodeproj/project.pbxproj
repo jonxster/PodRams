@@ -29,9 +29,22 @@
 		CE5833642D673B8D00D81290 /* PodRamsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PodRamsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CED4E06C2D6E696900CE103E /* Exceptions for "PodRams" folder in "PodRams" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Untitled.swift,
+			);
+			target = CE5833482D673B8C00D81290 /* PodRams */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CE58334B2D673B8C00D81290 /* PodRams */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CED4E06C2D6E696900CE103E /* Exceptions for "PodRams" folder in "PodRams" target */,
+			);
 			path = PodRams;
 			sourceTree = "<group>";
 		};
