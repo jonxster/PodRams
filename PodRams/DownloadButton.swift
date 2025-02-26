@@ -32,11 +32,8 @@ struct DownloadButton: View {
                 Image(systemName: "arrow.down.circle")
                     .font(.system(size: 16))
                     .foregroundColor(.blue)
-            case .downloading:
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle())
-                    .scaleEffect(0.5)
-                    .frame(width: 20, height: 20)
+            case .downloading(let progress):
+                DeterminateLoadingIndicator(progress: progress)
             case .downloaded:
                 Image(systemName: "trash")
                     .font(.system(size: 16))

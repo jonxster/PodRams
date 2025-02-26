@@ -36,7 +36,10 @@ public struct CachedAsyncImage: View {
                 Rectangle()
                     .foregroundColor(.gray.opacity(isLoading ? 0.3 : 0.1))
                     .frame(width: width, height: height)
-                    .overlay(isLoading ? ProgressView() : nil)
+                    .overlay(isLoading ? 
+                        LoadingIndicator()
+                            .frame(width: width/4, height: height/4)
+                        : nil)
                     .onAppear { loadImage() }
             }
         }

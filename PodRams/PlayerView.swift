@@ -56,12 +56,14 @@ struct PlayerView: View {
     private var frontSide: some View {
         Group {
             if audioPlayer.isLoading {
-                ProgressView()
+                LoadingIndicator()
+                    .frame(width: 32, height: 32)
             } else if let artworkURL = currentEpisode?.artworkURL ?? feedArtworkURL {
                 AsyncImage(url: artworkURL) { phase in
                     switch phase {
                     case .empty:
-                        ProgressView()
+                        LoadingIndicator()
+                            .frame(width: 32, height: 32)
                     case .success(let image):
                         image.resizable().scaledToFit()
                     case .failure:

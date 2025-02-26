@@ -15,7 +15,7 @@ class DownloadManager: ObservableObject {
     /// Enum representing the state of a download
     enum DownloadState: Equatable {
         case none
-        case downloading
+        case downloading(progress: Double)
         case downloaded(URL)
         case failed(Error)
         
@@ -24,12 +24,12 @@ class DownloadManager: ObservableObject {
             switch (lhs, rhs) {
             case (.none, .none):
                 return true
-            case (.downloading, .downloading):
+            case let (.downloading(p1), .downloading(p2)):
+                return p1 == p2
+            case let (.downloaded(url1), .downloaded(url2)):
+                return url1 == url2
+            case (.failed, .failed):
                 return true
-            case let (.downloaded(lhsURL), .downloaded(rhsURL)):
-                return lhsURL == rhsURL
-            case let (.failed(lhsError), .failed(rhsError)):
-                return lhsError.localizedDescription == rhsError.localizedDescription
             default:
                 return false
             }
@@ -40,6 +40,7 @@ class DownloadManager: ObservableObject {
     /// Uses non-optional DownloadState values
     @Published var downloadStates: [String: DownloadState] = [:]
     private var downloadTasks: [String: URLSessionDownloadTask] = [:]
+    private var progressObservations: [String: NSKeyValueObservation] = [:]
     private let fileManager = FileManager.default
     
     private init() {
@@ -112,7 +113,7 @@ class DownloadManager: ObservableObject {
         }
         
         print("Starting download for episode: \(episode.title)")
-        downloadStates[key] = .downloading
+        downloadStates[key] = .downloading(progress: 0.0)
         
         let task = URLSession.shared.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
             guard let self = self else { return }
@@ -176,6 +177,12 @@ class DownloadManager: ObservableObject {
             }
         }
         
+        progressObservations[key] = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            DispatchQueue.main.async {
+                self?.downloadStates[key] = .downloading(progress: progress.fractionCompleted)
+            }
+        }
+        
         downloadTasks[key] = task
         task.resume()
     }
@@ -183,6 +190,10 @@ class DownloadManager: ObservableObject {
     /// Removes a downloaded episode and updates the state
     func removeDownload(for episode: PodcastEpisode) {
         let key = episode.url.absoluteString
+        // Clean up observation
+        progressObservations[key]?.invalidate()
+        progressObservations[key] = nil
+        
         let destinationURL = localFileURL(for: episode)
         do {
             if fileManager.fileExists(atPath: destinationURL.path) {
@@ -203,5 +214,11 @@ class DownloadManager: ObservableObject {
             return url
         }
         return nil
+    }
+    
+    deinit {
+        // Clean up all observations
+        progressObservations.values.forEach { $0.invalidate() }
+        progressObservations.removeAll()
     }
 }

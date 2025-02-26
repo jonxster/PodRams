@@ -56,9 +56,8 @@ struct FavoritesView: View {
                             .disabled(loadingPodcastId == podcast.id)
                             .overlay(
                                 loadingPodcastId == podcast.id ?
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                        .scaleEffect(0.5)
+                                    LoadingIndicator()
+                                        .frame(width: 20, height: 20)
                                     : nil
                             )
 

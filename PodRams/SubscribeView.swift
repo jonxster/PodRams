@@ -39,8 +39,12 @@ struct SubscribeView: View {
                             }
                         )) {
                             if podcast.episodes.isEmpty {
-                                Text("Loading episodes...")
-                                    .foregroundColor(.gray)
+                                HStack {
+                                    Text("Loading episodes...")
+                                        .foregroundColor(.gray)
+                                    LoadingIndicator()
+                                        .frame(width: 16, height: 16)
+                                }
                             } else {
                                 ForEach(podcast.episodes, id: \.id) { episode in
                                     HStack {

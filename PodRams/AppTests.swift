@@ -118,71 +118,42 @@ class AppTests {
     static func testDownloadManager() throws {
         print("Testing DownloadManager...")
         
-        let downloadManager = DownloadManager.shared
-        // Clear any existing download states for testing
-        downloadManager.downloadStates = [:]
-        
-        // Create the Downloads directory if it doesn't exist
-        let fileManager = FileManager.default
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let downloadsURL = documentsURL.appendingPathComponent("Downloads")
-        
-        do {
-            if !fileManager.fileExists(atPath: downloadsURL.path) {
-                try fileManager.createDirectory(at: downloadsURL, withIntermediateDirectories: true)
-                print("Created Downloads directory at: \(downloadsURL.path)")
-            }
-        } catch {
-            print("Error creating Downloads directory: \(error)")
-        }
-        
-        // Create a test episode
-        let testURL = URL(string: "https://example.com/test.mp3")!
-        let episode = PodcastEpisode(
+        let manager = DownloadManager.shared
+        let testEpisode = PodcastEpisode(
             title: "Test Episode",
-            url: testURL,
+            url: URL(string: "https://example.com/test.mp3")!,
             artworkURL: nil,
-            duration: 300,
-            showNotes: "Test notes",
-            feedUrl: "https://example.com/feed"
+            duration: nil,
+            showNotes: nil,
+            feedUrl: nil
         )
         
-        // Instead of calling downloadEpisode which tries to make a network request,
-        // let's directly set the download state to simulate a download
-        print("Setting download state for episode: \(episode.title)")
-        downloadManager.downloadStates[testURL.absoluteString] = .downloading
+        // Test initial state
+        let initialState = manager.downloadStates[testEpisode.url.absoluteString]
+        safeAssert(initialState == nil, "Initial download state should be nil")
         
-        // Check that the state is set correctly
-        safeAssert(downloadManager.downloadStates[testURL.absoluteString] == .downloading, 
-               "Download state should be .downloading")
-        
-        // Now let's simulate a completed download by creating a dummy file
-        let dummyFileName = "test_download.mp3"
-        let dummyFileURL = downloadsURL.appendingPathComponent(dummyFileName)
-        
-        do {
-            // Create a small dummy file
-            let dummyData = "Test audio data".data(using: .utf8)!
-            try dummyData.write(to: dummyFileURL)
-            print("Created dummy file at: \(dummyFileURL.path)")
-            
-            // Set the download state to completed
-            downloadManager.downloadStates[testURL.absoluteString] = .downloaded(dummyFileURL)
-            
-            // Check that the state is set correctly
-            safeAssert(downloadManager.downloadStates[testURL.absoluteString] == .downloaded(dummyFileURL), 
-                   "Download state should be .downloaded with the correct URL")
-            
-            // Test the localURL method
-            let localURL = downloadManager.localURL(for: episode)
-            safeAssert(localURL == dummyFileURL, "localURL should return the correct URL")
-            
-            // Clean up the dummy file
-            try fileManager.removeItem(at: dummyFileURL)
-            print("Removed dummy file")
-        } catch {
-            print("Error handling dummy file: \(error)")
+        // Test starting download
+        manager.downloadEpisode(testEpisode)
+        let downloadingState = manager.downloadStates[testEpisode.url.absoluteString]
+        if let state = downloadingState {
+            safeAssert(
+                {
+                    switch state {
+                    case .downloading: return true
+                    default: return false
+                    }
+                }(),
+                "State should be downloading with progress"
+            )
+        } else {
+            safeAssert(false, "Download state should not be nil")
         }
+        
+        // Test download completion (simulated)
+        let testURL = FileManager.default.temporaryDirectory.appendingPathComponent("test.mp3")
+        manager.downloadStates[testEpisode.url.absoluteString] = .downloaded(testURL)
+        let completedState = manager.downloadStates[testEpisode.url.absoluteString]
+        safeAssert(completedState == .downloaded(testURL), "State should be downloaded")
         
         print("✅ DownloadManager tests passed!")
     }

@@ -203,8 +203,7 @@ struct ContentView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup {
             Button(action: { isAudioOutputSelectionVisible.toggle() }) {
-                Image(systemName: "airplayaudio")
-                    .foregroundColor(.white)
+                Image(systemName: AudioOutputManager.shared.currentRouteIcon)
             }
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
@@ -212,7 +211,6 @@ struct ContentView: View {
             
             Button(action: { isSubscribeVisible = true }) {
                 Image(systemName: "rectangle.and.paperclip")
-                    .foregroundColor(subscribedPodcasts.isEmpty ? .gray : .white)
             }
             .popover(isPresented: $isSubscribeVisible) {
                 SubscribeView(
@@ -221,10 +219,6 @@ struct ContentView: View {
                     podcastFetcher: podcastFetcher,
                     audioPlayer: audioPlayer
                 )
-                .onDisappear {
-                    PersistenceManager.saveSubscriptions(subscribedPodcasts)
-                }
-                .frame(minWidth: 400, minHeight: 500)
             }
             
             Button(action: { isSettingsVisible = true }) {
@@ -236,14 +230,12 @@ struct ContentView: View {
             
             Button(action: { isFavoritesVisible = true }) {
                 Image(systemName: "star")
-                    .foregroundColor(favoritePodcasts.isEmpty ? .gray : .white)
             }
             .disabled(favoritePodcasts.isEmpty)
             .help("Favorites (\(favoritePodcasts.count))")
             
             Button(action: { if !cue.isEmpty { isCueVisible.toggle() } }) {
                 Image(systemName: "list.bullet")
-                    .foregroundColor(cue.isEmpty ? .gray : .white)
             }
             .disabled(cue.isEmpty)
             .help("Cue (\(cue.count))")
