@@ -16,7 +16,7 @@ struct ProgressBarView: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle()
-                    .fill(Color(NSColor.darkGray))
+                    .fill(Color.clear)
                 Rectangle()
                     .fill(Color.blue)
                     .frame(width: geo.size.width * CGFloat(duration > 0 ? currentTime / duration : 0))

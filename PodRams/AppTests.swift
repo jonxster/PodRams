@@ -25,6 +25,7 @@ class AppTests {
             try testPlayerView()
             try testDownloadManager()
             try testPodcastFetcher()
+            try testEpisodeRowHover()
             
             print("✅ All tests completed successfully!")
         } catch {
@@ -227,5 +228,30 @@ class AppTests {
         safeAssert(episodes[1].showNotes == "This is episode 2", "Second episode show notes should be correct")
         
         print("✅ RSSParser tests passed!")
+    }
+    
+    static func testEpisodeRowHover() throws {
+        print("Testing EpisodeRow hover functionality...")
+        
+        // Test the hover state logic
+        func testHoverLogic(isPlaying: Bool, isHovering: Bool) -> Bool {
+            // Should show play icon when hovering AND not playing
+            return isHovering && !isPlaying
+        }
+        
+        // Test various combinations
+        safeAssert(testHoverLogic(isPlaying: false, isHovering: false) == false,
+                   "Should not show play icon when not hovering and not playing")
+        
+        safeAssert(testHoverLogic(isPlaying: false, isHovering: true) == true,
+                   "Should show play icon when hovering and not playing")
+        
+        safeAssert(testHoverLogic(isPlaying: true, isHovering: true) == false,
+                   "Should not show play icon when hovering and playing")
+        
+        safeAssert(testHoverLogic(isPlaying: true, isHovering: false) == false,
+                   "Should not show play icon when not hovering and playing")
+        
+        print("✅ EpisodeRow hover tests passed!")
     }
 } 

@@ -266,9 +266,21 @@ struct EpisodeRow: View {
     var onSelect: (() -> Void)?
     var onToggleCue: (() -> Void)?
     var onDownload: (() -> Void)?
+    @State var isHovering = false
     
     var body: some View {
         HStack(spacing: 0) {
+            // Play icon outside the button's highlight area
+            if isHovering && !isPlaying {
+                Image(systemName: "play.fill")
+                    .foregroundColor(.white)
+                    .font(.system(size: 12))
+                    .frame(width: 16)
+            } else {
+                Spacer()
+                    .frame(width: 16)
+            }
+            
             Button(action: {
                 onSelect?()
             }) {
@@ -282,12 +294,18 @@ struct EpisodeRow: View {
                         Text(episode.title)
                             .lineLimit(1)
                             .foregroundColor(isPlaying ? .white : .primary)
+                            .background(Color.clear)
                         Spacer()
                     }
                     .padding(.horizontal, 8)
                 }
             }
             .buttonStyle(PlainButtonStyle())
+            .contentShape(Rectangle())
+            .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
+            .onHover { hovering in
+                isHovering = hovering
+            }
             
             // Updated playlist icon section
             Image(systemName: "music.note.list")
