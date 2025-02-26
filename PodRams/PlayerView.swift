@@ -20,7 +20,7 @@ struct PlayerView: View {
     /// Controls whether to show the front (artwork) or back (show notes).
     @State private var isFlipped = false
     
-    private var currentEpisode: PodcastEpisode? {
+    var currentEpisode: PodcastEpisode? {
         guard let idx = currentEpisodeIndex, idx >= 0, idx < episodes.count else { return nil }
         return episodes[idx]
     }
@@ -133,9 +133,9 @@ struct PlayerView: View {
             Button(action: { audioPlayer.volume = 0 }) {
                 Image(systemName: "speaker.fill")
                     .foregroundColor(.white)
-                    .padding(6)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
+            .focusable(false)
             
             Slider(value: $audioPlayer.volume, in: 0...1)
                 .frame(maxWidth: 200)
@@ -143,9 +143,9 @@ struct PlayerView: View {
             Button(action: { audioPlayer.volume = 1 }) {
                 Image(systemName: "speaker.wave.3.fill")
                     .foregroundColor(.white)
-                    .padding(6)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
+            .focusable(false)
         }
         .padding(.horizontal)
         .padding(.bottom, 10)

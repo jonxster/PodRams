@@ -25,7 +25,7 @@ struct CueSheetView: View {
                 .padding()
 
             List {
-                ForEach(cue) { episode in
+                ForEach(Array(cue.enumerated()), id: \.offset) { index, episode in
                     CueRowView(episode: episode)
                         .onDrag {
                             self.draggedEpisode = episode
@@ -34,12 +34,10 @@ struct CueSheetView: View {
                         .onDrop(of: [.text],
                                 delegate: CueDropDelegate(item: episode, cue: $cue, draggedEpisode: $draggedEpisode))
                         .onTapGesture {
-                            if let idx = cue.firstIndex(of: episode) {
-                                selectedEpisodeIndex = idx
-                                isCuePlaying = true
-                                audioPlayer.playAudio(url: episode.url)
-                                dismiss()
-                            }
+                            selectedEpisodeIndex = index
+                            isCuePlaying = true
+                            audioPlayer.playAudio(url: episode.url)
+                            dismiss()
                         }
                         .onHover { hovering in
                             if hovering {

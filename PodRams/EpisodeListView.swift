@@ -9,98 +9,128 @@
 
 import SwiftUI
 
-struct EpisodeListView: View {
-    var episodes: [PodcastEpisode]
-    @Binding var selectedEpisodeIndex: Int?
-    @ObservedObject var audioPlayer: AudioPlayer
-    @Binding var cue: [PodcastEpisode]
+// Helper view to handle a single episode row configuration
+struct EpisodeRowConfiguration {
+    let episode: PodcastEpisode
+    let index: Int
+    let isPlaying: Bool
+    let isInCue: Bool
+    let currentTime: Double
+    let duration: Double
+    let audioPlayer: AudioPlayer
+    let selectedPodcast: Podcast?
+    let onSelect: (Int) -> Void
+    let onToggleCue: (PodcastEpisode) -> Void
+    let onDownload: (PodcastEpisode) -> Void
+}
 
+// Separate view for episode rows
+struct ConfiguredEpisodeRow: View {
+    let config: EpisodeRowConfiguration
+    
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Episodes (\(episodes.count))")
-                .font(.headline)
-                .padding(.horizontal)
-
-            if episodes.isEmpty {
-                ProgressView("Loading episodes...")
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .center)
-            } else {
-                List {
-                    ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
-                        episodeRow(for: episode, index: index)
-                    }
-                }
-                .listStyle(PlainListStyle())
+        EpisodeRow(
+            episode: config.episode,
+            isPlaying: config.isPlaying,
+            isInCue: config.isInCue,
+            currentTime: config.currentTime,
+            duration: config.duration,
+            onSeek: { newTime in
+                config.audioPlayer.seek(to: newTime)
+            },
+            onSelect: {
+                config.onSelect(config.index)
+            },
+            onToggleCue: {
+                config.onToggleCue(config.episode)
+            },
+            onDownload: {
+                config.onDownload(config.episode)
             }
-        }
-        .frame(minWidth: 250)
-    }
-
-    private func episodeRow(for episode: PodcastEpisode, index: Int) -> some View {
-        let isPlaying = selectedEpisodeIndex == index
-
-        return HStack(spacing: 8) {
-            Text(episode.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            if isPlaying {
-                playbackTimeDisplay()
-            }
-
-            Button(action: {
-                toggleCue(for: episode)
-            }) {
-                Image(systemName: "list.bullet")
-                    .foregroundColor(cueContains(episode) ? .green : .white)
-            }
-            .buttonStyle(BorderlessButtonStyle())
-        }
-        .padding(.vertical, 4)
+        )
         .contentShape(Rectangle())
-        .onTapGesture {
-            selectedEpisodeIndex = index
-            audioPlayer.playAudio(url: episode.url)
+    }
+}
+
+struct EpisodeListView: View {
+    let episodes: [PodcastEpisode]
+    let selectedEpisodeIndex: Int?
+    let cue: [PodcastEpisode]
+    let audioPlayer: AudioPlayer
+    let selectedPodcast: Podcast?
+    @Binding var selectedIndex: Int?
+    @Binding var cueList: [PodcastEpisode]
+    
+    private func handleEpisodeSelect(_ index: Int, episode: PodcastEpisode) {
+        // First stop any current playback
+        audioPlayer.stopAudio()
+        
+        // Then set the new index and start playback
+        selectedIndex = index
+        
+        // Get the local URL if available, otherwise use the remote URL
+        let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
+        
+        // Add a small delay to ensure the previous playback is fully stopped
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            audioPlayer.playAudio(url: playURL)
             PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
         }
-        .listRowInsets(EdgeInsets())
-        .background(rowBackground(for: isPlaying))
     }
-
-    private func rowBackground(for isPlaying: Bool) -> some View {
-        Group {
-            if isPlaying {
-                EpisodeRowBackground(currentTime: audioPlayer.currentTime, duration: audioPlayer.duration)
-            } else {
-                Color(NSColor.clear)
-            }
-        }
-    }
-
-    private func playbackTimeDisplay() -> some View {
-        Text("\(formatTime(audioPlayer.currentTime)) of \(formatTime(audioPlayer.duration))")
-            .foregroundColor(.white.opacity(0.7))
-            .font(.caption)
-            .frame(width: 100, alignment: .trailing)
-    }
-
-    private func cueContains(_ episode: PodcastEpisode) -> Bool {
-        cue.contains { $0.id == episode.id }
-    }
-
-    private func toggleCue(for episode: PodcastEpisode) {
-        if let idx = cue.firstIndex(where: { $0.id == episode.id }) {
-            cue.remove(at: idx)
+    
+    private func handleToggleCue(for episode: PodcastEpisode) {
+        if let idx = cueList.firstIndex(where: { $0.id == episode.id }) {
+            cueList.remove(at: idx)
         } else {
-            cue.append(episode)
+            var newEpisode = episode
+            if newEpisode.podcastName == nil {
+                newEpisode.podcastName = selectedPodcast?.title ?? episode.podcastName
+            }
+            // Create a unique ID for the cue version of the episode
+            let cueId = "cue_\(UUID().uuidString)_\(episode.url.absoluteString)"
+            newEpisode = PodcastEpisode(
+                id: cueId,
+                title: newEpisode.title,
+                url: newEpisode.url,
+                artworkURL: newEpisode.artworkURL,
+                duration: newEpisode.duration,
+                showNotes: newEpisode.showNotes,
+                feedUrl: newEpisode.feedUrl,
+                podcastName: newEpisode.podcastName
+            )
+            cueList.append(newEpisode)
         }
+        let feedUrl = episode.feedUrl ?? selectedPodcast?.feedUrl
+        PersistenceManager.saveCue(cueList, feedUrl: feedUrl)
     }
-
-    private func formatTime(_ seconds: Double) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "0:00" }
-        let totalSeconds = Int(seconds)
-        let minutes = totalSeconds / 60
-        let secs = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, secs)
+    
+    private func handleDownload(episode: PodcastEpisode) {
+        DownloadManager.shared.downloadEpisode(episode)
+    }
+    
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(episodes.enumerated()), id: \.offset) { index, episode in
+                    let config = EpisodeRowConfiguration(
+                        episode: episode,
+                        index: index,
+                        isPlaying: selectedEpisodeIndex == index,
+                        isInCue: cue.contains { $0.url.absoluteString == episode.url.absoluteString },
+                        currentTime: selectedEpisodeIndex == index ? audioPlayer.currentTime : 0,
+                        duration: selectedEpisodeIndex == index ? audioPlayer.duration : 0,
+                        audioPlayer: audioPlayer,
+                        selectedPodcast: selectedPodcast,
+                        onSelect: { idx in handleEpisodeSelect(idx, episode: episode) },
+                        onToggleCue: handleToggleCue,
+                        onDownload: handleDownload
+                    )
+                    
+                    ConfiguredEpisodeRow(config: config)
+                }
+            }
+            .padding(.top, 10)
+            .padding()
+        }
     }
 }

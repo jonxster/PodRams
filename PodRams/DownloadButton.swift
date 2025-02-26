@@ -8,35 +8,45 @@ import SwiftUI
 
 struct DownloadButton: View {
     let episode: PodcastEpisode
-    @ObservedObject var downloadManager = DownloadManager.shared
+    @ObservedObject private var downloadManager = DownloadManager.shared
     
     var body: some View {
-        Group {
-            switch downloadManager.downloadStates[episode.url.absoluteString] ?? .none {
+        let downloadState = downloadManager.downloadStates[episode.url.absoluteString] ?? .none
+        
+        Button(action: {
+            switch downloadState {
+            case .none:
+                downloadManager.downloadEpisode(episode)
+            case .downloaded:
+                downloadManager.removeDownload(for: episode)
+            case .downloading:
+                // Could add cancel functionality here in the future
+                break
+            case .failed:
+                // Could retry the download here
+                downloadManager.downloadEpisode(episode)
+            }
+        }) {
+            switch downloadState {
+            case .none:
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(.blue)
             case .downloading:
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle())
                     .scaleEffect(0.5)
                     .frame(width: 20, height: 20)
-            case .downloaded(_):
-                Button(action: {
-                    downloadManager.removeDownload(for: episode)
-                }) {
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(BorderlessButtonStyle())
-            case .none:
-                Button(action: {
-                    downloadManager.downloadEpisode(episode)
-                }) {
-                    Image(systemName: "square.and.arrow.down")
-                        .font(.system(size: 16))
-                        .foregroundColor(.blue)
-                }
-                .buttonStyle(BorderlessButtonStyle())
+            case .downloaded:
+                Image(systemName: "trash")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
+            case .failed:
+                Image(systemName: "exclamationmark.circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(.red)
             }
         }
+        .buttonStyle(BorderlessButtonStyle())
     }
 }

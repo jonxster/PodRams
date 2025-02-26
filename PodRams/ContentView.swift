@@ -30,6 +30,43 @@ struct ContentView: View {
         return []
     }
     
+    var currentPlayingTitle: some View {
+        HStack {
+            if let currentEpisode = activeEpisodes.indices.contains(selectedEpisodeIndex ?? -1) ? activeEpisodes[selectedEpisodeIndex!] : nil {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Playing")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    
+                    HStack {
+                        if isCuePlaying {
+                            Text("From Cue:")
+                                .font(.headline)
+                            
+                            Button(action: {
+                                isCueVisible.toggle()
+                            }) {
+                                Text("\(currentEpisode.podcastName ?? "Unknown Podcast")")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                            }
+                        } else {
+                            Text(selectedPodcast?.title ?? "Unknown Podcast")
+                                .font(.headline)
+                        }
+                    }
+                    
+                    Text(currentEpisode.title)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             PlayerView(
@@ -38,51 +75,26 @@ struct ContentView: View {
                 currentEpisodeIndex: $selectedEpisodeIndex,
                 feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
             )
-            .padding(.bottom, 20)
+            .padding(.bottom, 10)
+            
+            currentPlayingTitle
             
             ZStack {
                 if !activeEpisodes.isEmpty {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 8) {
-                            ForEach(Array(activeEpisodes.enumerated()), id: \.element.id) { index, episode in
-                                EpisodeRow(
-                                    episode: episode,
-                                    isPlaying: selectedEpisodeIndex == index,
-                                    isInCue: cue.contains { $0.id == episode.id },
-                                    currentTime: selectedEpisodeIndex == index ? audioPlayer.currentTime : 0,
-                                    duration: selectedEpisodeIndex == index ? audioPlayer.duration : 0,
-                                    onSeek: { newTime in
-                                        audioPlayer.seek(to: newTime)
-                                    },
-                                    onSelect: {
-                                        selectedEpisodeIndex = index
-                                        let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
-                                        audioPlayer.playAudio(url: playURL)
-                                        PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
-                                    },
-                                    onToggleCue: {
-                                        if let idx = cue.firstIndex(where: { $0.id == episode.id }) {
-                                            cue.remove(at: idx)
-                                        } else {
-                                            var newEpisode = episode
-                                            newEpisode.podcastName = selectedPodcast?.title
-                                            cue.append(newEpisode)
-                                        }
-                                    },
-                                    onDownload: {
-                                        DownloadManager.shared.downloadEpisode(episode)
-                                    }
-                                )
-                                .contentShape(Rectangle())
-                            }
-                        }
-                        .padding(.top, 10)
-                        .padding()
-                    }
+                    EpisodeListView(
+                        episodes: activeEpisodes,
+                        selectedEpisodeIndex: selectedEpisodeIndex,
+                        cue: cue,
+                        audioPlayer: audioPlayer,
+                        selectedPodcast: selectedPodcast,
+                        selectedIndex: $selectedEpisodeIndex,
+                        cueList: $cue
+                    )
                 } else {
                     Text("No episodes available")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                
                 if isPodcastLoading {
                     ProgressView("Loading podcast...")
                         .progressViewStyle(CircularProgressViewStyle())
@@ -168,6 +180,22 @@ struct ContentView: View {
                         isPodcastLoading = false
                     }
                 }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestPodcast"))) { notification in
+            if let testPodcast = notification.userInfo?["podcast"] as? Podcast {
+                // Add to subscriptions
+                subscribedPodcasts.append(testPodcast)
+                selectedPodcast = testPodcast
+                selectedEpisodeIndex = 0
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestEpisode"))) { notification in
+            if let testEpisode = notification.userInfo?["episode"] as? PodcastEpisode {
+                // Add to cue
+                cue.append(testEpisode)
+                isCuePlaying = true
+                selectedEpisodeIndex = cue.count - 1
             }
         }
     }

@@ -10,8 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("skipSilence") private var skipSilence: Bool = false
     @AppStorage("reduceLoudSounds") private var reduceLoudSounds: Bool = false
-    @AppStorage("leftPan") private var leftPan: Double = 0.5
-    @AppStorage("rightPan") private var rightPan: Double = 0.5
+    @AppStorage("audioPan") private var audioPan: Double = 0.5 // 0.5 is center
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -21,14 +20,41 @@ struct SettingsView: View {
             Toggle("Skip silence in podcasts", isOn: $skipSilence)
             Toggle("Reduce loud sounds", isOn: $reduceLoudSounds)
             
-            HStack {
-                Text("Left Panning")
-                Slider(value: $leftPan, in: 0...1)
-            }
-            
-            HStack {
-                Text("Right Panning")
-                Slider(value: $rightPan, in: 0...1)
+            VStack(alignment: .leading) {
+                Text("Audio Balance")
+                HStack {
+                    Text("Left")
+                    Slider(
+                        value: $audioPan,
+                        in: 0...1,
+                        step: 0.01,
+                        onEditingChanged: { editing in
+                            if !editing && abs(audioPan - 0.5) < 0.05 {
+                                // Snap to center if close
+                                audioPan = 0.5
+                            }
+                            // Update audio panning
+                            NotificationCenter.default.post(
+                                name: .audioPanChanged,
+                                object: nil,
+                                userInfo: ["pan": audioPan]
+                            )
+                        }
+                    )
+                    Text("Right")
+                }
+                
+                if audioPan == 0.5 {
+                    Text("Center")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    Text(audioPan < 0.5 ? "\(Int((0.5 - audioPan) * 200))% Left" : "\(Int((audioPan - 0.5) * 200))% Right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
             
             Spacer()
@@ -36,4 +62,9 @@ struct SettingsView: View {
         .padding()
         .frame(width: 300, height: 200)
     }
+}
+
+// Add notification name for audio pan changes
+extension Notification.Name {
+    static let audioPanChanged = Notification.Name("audioPanChanged")
 }

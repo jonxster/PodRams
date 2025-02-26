@@ -5,8 +5,6 @@
 //  Created by Tom Björnebark on 2025-02-25.
 //
 
-// AudioPlayer.swift
-
 import Foundation
 import Combine
 import AVFoundation
@@ -17,16 +15,69 @@ class AudioPlayer: ObservableObject {
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
     @Published var volume: Double = 0.5 {
-        didSet { player?.volume = Float(volume) }
+        didSet { updateVolume() }
     }
+    // Pan is stored as 0 (full left) to 1 (full right), 0.5 is center.
+    @Published var pan: Double = 0.5 {
+        didSet {
+            updatePan()
+            UserDefaults.standard.set(pan, forKey: "audioPan")
+        }
+    }
+    
+    private let audioEngine = AVAudioEngine()
+    private let playerNode = AVAudioPlayerNode()
     
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var durationObserver: NSKeyValueObservation?
     private var cancellables = Set<AnyCancellable>()
+    private var currentURL: URL?
+    private var engineConfigured = false
     
     init() {
         setupThrottling()
+        setupAudioEngine()
+        
+        if let savedPan = UserDefaults.standard.object(forKey: "audioPan") as? Double {
+            pan = savedPan
+        }
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(handlePanChange),
+                                               name: .audioPanChanged,
+                                               object: nil)
+    }
+    
+    private func setupAudioEngine() {
+        audioEngine.attach(playerNode)
+        let format = audioEngine.mainMixerNode.outputFormat(forBus: 0)
+        audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
+        
+        updatePan()
+        updateVolume()
+        
+        do {
+            try audioEngine.start()
+            engineConfigured = true
+            print("Audio engine started successfully")
+        } catch {
+            print("Failed to start audio engine: \(error)")
+        }
+    }
+    
+    private func updatePan() {
+        // Convert pan from 0...1 (with 0.5 as center) to -1...1.
+        let panValue = Float((pan * 2) - 1)
+        playerNode.pan = panValue
+        print("Player node pan set to: \(panValue)")
+    }
+    
+    private func updateVolume() {
+        playerNode.volume = Float(volume)
+        audioEngine.mainMixerNode.outputVolume = Float(volume)
+        player?.volume = Float(volume)
+        print("Volume set to: \(volume)")
     }
     
     func playAudio(url: URL) {
@@ -35,53 +86,50 @@ class AudioPlayer: ObservableObject {
             return
         }
         
-        // If this URL is already loaded, resume playback.
-        if let currentPlayer = player,
-           let currentItem = currentPlayer.currentItem,
-           let assetURL = (currentItem.asset as? AVURLAsset)?.url,
-           assetURL == url {
-            currentPlayer.play()
-            isPlaying = true
-            return
-        }
+        print("Playing audio from URL: \(url)")
         
+        // Clean up existing playback
+        stopAudio()
         cleanupObservers()
+        
+        // Reset state
+        isPlaying = false
+        currentTime = 0
+        duration = 0
         isLoading = true
+        currentURL = url
         
+        // Create new player
         let playerItem = AVPlayerItem(url: url)
-        durationObserver = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                switch item.status {
-                case .readyToPlay:
-                    self.duration = item.duration.seconds
-                    self.isLoading = false
-                case .failed:
-                    print("Player item failed: \(item.error?.localizedDescription ?? "Unknown error")")
-                    self.isLoading = false
-                default:
-                    break
-                }
-            }
-        }
-        
+        setupPlayerItem(playerItem)
         let newPlayer = AVPlayer(playerItem: playerItem)
-        newPlayer.volume = Float(volume)
         player = newPlayer
         
+        // Always use AVPlayer for both remote and local files
+        player?.volume = Float(volume)
         addPeriodicTimeObserver()
-        newPlayer.play()
+        player?.play()
+        isPlaying = true
+        isLoading = false
+    }
+    
+    private func playThroughAudioEngine(url: URL) {
+        // Temporarily disable audio engine playback and use AVPlayer for all files
+        player?.volume = Float(volume)
+        player?.play()
         isPlaying = true
     }
     
     func pauseAudio() {
         player?.pause()
+        playerNode.pause()
         isPlaying = false
     }
     
     func stopAudio() {
         player?.pause()
         player?.seek(to: .zero)
+        playerNode.stop()
         isPlaying = false
     }
     
@@ -89,22 +137,25 @@ class AudioPlayer: ObservableObject {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player?.seek(to: cmTime)
         currentTime = time
+        
+        if let url = currentURL, engineConfigured {
+            playerNode.stop()
+            guard let audioFile = try? AVAudioFile(forReading: url) else { return }
+            let format = audioFile.processingFormat
+            let framePosition = AVAudioFramePosition(time * format.sampleRate)
+            let framesToPlay = AVAudioFrameCount(audioFile.length - framePosition)
+            playerNode.scheduleSegment(audioFile,
+                                         startingFrame: framePosition,
+                                         frameCount: framesToPlay,
+                                         at: nil,
+                                         completionHandler: nil)
+            if isPlaying { playerNode.play() }
+        }
     }
     
-    /// Preloads media data concurrently using AVAsset’s async API.
     func preloadAudio(url: URL) {
-        let asset = AVURLAsset(url: url)
-        Task {
-            do {
-                async let loadedDuration: CMTime = asset.load(.duration)
-                async let loadedTracks: [AVAssetTrack] = asset.load(.tracks)
-                let durationValue = try await loadedDuration
-                _ = try await loadedTracks
-                print("Preloaded asset for \(url), duration: \(CMTimeGetSeconds(durationValue)) seconds")
-            } catch {
-                print("Preload failed for \(url): \(error)")
-            }
-        }
+        print("Preloading asset for \(url)")
+        if url.isFileURL { _ = try? AVAudioFile(forReading: url) }
     }
     
     private func setupThrottling() {
@@ -141,10 +192,38 @@ class AudioPlayer: ObservableObject {
         durationObserver = nil
     }
     
+    @objc private func handlePanChange(_ notification: Notification) {
+        if let panValue = notification.userInfo?["pan"] as? Double {
+            pan = panValue
+        }
+    }
+    
     deinit {
+        NotificationCenter.default.removeObserver(self)
         cleanupObservers()
         player?.pause()
         player = nil
+        playerNode.stop()
+        audioEngine.stop()
+        audioEngine.reset()
         cancellables.removeAll()
+    }
+    
+    private func setupPlayerItem(_ playerItem: AVPlayerItem) {
+        durationObserver = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch item.status {
+                case .readyToPlay:
+                    self.duration = item.duration.seconds
+                    self.isLoading = false
+                case .failed:
+                    print("Player item failed: \(item.error?.localizedDescription ?? "Unknown error")")
+                    self.isLoading = false
+                default:
+                    break
+                }
+            }
+        }
     }
 }

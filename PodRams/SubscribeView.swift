@@ -53,8 +53,7 @@ struct SubscribeView: View {
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         selectedPodcast = podcast
-                                        if let index = podcast.episodes.firstIndex(where: { $0.id == episode.id }) {
-                                            audioPlayer.playAudio(url: episode.url)
+                                        if podcast.episodes.firstIndex(where: { $0.id == episode.id }) != nil {
                                             if let localURL = DownloadManager.shared.localURL(for: episode) {
                                                 audioPlayer.playAudio(url: localURL)
                                             } else {
@@ -80,8 +79,8 @@ struct SubscribeView: View {
                                 Button(action: {
                                     removeSubscription(podcast)
                                 }) {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundColor(.red)
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.gray)
                                 }
                                 .buttonStyle(BorderlessButtonStyle())
                             }
