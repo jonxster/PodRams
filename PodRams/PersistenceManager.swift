@@ -5,6 +5,7 @@ fileprivate enum PersistenceKeys: String {
     case cue = "cue.json"
     case lastPlayback = "lastPlayback.json"
     case subscriptions = "subscriptions.json" // New key for subscriptions
+    case downloads = "downloads.json" // New key for downloads
 }
 
 struct PersistedEpisode: Codable, Equatable {
@@ -24,6 +25,11 @@ struct PersistedPodcast: Codable {
     let feedArtworkURL: String?
 }
 
+struct PersistedDownload: Codable {
+    let episodeUrl: String
+    let localFilePath: String
+}
+
 struct PersistenceManager {
     private static let fileManager = FileManager.default
     private static let documentsDirectory: URL = {
@@ -37,6 +43,7 @@ struct PersistenceManager {
     private static var cueCache: [PodcastEpisode]?
     private static var lastPlaybackCache: PodcastEpisode?
     private static var subscriptionsCache: [Podcast]? // New cache
+    private static var downloadsCache: [PersistedDownload]?
     
     private static func fileURL(for key: PersistenceKeys) -> URL {
         documentsDirectory.appendingPathComponent(key.rawValue)
@@ -197,25 +204,6 @@ struct PersistenceManager {
         return nil
     }
     
-    static func clearAll() {
-        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback, .subscriptions]
-        queue.async {
-            for key in keys {
-                try? fileManager.removeItem(at: fileURL(for: key))
-            }
-            favoritesCache = nil
-            cueCache = nil
-            lastPlaybackCache = nil
-            subscriptionsCache = nil
-        }
-    }
-    
-    static var hasData: Bool {
-        if favoritesCache != nil || cueCache != nil || lastPlaybackCache != nil { return true }
-        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback]
-        return keys.contains { fileManager.fileExists(atPath: fileURL(for: $0).path) }
-    }
-    
     // Subscriptions
     static func saveSubscriptions(_ subscriptions: [Podcast]) {
         let persisted = subscriptions.compactMap { podcast -> PersistedPodcast? in
@@ -249,5 +237,39 @@ struct PersistenceManager {
         }
         subscriptionsCache = result
         return result
+    }
+    
+    // Downloads
+    static func saveDownloads(_ downloads: [PersistedDownload]) {
+        downloadsCache = downloads
+        saveData(downloads, to: .downloads)
+    }
+    
+    static func loadDownloads() async -> [PersistedDownload] {
+        if let cached = downloadsCache { return cached }
+        let persisted: [PersistedDownload]? = await loadData(from: .downloads)
+        let result = persisted ?? []
+        downloadsCache = result
+        return result
+    }
+    
+    static func clearAll() {
+        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback, .subscriptions, .downloads]
+        queue.async {
+            for key in keys {
+                try? fileManager.removeItem(at: fileURL(for: key))
+            }
+            favoritesCache = nil
+            cueCache = nil
+            lastPlaybackCache = nil
+            subscriptionsCache = nil
+            downloadsCache = nil
+        }
+    }
+    
+    static var hasData: Bool {
+        if favoritesCache != nil || cueCache != nil || lastPlaybackCache != nil { return true }
+        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback]
+        return keys.contains { fileManager.fileExists(atPath: fileURL(for: $0).path) }
     }
 }

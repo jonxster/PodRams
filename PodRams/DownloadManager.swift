@@ -11,7 +11,7 @@ import CryptoKit
 /// Manages downloading of podcast episodes.
 /// This singleton class uses URLSession to download episodes and tracks their download states.
 /// It handles creating required directories, monitoring download progress, and moving downloaded files.
-class DownloadManager: ObservableObject {
+class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Shared singleton instance for global access.
     static let shared = DownloadManager()
     
@@ -52,6 +52,11 @@ class DownloadManager: ObservableObject {
     private init() {
         // Ensure required directories are available on initialization.
         createRequiredDirectories()
+        
+        // Load saved download states
+        Task {
+            await loadDownloadStates()
+        }
     }
     
     /// Creates necessary directories (Downloads and tmp) inside the user's document directory.
@@ -114,6 +119,40 @@ class DownloadManager: ObservableObject {
         return downloadsDir.appendingPathComponent(fileName)
     }
     
+    /// Loads saved download states from persistence
+    private func loadDownloadStates() async {
+        let savedDownloads = await PersistenceManager.loadDownloads()
+        
+        for download in savedDownloads {
+            let fileURL = URL(fileURLWithPath: download.localFilePath)
+            
+            // Verify the file still exists
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                // Capture self as a local variable to avoid Sendable warning
+                let downloadManager = self
+                DispatchQueue.main.async {
+                    downloadManager.downloadStates[download.episodeUrl] = .downloaded(fileURL)
+                }
+            }
+        }
+    }
+    
+    /// Saves the current download states to persistence
+    private func saveDownloadStates() {
+        var downloads: [PersistedDownload] = []
+        
+        for (episodeUrl, state) in downloadStates {
+            if case let .downloaded(url) = state {
+                downloads.append(PersistedDownload(
+                    episodeUrl: episodeUrl,
+                    localFilePath: url.path
+                ))
+            }
+        }
+        
+        PersistenceManager.saveDownloads(downloads)
+    }
+    
     /// Starts downloading a podcast episode.
     /// Sets up progress observation and moves the downloaded file to the Downloads directory upon completion.
     /// - Parameter episode: The podcast episode to download.
@@ -133,13 +172,14 @@ class DownloadManager: ObservableObject {
         
         // Create a download task for the episode.
         let task = URLSession.shared.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
-            guard let self = self else { return }
+            guard let downloadManager = self else { return }
             
             // Handle error scenario.
             if let error = error {
                 print("Download error for episode '\(episode.title)': \(error)")
                 DispatchQueue.main.async {
-                    self.downloadStates[key] = .failed(error)
+                    downloadManager.downloadStates[key] = .failed(error)
+                    downloadManager.saveDownloadStates()
                 }
                 return
             }
@@ -148,7 +188,8 @@ class DownloadManager: ObservableObject {
             guard let tempURL = tempURL else {
                 print("No temporary URL provided for downloaded file")
                 DispatchQueue.main.async {
-                    self.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
+                    downloadManager.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
+                    downloadManager.saveDownloadStates()
                 }
                 return
             }
@@ -158,7 +199,7 @@ class DownloadManager: ObservableObject {
             let downloadsURL = containerURL.appendingPathComponent("Downloads")
             
             // Generate destination filename using SHA256 hash with a ".mp3" extension.
-            let filename = self.sha256(episode.url.absoluteString) + ".mp3"
+            let filename = downloadManager.sha256(episode.url.absoluteString) + ".mp3"
             let destinationURL = downloadsURL.appendingPathComponent(filename)
             
             do {
@@ -172,7 +213,8 @@ class DownloadManager: ObservableObject {
                 print("Successfully moved downloaded file to: \(destinationURL.path)")
                 
                 DispatchQueue.main.async {
-                    self.downloadStates[key] = .downloaded(destinationURL)
+                    downloadManager.downloadStates[key] = .downloaded(destinationURL)
+                    downloadManager.saveDownloadStates()
                 }
             } catch {
                 print("Error moving file for episode '\(episode.title)': \(error)")
@@ -185,12 +227,14 @@ class DownloadManager: ObservableObject {
                     print("Successfully copied file using fallback method")
                     
                     DispatchQueue.main.async {
-                        self.downloadStates[key] = .downloaded(destinationURL)
+                        downloadManager.downloadStates[key] = .downloaded(destinationURL)
+                        downloadManager.saveDownloadStates()
                     }
                 } catch {
                     print("Fallback copy also failed: \(error)")
                     DispatchQueue.main.async {
-                        self.downloadStates[key] = .failed(error)
+                        downloadManager.downloadStates[key] = .failed(error)
+                        downloadManager.saveDownloadStates()
                     }
                 }
             }
@@ -198,8 +242,9 @@ class DownloadManager: ObservableObject {
         
         // Observe download progress and update the download state accordingly.
         progressObservations[key] = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            guard let downloadManager = self else { return }
             DispatchQueue.main.async {
-                self?.downloadStates[key] = .downloading(progress: progress.fractionCompleted)
+                downloadManager.downloadStates[key] = .downloading(progress: progress.fractionCompleted)
             }
         }
         
@@ -223,7 +268,9 @@ class DownloadManager: ObservableObject {
                 print("Removed downloaded file for episode '\(episode.title)' at: \(destinationURL.path)")
             }
             // Explicitly set the state to .none after removal.
-            downloadStates[key] = DownloadManager.DownloadState.none
+            // Use explicit type to avoid ambiguity with Optional.none
+            downloadStates[key] = DownloadState.none
+            saveDownloadStates()
         } catch {
             print("Error removing downloaded episode '\(episode.title)': \(error)")
         }
@@ -234,10 +281,48 @@ class DownloadManager: ObservableObject {
     /// - Returns: The local URL if the episode is downloaded; otherwise, nil.
     func localURL(for episode: PodcastEpisode) -> URL? {
         let key = episode.url.absoluteString
+        
+        // First check if we have the download state in memory
         if case let .downloaded(url) = downloadStates[key] {
-            return url
+            // Verify the file still exists
+            if FileManager.default.fileExists(atPath: url.path) {
+                return url
+            } else {
+                // File doesn't exist anymore, update state
+                // Use explicit type to avoid ambiguity with Optional.none
+                downloadStates[key] = DownloadState.none
+                saveDownloadStates()
+                return nil
+            }
         }
+        
+        // If not in memory, check if the file exists on disk
+        let potentialURL = localFileURL(for: episode)
+        if FileManager.default.fileExists(atPath: potentialURL.path) {
+            // File exists, update the state and return the URL
+            downloadStates[key] = .downloaded(potentialURL)
+            saveDownloadStates()
+            return potentialURL
+        }
+        
         return nil
+    }
+    
+    /// Checks if an episode is downloaded without changing its state.
+    /// - Parameter episode: The podcast episode to check.
+    /// - Returns: True if the episode is downloaded; otherwise, false.
+    func isDownloaded(_ episode: PodcastEpisode) -> Bool {
+        let key = episode.url.absoluteString
+        
+        // First check if we have the download state in memory
+        if case let .downloaded(url) = downloadStates[key] {
+            // Verify the file still exists
+            return FileManager.default.fileExists(atPath: url.path)
+        }
+        
+        // If not in memory, check if the file exists on disk
+        let potentialURL = localFileURL(for: episode)
+        return FileManager.default.fileExists(atPath: potentialURL.path)
     }
     
     deinit {

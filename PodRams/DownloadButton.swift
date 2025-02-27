@@ -17,7 +17,7 @@ struct DownloadButton: View {
     var body: some View {
         // Retrieve the download state for this episode using its URL as the key.
         // If no state exists, default to .none.
-        let downloadState = downloadManager.downloadStates[episode.url.absoluteString] ?? .none
+        let downloadState = downloadManager.downloadStates[episode.url.absoluteString] ?? DownloadManager.DownloadState.none
         
         Button(action: {
             // Perform an action based on the current download state.
