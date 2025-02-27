@@ -33,6 +33,9 @@ struct ContentView: View {
     @State private var isSubscribeVisible = false
     @State private var isSettingsVisible = false
     
+    // Add a new state variable to track initialization
+    @State private var isInitialized = false
+    
     /// Computes the list of episodes to display.
     /// If the cue is playing, returns the cue episodes; otherwise, returns episodes from the selected podcast.
     var activeEpisodes: [PodcastEpisode] {
@@ -74,53 +77,73 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 12) {  // Vertical stack for main layout with spacing of 12.
-            // Player controls view.
-            PlayerView(
-                audioPlayer: audioPlayer,
-                episodes: activeEpisodes,
-                currentEpisodeIndex: $selectedEpisodeIndex,
-                feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
-            )
-            .padding(.bottom, 12)  // Extra bottom padding for separation.
-            
-            // Title display section for current playing podcast/episode.
-            currentPlayingTitle
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-            
-            // Episode list section with loading indicator overlay.
-            ZStack {
-                if !activeEpisodes.isEmpty {
-                    EpisodeListView(
-                        episodes: activeEpisodes,
-                        selectedEpisodeIndex: selectedEpisodeIndex,
-                        cue: cue,
+        Group {
+            if isInitialized {
+                // Main content - only show when fully initialized
+                VStack(spacing: 12) {
+                    // Player controls view.
+                    PlayerView(
                         audioPlayer: audioPlayer,
-                        selectedPodcast: selectedPodcast,
-                        selectedIndex: $selectedEpisodeIndex,
-                        cueList: $cue
+                        episodes: activeEpisodes,
+                        currentEpisodeIndex: $selectedEpisodeIndex,
+                        feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
                     )
-                } else {
-                    // Inform the user if no episodes are available.
-                    Text("No episodes available")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.bottom, 12)  // Extra bottom padding for separation.
+                    
+                    // Title display section for current playing podcast/episode.
+                    currentPlayingTitle
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                    
+                    // Episode list section with loading indicator overlay.
+                    ZStack {
+                        if !activeEpisodes.isEmpty {
+                            EpisodeListView(
+                                episodes: activeEpisodes,
+                                selectedEpisodeIndex: selectedEpisodeIndex,
+                                cue: cue,
+                                audioPlayer: audioPlayer,
+                                selectedPodcast: selectedPodcast,
+                                selectedIndex: $selectedEpisodeIndex,
+                                cueList: $cue
+                            )
+                        } else {
+                            // Inform the user if no episodes are available.
+                            Text("No episodes available")
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        
+                        // Show a progress indicator while the podcast is loading.
+                        if isPodcastLoading {
+                            ProgressView("Loading podcast...")
+                                .progressViewStyle(CircularProgressViewStyle())
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
                 }
-                
-                // Show a progress indicator while the podcast is loading.
-                if isPodcastLoading {
-                    ProgressView("Loading podcast...")
+                .padding()
+                .frame(minWidth: 600, minHeight: 400)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Toolbar with various action buttons.
+                .toolbar { toolbarContent }
+            } else {
+                // Loading screen
+                VStack {
+                    ProgressView("Loading PodRams...")
                         .progressViewStyle(CircularProgressViewStyle())
+                        .padding()
+                    Text("Preparing your podcasts")
+                        .font(.caption)
+                        .foregroundColor(.gray)
                 }
+                .frame(minWidth: 600, minHeight: 400)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxHeight: .infinity)
         }
-        .padding()
+        // These modifiers apply to both states
         .frame(minWidth: 600, minHeight: 400)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Toolbar with various action buttons.
-        .toolbar { toolbarContent }
-        // Popover for searching podcasts.
+        // Popovers and other modifiers
         .popover(isPresented: $isSearching) {
             SearchSheetView(
                 podcastFetcher: podcastFetcher,
@@ -173,36 +196,50 @@ struct ContentView: View {
         })
         // Task to load persisted data on view startup.
         .task {
+            // Load persisted data
             favoritePodcasts = await PersistenceManager.loadFavorites()
             cue = await PersistenceManager.loadCue()
             subscribedPodcasts = await PersistenceManager.loadSubscriptions()
             lastPlayedEpisode = await PersistenceManager.loadLastPlayback()
+            
             if let lastEp = lastPlayedEpisode,
                let feedUrl = lastEp.feedUrl, !feedUrl.isEmpty {
-                // Create a temporary podcast object from the last played episode.
+                // Create a temporary podcast object from the last played episode
                 let cachedPodcast = Podcast(title: lastEp.title, feedUrl: feedUrl, episodes: [lastEp])
                 cachedPodcast.feedArtworkURL = lastEp.artworkURL
+                
+                // Set initial state
                 selectedPodcast = cachedPodcast
                 selectedEpisodeIndex = 0
-                audioPlayer.playAudio(url: lastEp.url)
                 isPodcastLoading = true
-                // Fetch the full list of episodes and update the UI.
-                Task {
-                    let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: cachedPodcast)
-                    await MainActor.run {
-                        cachedPodcast.episodes = episodes
-                        if let feedArt = feedArt {
-                            cachedPodcast.feedArtworkURL = feedArt
-                        }
-                        selectedPodcast = cachedPodcast
-                        if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
-                            selectedEpisodeIndex = index
-                        } else {
-                            selectedEpisodeIndex = 0
-                        }
-                        isPodcastLoading = false
+                
+                // Fetch the full list of episodes first
+                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: cachedPodcast)
+                
+                await MainActor.run {
+                    // Update podcast with fetched data
+                    cachedPodcast.episodes = episodes
+                    if let feedArt = feedArt {
+                        cachedPodcast.feedArtworkURL = feedArt
                     }
+                    
+                    // Update selected podcast and episode index
+                    selectedPodcast = cachedPodcast
+                    if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
+                        selectedEpisodeIndex = index
+                    }
+                    
+                    // Now that everything is loaded, start playback
+                    audioPlayer.setPlayingState(true)
+                    audioPlayer.playAudio(url: lastEp.url)
+                    
+                    // Mark initialization as complete and loading as finished
+                    isPodcastLoading = false
+                    isInitialized = true
                 }
+            } else {
+                // No last episode to resume, just mark as initialized
+                isInitialized = true
             }
         }
         // Listen for notifications to add a test podcast.
@@ -329,11 +366,16 @@ struct EpisodeRow: View {
     /// Local state to track whether the mouse is hovering over the row.
     @State var isHovering = false
     
-    // Add this to ensure the view updates when currentTime changes
-    private var currentTimePublisher: AnyPublisher<Double, Never> {
-        audioPlayer.$currentTime
-            .removeDuplicates()
-            .eraseToAnyPublisher()
+    // Add this to force an update when the view appears
+    @State private var hasAppeared = false
+    
+    // Add this to ensure we're tracking both currentTime and isPlaying changes
+    private var audioPlayerStatePublisher: AnyPublisher<(Double, Bool), Never> {
+        Publishers.CombineLatest(
+            audioPlayer.$currentTime.removeDuplicates(),
+            audioPlayer.$isPlaying.removeDuplicates()
+        )
+        .eraseToAnyPublisher()
     }
     
     var formattedTime: String {
@@ -352,21 +394,31 @@ struct EpisodeRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Play/speaker icon section
-            if isPlaying && !isHovering {
-                // Show speaker icon when this episode is playing and not being hovered over
-                Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
-                    .foregroundColor(.white)
-                    .font(.system(size: 12))
-                    .frame(width: 16)
+            // Play/speaker icon section with forced display for playing episodes
+            if isPlaying {
+                // Always show speaker icon for the playing episode when not hovering
+                if !isHovering {
+                    // Force display of speaker icon for playing episodes
+                    Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
+                        .foregroundColor(.white)
+                        .font(.system(size: 12))
+                        .frame(width: 16)
+                        .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)") // Force redraw when state changes
+                } else {
+                    // Show play/pause icon on hover based on current state
+                    Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                        .foregroundColor(.white)
+                        .font(.system(size: 12))
+                        .frame(width: 16)
+                }
             } else if isHovering {
-                // Show play icon when hovering over any episode (playing or not)
+                // Show play icon when hovering over non-playing episodes
                 Image(systemName: "play.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
                     .frame(width: 16)
             } else {
-                // Empty space when not playing and not hovering
+                // Empty space for non-playing, non-hovering episodes
                 Spacer()
                     .frame(width: 16)
             }
@@ -412,9 +464,14 @@ struct EpisodeRow: View {
                 .frame(width: 40)
                 .padding(.trailing, 8)
         }
-        // Add this to force the view to update when currentTime changes
-        .onReceive(currentTimePublisher) { _ in
-            // This empty closure forces the view to update when currentTime changes
+        .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)") // Force redraw when state changes
+        .onAppear {
+            // Force a refresh when the view appears
+            hasAppeared = true
+        }
+        // Update to use the combined publisher
+        .onReceive(audioPlayerStatePublisher) { _, _ in
+            // This empty closure forces the view to update when audio player state changes
         }
     }
 }

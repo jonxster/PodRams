@@ -308,4 +308,11 @@ class AudioPlayer: ObservableObject {
             cleanupObservers()
         }
     }
+    
+    /// Adds this method to AudioPlayer to explicitly set the playing state
+    func setPlayingState(_ isPlaying: Bool) {
+        DispatchQueue.main.async {
+            self.isPlaying = isPlaying
+        }
+    }
 }
