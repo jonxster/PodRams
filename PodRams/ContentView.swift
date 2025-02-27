@@ -31,54 +31,48 @@ struct ContentView: View {
     }
     
     var currentPlayingTitle: some View {
-        HStack {
-            if let currentEpisode = activeEpisodes.indices.contains(selectedEpisodeIndex ?? -1) ? activeEpisodes[selectedEpisodeIndex!] : nil {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Playing")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    
-                    HStack {
-                        if isCuePlaying {
-                            Text("From Cue:")
+        if let currentEpisode = activeEpisodes.indices.contains(selectedEpisodeIndex ?? -1) ? activeEpisodes[selectedEpisodeIndex!] : nil {
+            return AnyView(
+                HStack {
+                    Spacer()
+                    if isCuePlaying {
+                        Button(action: {
+                            isCueVisible.toggle()
+                        }) {
+                            Text("\(currentEpisode.podcastName ?? "Unknown Podcast")")
                                 .font(.headline)
-                            
-                            Button(action: {
-                                isCueVisible.toggle()
-                            }) {
-                                Text("\(currentEpisode.podcastName ?? "Unknown Podcast")")
-                                    .font(.headline)
-                                    .foregroundColor(.blue)
-                            }
-                        } else {
-                            Text(selectedPodcast?.title ?? "Unknown Podcast")
-                                .font(.headline)
+                                .foregroundColor(.blue)
                         }
+                    } else {
+                        Text(selectedPodcast?.title ?? "Unknown Podcast")
+                            .font(.headline)
                     }
-                    
-                    Text(currentEpisode.title)
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
                 .padding(.vertical, 8)
-            }
+            )
         }
+        return AnyView(EmptyView())
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {  // Increased spacing from 0 to 12
+            // Player controls section
             PlayerView(
                 audioPlayer: audioPlayer,
                 episodes: activeEpisodes,
                 currentEpisodeIndex: $selectedEpisodeIndex,
                 feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
             )
-            .padding(.bottom, 10)
+            .padding(.bottom, 12)  // Increased from 8 to 12
             
+            // Title section with clear separation
             currentPlayingTitle
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)  // Added explicit vertical padding
+            //              .background(Color.gray.opacity(0.1))
             
+            // Episode list section
             ZStack {
                 if !activeEpisodes.isEmpty {
                     EpisodeListView(
@@ -100,6 +94,7 @@ struct ContentView: View {
                         .progressViewStyle(CircularProgressViewStyle())
                 }
             }
+            .frame(maxHeight: .infinity)
         }
         .padding()
         .frame(minWidth: 600, minHeight: 400)
