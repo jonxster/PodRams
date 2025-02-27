@@ -279,6 +279,7 @@ struct ContentView: View {
                 SubscribeView(
                     subscribedPodcasts: $subscribedPodcasts,
                     selectedPodcast: $selectedPodcast,
+                    selectedEpisodeIndex: $selectedEpisodeIndex,
                     podcastFetcher: podcastFetcher,
                     audioPlayer: audioPlayer
                 )

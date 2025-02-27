@@ -9,6 +9,7 @@ import SwiftUI
 struct SubscribeView: View {
     @Binding var subscribedPodcasts: [Podcast]
     @Binding var selectedPodcast: Podcast?
+    @Binding var selectedEpisodeIndex: Int?
     @ObservedObject var podcastFetcher: PodcastFetcher
     @ObservedObject var audioPlayer: AudioPlayer
     
@@ -57,11 +58,17 @@ struct SubscribeView: View {
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         selectedPodcast = podcast
-                                        if podcast.episodes.firstIndex(where: { $0.id == episode.id }) != nil {
-                                            if let localURL = DownloadManager.shared.localURL(for: episode) {
-                                                audioPlayer.playAudio(url: localURL)
-                                            } else {
-                                                audioPlayer.playAudio(url: episode.url)
+                                        if let index = podcast.episodes.firstIndex(where: { $0.id == episode.id }) {
+                                            selectedEpisodeIndex = index
+                                            
+                                            // Use local URL if downloaded, otherwise use the remote URL
+                                            let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
+                                            audioPlayer.playAudio(url: playURL)
+                                            
+                                            // Mark as played and save last playback
+                                            PlayedEpisodesManager.shared.markAsPlayed(episode)
+                                            if let feedUrl = podcast.feedUrl {
+                                                PersistenceManager.saveLastPlayback(episode: episode, feedUrl: feedUrl)
                                             }
                                         }
                                     }
@@ -77,6 +84,9 @@ struct SubscribeView: View {
                                 .cornerRadius(4)
                                 
                                 Text(podcast.title)
+                                    .onTapGesture {
+                                        selectPodcast(podcast)
+                                    }
                                 
                                 Spacer()
                                 
@@ -117,6 +127,70 @@ struct SubscribeView: View {
         if let idx = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) {
             subscribedPodcasts.remove(at: idx)
             PersistenceManager.saveSubscriptions(subscribedPodcasts)
+        }
+    }
+    
+    private func selectPodcast(_ podcast: Podcast) {
+        // First, load episodes if they're not already loaded
+        if podcast.episodes.isEmpty {
+            loadEpisodes(for: podcast)
+            // Set a loading indicator
+            loadingPodcastId = podcast.id
+            
+            // Fetch episodes and then determine which one to play
+            Task {
+                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+                
+                await MainActor.run {
+                    podcast.episodes = episodes
+                    if let feedArt = feedArt {
+                        podcast.feedArtworkURL = feedArt
+                    }
+                    
+                    // Now that episodes are loaded, determine which one to play
+                    playAppropriateEpisode(for: podcast)
+                    
+                    loadingPodcastId = nil
+                }
+            }
+        } else {
+            // Episodes already loaded, determine which one to play
+            playAppropriateEpisode(for: podcast)
+        }
+    }
+    
+    private func playAppropriateEpisode(for podcast: Podcast) {
+        guard !podcast.episodes.isEmpty else { return }
+        
+        // Set the selected podcast
+        selectedPodcast = podcast
+        
+        // Try to find the last played episode for this podcast
+        Task {
+            if let lastPlayedEpisode = await PersistenceManager.loadLastPlayback(),
+               let feedUrl = lastPlayedEpisode.feedUrl,
+               feedUrl == podcast.feedUrl {
+                
+                // Find the matching episode in the current podcast
+                if let index = podcast.episodes.firstIndex(where: { $0.url.absoluteString == lastPlayedEpisode.url.absoluteString }) {
+                    selectedEpisodeIndex = index
+                    audioPlayer.playAudio(url: podcast.episodes[index].url)
+                    
+                    // Mark as played
+                    PlayedEpisodesManager.shared.markAsPlayed(podcast.episodes[index])
+                    return
+                }
+            }
+            
+            // If no last played episode found or it doesn't match, play the first (latest) episode
+            selectedEpisodeIndex = 0
+            audioPlayer.playAudio(url: podcast.episodes[0].url)
+            
+            // Mark as played and save this as the last played episode
+            PlayedEpisodesManager.shared.markAsPlayed(podcast.episodes[0])
+            if let feedUrl = podcast.feedUrl {
+                PersistenceManager.saveLastPlayback(episode: podcast.episodes[0], feedUrl: feedUrl)
+            }
         }
     }
 }

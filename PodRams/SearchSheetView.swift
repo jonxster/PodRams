@@ -58,11 +58,18 @@ struct SearchSheetView: View {
                                 toggleFavorite(podcast)
                             }
                         
-                        Image(systemName: isSubscribed(podcast) ? "rectangle.and.paperclip.fill" : "rectangle.and.paperclip")
-                            .foregroundColor(.blue)
-                            .onTapGesture {
-                                toggleSubscription(podcast)
-                            }
+                        // Only show subscription button if not already subscribed
+                        if !isSubscribed(podcast) {
+                            Image(systemName: "rectangle.and.paperclip")
+                                .foregroundColor(.blue)
+                                .onTapGesture {
+                                    toggleSubscription(podcast)
+                                }
+                        } else {
+                            // Show a checkmark or other indicator that it's already subscribed
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -117,7 +124,11 @@ struct SearchSheetView: View {
         if let idx = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) {
             subscribedPodcasts.remove(at: idx)
         } else {
-            subscribedPodcasts.append(podcast)
+            // Check if a podcast with the same feed URL already exists
+            if let feedUrl = podcast.feedUrl, 
+               !subscribedPodcasts.contains(where: { $0.feedUrl == feedUrl }) {
+                subscribedPodcasts.append(podcast)
+            }
         }
         PersistenceManager.saveSubscriptions(subscribedPodcasts)
     }
