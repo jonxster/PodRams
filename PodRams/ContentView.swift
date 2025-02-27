@@ -315,14 +315,14 @@ struct EpisodeRow: View {
     var body: some View {
         HStack(spacing: 0) {
             // Play/speaker icon section
-            if isPlaying {
-                // Show speaker icon when this episode is playing
+            if isPlaying && !isHovering {
+                // Show speaker icon when this episode is playing and not being hovered over
                 Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
                     .frame(width: 16)
             } else if isHovering {
-                // Show play icon when hovering over a non-playing episode
+                // Show play icon when hovering over any episode (playing or not)
                 Image(systemName: "play.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
