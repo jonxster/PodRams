@@ -18,6 +18,9 @@ struct SearchSheetView: View {
     @Binding var favoritePodcasts: [Podcast]
     @Binding var subscribedPodcasts: [Podcast] // New: subscription binding
 
+    // Add a closure to handle podcast selection using ContentView's method
+    var onPodcastSelect: ((Podcast, Bool) -> Void)?
+
     var dismiss: () -> Void
 
     var body: some View {
@@ -86,6 +89,14 @@ struct SearchSheetView: View {
     }
 
     private func selectPodcast(_ podcast: Podcast) {
+        // If we have an external handler, use it
+        if let onPodcastSelect = onPodcastSelect {
+            onPodcastSelect(podcast, true) // true for autoPlay
+            dismiss()
+            return
+        }
+        
+        // Otherwise, use the original implementation
         Task {
             selectedPodcast = podcast
             isCuePlaying = false
@@ -109,9 +120,15 @@ struct SearchSheetView: View {
     
     private func toggleFavorite(_ podcast: Podcast) {
         if let idx = favoritePodcasts.firstIndex(where: { $0.id == podcast.id }) {
-            favoritePodcasts.remove(at: idx)
+            // Create a new array to avoid direct binding modification
+            var updatedFavorites = favoritePodcasts
+            updatedFavorites.remove(at: idx)
+            favoritePodcasts = updatedFavorites
         } else {
-            favoritePodcasts.append(podcast)
+            // Create a new array to avoid direct binding modification
+            var updatedFavorites = favoritePodcasts
+            updatedFavorites.append(podcast)
+            favoritePodcasts = updatedFavorites
         }
         PersistenceManager.saveFavorites(favoritePodcasts)
     }
@@ -122,12 +139,18 @@ struct SearchSheetView: View {
     
     private func toggleSubscription(_ podcast: Podcast) {
         if let idx = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) {
-            subscribedPodcasts.remove(at: idx)
+            // Create a new array to avoid direct binding modification
+            var updatedSubscriptions = subscribedPodcasts
+            updatedSubscriptions.remove(at: idx)
+            subscribedPodcasts = updatedSubscriptions
         } else {
             // Check if a podcast with the same feed URL already exists
             if let feedUrl = podcast.feedUrl, 
                !subscribedPodcasts.contains(where: { $0.feedUrl == feedUrl }) {
-                subscribedPodcasts.append(podcast)
+                // Create a new array to avoid direct binding modification
+                var updatedSubscriptions = subscribedPodcasts
+                updatedSubscriptions.append(podcast)
+                subscribedPodcasts = updatedSubscriptions
             }
         }
         PersistenceManager.saveSubscriptions(subscribedPodcasts)

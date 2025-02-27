@@ -13,6 +13,9 @@ struct SubscribeView: View {
     @ObservedObject var podcastFetcher: PodcastFetcher
     @ObservedObject var audioPlayer: AudioPlayer
     
+    // Add a closure to handle podcast selection using ContentView's method
+    var onPodcastSelect: ((Podcast, Bool) -> Void)?
+    
     @State private var expandedPodcasts: Set<UUID> = []
     @State private var loadingPodcastId: UUID?
     
@@ -131,6 +134,13 @@ struct SubscribeView: View {
     }
     
     private func selectPodcast(_ podcast: Podcast) {
+        // If we have an external handler, use it
+        if let onPodcastSelect = onPodcastSelect {
+            onPodcastSelect(podcast, true) // true for autoPlay
+            return
+        }
+        
+        // Otherwise, use the original implementation
         // First, load episodes if they're not already loaded
         if podcast.episodes.isEmpty {
             loadEpisodes(for: podcast)

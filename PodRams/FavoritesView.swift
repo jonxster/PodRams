@@ -129,7 +129,10 @@ struct FavoritesView: View {
 
     private func removeFromFavorites(_ podcast: Podcast) {
         if let idx = favoritePodcasts.firstIndex(where: { $0.id == podcast.id }) {
-            favoritePodcasts.remove(at: idx)
+            var updatedFavorites = favoritePodcasts
+            updatedFavorites.remove(at: idx)
+            favoritePodcasts = updatedFavorites
+            
             PersistenceManager.saveFavorites(favoritePodcasts)
         }
     }

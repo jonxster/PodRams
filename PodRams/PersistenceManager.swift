@@ -13,6 +13,7 @@ struct PersistedEpisode: Codable, Equatable {
     let title: String
     let audioURL: String
     let duration: Double?
+    let podcastName: String?
     
     var isValid: Bool {
         !feedUrl.isEmpty && !title.isEmpty && !audioURL.isEmpty && URL(string: audioURL) != nil
@@ -139,7 +140,8 @@ struct PersistenceManager {
                 feedUrl: feedUrl,
                 title: episode.title,
                 audioURL: urlString,
-                duration: episode.duration
+                duration: episode.duration,
+                podcastName: episode.podcastName
             )
         }
         cueCache = episodes
@@ -160,7 +162,8 @@ struct PersistenceManager {
                 artworkURL: nil,
                 duration: pe.duration,
                 showNotes: nil,
-                feedUrl: pe.feedUrl
+                feedUrl: pe.feedUrl,
+                podcastName: pe.podcastName
             )
         } ?? []
         cueCache = result
@@ -180,7 +183,8 @@ struct PersistenceManager {
             feedUrl: feedUrl,
             title: episode.title,
             audioURL: episode.url.absoluteString,
-            duration: episode.duration
+            duration: episode.duration,
+            podcastName: episode.podcastName
         )
         lastPlaybackCache = episode
         saveData(persisted, to: .lastPlayback)
@@ -196,7 +200,8 @@ struct PersistenceManager {
                 artworkURL: nil,
                 duration: pe.duration,
                 showNotes: nil,
-                feedUrl: pe.feedUrl
+                feedUrl: pe.feedUrl,
+                podcastName: pe.podcastName
             )
             lastPlaybackCache = episode
             return episode

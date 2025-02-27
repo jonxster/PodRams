@@ -21,6 +21,8 @@ struct CueSheetView: View {
     @ObservedObject var audioPlayer: AudioPlayer
     /// Environment dismiss action to close the view.
     @Environment(\.dismiss) var dismiss
+    /// Binding to the selected podcast.
+    @Binding var selectedPodcast: Podcast?
 
     /// Local state to hold the episode being dragged during a drag-and-drop operation.
     @State private var draggedEpisode: PodcastEpisode?
@@ -50,7 +52,22 @@ struct CueSheetView: View {
                         .onTapGesture {
                             selectedEpisodeIndex = index
                             isCuePlaying = true
-                            audioPlayer.playAudio(url: episode.url)
+                            
+                            // Ensure the episode has a podcast name before playing
+                            if episode.podcastName == nil && selectedPodcast != nil {
+                                var updatedEpisode = episode
+                                updatedEpisode.podcastName = selectedPodcast?.title
+                                
+                                // Create a new array to avoid direct binding modification
+                                var updatedCue = cue
+                                updatedCue[index] = updatedEpisode
+                                cue = updatedCue
+                                
+                                PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                                audioPlayer.playAudio(url: updatedEpisode.url)
+                            } else {
+                                audioPlayer.playAudio(url: episode.url)
+                            }
                             dismiss()
                         }
                         // Change the cursor on hover to indicate interactivity.
@@ -61,8 +78,11 @@ struct CueSheetView: View {
                                 NSCursor.pop()
                             }
                         }
+                        .listRowBackground(Color.clear) // Clear background for each row
                 }
             }
+            .listStyle(PlainListStyle()) // Use plain style to minimize default styling
+            .background(Color.clear) // Clear background for the list
             
             // Display the total play time of all episodes in the cue.
             Text("Total Play Time: \(formatTotalTime(totalDuration()))")
@@ -76,6 +96,37 @@ struct CueSheetView: View {
         .onAppear {
             debugDurations()
             updateMissingDurations()
+            updateMissingPodcastNames()
+        }
+    }
+    
+    /// Updates episodes in the cue that are missing podcast names.
+    /// Uses the selectedPodcast title if available.
+    private func updateMissingPodcastNames() {
+        guard !cue.isEmpty else { return }
+        
+        Task {
+            var updatedCue = cue
+            var hasUpdates = false
+            
+            for index in updatedCue.indices {
+                if updatedCue[index].podcastName == nil && selectedPodcast != nil {
+                    updatedCue[index].podcastName = selectedPodcast?.title
+                    hasUpdates = true
+                }
+            }
+            
+            if hasUpdates {
+                await MainActor.run {
+                    // Update the binding on the main thread
+                    cue = updatedCue
+                    
+                    // Save the updated cue to persistent storage
+                    if let feedUrl = cue.first?.feedUrl {
+                        PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                    }
+                }
+            }
         }
     }
     
@@ -129,20 +180,33 @@ struct CueSheetView: View {
     private func updateMissingDurations() {
         guard !cue.isEmpty else { return }
         Task {
-            for index in cue.indices {
-                if cue[index].duration == nil || cue[index].duration == 0 {
+            var updatedCue = cue
+            var hasUpdates = false
+            
+            for index in updatedCue.indices {
+                if updatedCue[index].duration == nil || updatedCue[index].duration == 0 {
                     do {
-                        let duration = try await fetchDuration(from: cue[index].url)
+                        let duration = try await fetchDuration(from: updatedCue[index].url)
                         if duration > 0 {
-                            await MainActor.run {
-                                cue[index].duration = duration
-                                // Save updated cue to persistent storage.
-                                PersistenceManager.saveCue(cue, feedUrl: cue[index].feedUrl ?? "unknown")
-                                print("Updated duration for '\(cue[index].title)' to \(duration) seconds")
-                            }
+                            updatedCue[index].duration = duration
+                            hasUpdates = true
+                            print("Fetched duration for '\(updatedCue[index].title)': \(duration) seconds")
                         }
                     } catch {
-                        print("Failed to fetch duration for '\(cue[index].title)': \(error)")
+                        print("Failed to fetch duration for '\(updatedCue[index].title)': \(error)")
+                    }
+                }
+            }
+            
+            if hasUpdates {
+                await MainActor.run {
+                    // Update the binding on the main thread
+                    cue = updatedCue
+                    
+                    // Save updated cue to persistent storage
+                    if let feedUrl = cue.first?.feedUrl {
+                        PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                        print("Updated cue with new durations and saved to persistent storage")
                     }
                 }
             }
@@ -172,8 +236,10 @@ struct CueRowView: View {
             // If the episode has an associated podcast name, display it alongside the episode title.
             if let podcastName = episode.podcastName {
                 Text("\(podcastName) – \(episode.title)")
+                    .foregroundColor(.white)
             } else {
                 Text(episode.title)
+                    .foregroundColor(.white)
             }
             
             Spacer()
@@ -181,7 +247,11 @@ struct CueRowView: View {
             // Add trashcan button to remove the episode from the cue
             Button(action: {
                 if let index = cue.firstIndex(of: episode) {
-                    cue.remove(at: index)
+                    // Create a new array to avoid direct binding modification
+                    var updatedCue = cue
+                    updatedCue.remove(at: index)
+                    cue = updatedCue
+                    
                     // Save the updated cue to persistence
                     PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
                 }
@@ -193,6 +263,7 @@ struct CueRowView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.clear) // Ensure no background color
     }
 }
 
@@ -213,8 +284,12 @@ struct CueDropDelegate: DropDelegate {
               let toIndex = cue.firstIndex(of: item) else { return }
         
         withAnimation {
-            cue.move(fromOffsets: IndexSet(integer: fromIndex),
-                     toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+            // Create a new array to avoid direct binding modification
+            var updatedCue = cue
+            let movedItem = updatedCue.remove(at: fromIndex)
+            let insertIndex = toIndex > fromIndex ? toIndex - 1 : toIndex
+            updatedCue.insert(movedItem, at: insertIndex)
+            cue = updatedCue
         }
     }
 

@@ -40,7 +40,15 @@ struct ContentView: View {
     /// If the cue is playing, returns the cue episodes; otherwise, returns episodes from the selected podcast.
     var activeEpisodes: [PodcastEpisode] {
         if isCuePlaying {
-            return cue
+            // Create a new array instead of modifying the original cue
+            return cue.map { episode in
+                if episode.podcastName == nil {
+                    var updatedEpisode = episode
+                    updatedEpisode.podcastName = selectedPodcast?.title ?? "Unknown Podcast"
+                    return updatedEpisode
+                }
+                return episode
+            }
         } else if let p = selectedPodcast {
             return p.episodes
         }
@@ -61,16 +69,21 @@ struct ContentView: View {
                         }) {
                             Text("\(currentEpisode.podcastName ?? "Unknown Podcast")")
                                 .font(.headline)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.white)
+                                .background(Color.clear)
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        .background(Color.clear)
                     } else {
                         // Display the selected podcast title.
                         Text(selectedPodcast?.title ?? "Unknown Podcast")
                             .font(.headline)
+                            .background(Color.clear)
                     }
                     Spacer()
                 }
                 .padding(.vertical, 8)
+                .background(Color.clear)
             )
         }
         return AnyView(EmptyView())
@@ -105,7 +118,8 @@ struct ContentView: View {
                                 audioPlayer: audioPlayer,
                                 selectedPodcast: selectedPodcast,
                                 selectedIndex: $selectedEpisodeIndex,
-                                cueList: $cue
+                                cueList: $cue,
+                                isCuePlaying: $isCuePlaying
                             )
                         } else {
                             // Inform the user if no episodes are available.
@@ -152,7 +166,8 @@ struct ContentView: View {
                 audioPlayer: audioPlayer,
                 isCuePlaying: $isCuePlaying,
                 favoritePodcasts: $favoritePodcasts,
-                subscribedPodcasts: $subscribedPodcasts
+                subscribedPodcasts: $subscribedPodcasts,
+                onPodcastSelect: handlePodcastSelect
             ) {
                 isSearching = false
             }
@@ -164,7 +179,8 @@ struct ContentView: View {
                 cue: $cue,
                 isCuePlaying: $isCuePlaying,
                 selectedEpisodeIndex: $selectedEpisodeIndex,
-                audioPlayer: audioPlayer
+                audioPlayer: audioPlayer,
+                selectedPodcast: $selectedPodcast
             )
             .frame(minWidth: 400, minHeight: 500)
         }
@@ -245,7 +261,11 @@ struct ContentView: View {
         // Listen for notifications to add a test podcast.
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestPodcast"))) { notification in
             if let testPodcast = notification.userInfo?["podcast"] as? Podcast {
-                subscribedPodcasts.append(testPodcast)
+                // Create a new array to avoid direct state modification
+                var updatedSubscriptions = subscribedPodcasts
+                updatedSubscriptions.append(testPodcast)
+                subscribedPodcasts = updatedSubscriptions
+                
                 selectedPodcast = testPodcast
                 selectedEpisodeIndex = 0
             }
@@ -253,7 +273,11 @@ struct ContentView: View {
         // Listen for notifications to add a test episode to the cue.
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestEpisode"))) { notification in
             if let testEpisode = notification.userInfo?["episode"] as? PodcastEpisode {
-                cue.append(testEpisode)
+                // Create a new array to avoid direct state modification
+                var updatedCue = cue
+                updatedCue.append(testEpisode)
+                cue = updatedCue
+                
                 isCuePlaying = true
                 selectedEpisodeIndex = cue.count - 1
             }
@@ -281,7 +305,8 @@ struct ContentView: View {
                     selectedPodcast: $selectedPodcast,
                     selectedEpisodeIndex: $selectedEpisodeIndex,
                     podcastFetcher: podcastFetcher,
-                    audioPlayer: audioPlayer
+                    audioPlayer: audioPlayer,
+                    onPodcastSelect: handlePodcastSelect
                 )
             }
             
@@ -322,6 +347,48 @@ struct ContentView: View {
             audioPlayer.pauseAudio()
         } else if let index = selectedEpisodeIndex, index < activeEpisodes.count {
             audioPlayer.playAudio(url: activeEpisodes[index].url)
+        }
+    }
+    
+    /// Handles the selection of a podcast from the list of subscribed podcasts.
+    /// Loads the podcast episodes, updates the UI state, and starts playback if requested.
+    private func handlePodcastSelect(_ podcast: Podcast, autoPlay: Bool = false) {
+        // Reset cue playing state when selecting a podcast
+        isCuePlaying = false
+        
+        // If we're already viewing this podcast, just return
+        if let selected = selectedPodcast, selected.id == podcast.id {
+            return
+        }
+        
+        // Set loading state and update selected podcast
+        isPodcastLoading = true
+        selectedPodcast = podcast
+        selectedEpisodeIndex = nil
+        
+        // Fetch episodes for the selected podcast
+        Task {
+            let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+            
+            await MainActor.run {
+                // Update podcast with fetched data
+                podcast.episodes = episodes
+                if let feedArt = feedArt {
+                    podcast.feedArtworkURL = feedArt
+                }
+                
+                // Update selected podcast and episode index
+                selectedPodcast = podcast
+                
+                // If autoPlay is true, start playback of the first episode
+                if autoPlay && !episodes.isEmpty {
+                    selectedEpisodeIndex = 0
+                    audioPlayer.playAudio(url: episodes[0].url)
+                }
+                
+                // Mark loading as finished
+                isPodcastLoading = false
+            }
         }
     }
 }

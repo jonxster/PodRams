@@ -66,6 +66,7 @@ struct EpisodeListView: View {
     let selectedPodcast: Podcast?       // The podcast whose episodes are being displayed.
     @Binding var selectedIndex: Int?    // Binding to the selected episode index for external control.
     @Binding var cueList: [PodcastEpisode]  // Binding to the play queue, enabling real-time updates.
+    @Binding var isCuePlaying: Bool
     
     // Add a timer to force UI updates
     @State private var refreshTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
@@ -73,13 +74,19 @@ struct EpisodeListView: View {
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
     private func handleEpisodeSelect(_ index: Int, episode: PodcastEpisode) {
-        audioPlayer.stopAudio()           // Stop any current playback.
-        selectedIndex = index             // Update the selected index.
+        // Reset cue playing state when selecting an episode from a podcast
+        isCuePlaying = false
         
-        // Use local URL if downloaded, otherwise use the remote URL.
+        // First stop any current playback
+        audioPlayer.stopAudio()
+        
+        // Then set the new index and start playback
+        selectedIndex = index
+        
+        // Get the local URL if available, otherwise use the remote URL
         let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
         
-        // Delay playback to ensure previous playback has fully stopped.
+        // Add a small delay to ensure the previous playback is fully stopped
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             audioPlayer.playAudio(url: playURL)
             PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
@@ -95,9 +102,9 @@ struct EpisodeListView: View {
         } else {
             var newEpisode = episode
             // Ensure the episode has an associated podcast name.
-            if newEpisode.podcastName == nil {
-                newEpisode.podcastName = selectedPodcast?.title ?? episode.podcastName
-            }
+            // Always prefer the selectedPodcast title if available
+            newEpisode.podcastName = selectedPodcast?.title ?? episode.podcastName
+            
             // Generate a unique ID for the cue version of the episode.
             let cueId = "cue_\(UUID().uuidString)_\(episode.url.absoluteString)"
             newEpisode = PodcastEpisode(
