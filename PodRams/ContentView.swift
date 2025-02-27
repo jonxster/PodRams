@@ -184,7 +184,6 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestPodcast"))) { notification in
             if let testPodcast = notification.userInfo?["podcast"] as? Podcast {
-                // Add to subscriptions
                 subscribedPodcasts.append(testPodcast)
                 selectedPodcast = testPodcast
                 selectedEpisodeIndex = 0
@@ -192,7 +191,6 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestEpisode"))) { notification in
             if let testEpisode = notification.userInfo?["episode"] as? PodcastEpisode {
-                // Add to cue
                 cue.append(testEpisode)
                 isCuePlaying = true
                 selectedEpisodeIndex = cue.count - 1
@@ -270,15 +268,21 @@ struct EpisodeRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Play icon outside the button's highlight area
-            if isHovering && !isPlaying {
+            if isPlaying {
+                Image(systemName: "speaker.3.fill")
+                    .foregroundColor(.white)
+                    .font(.system(size: 12))
+                    .frame(width: 16)
+                    .padding(.trailing, 10)
+            } else if isHovering {
                 Image(systemName: "play.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
                     .frame(width: 16)
+                    .padding(.trailing, 10)
             } else {
                 Spacer()
-                    .frame(width: 16)
+                    .frame(width: 26) // 16 + 10 for consistent spacing
             }
             
             Button(action: {
@@ -307,14 +311,16 @@ struct EpisodeRow: View {
                 isHovering = hovering
             }
             
-            // Updated playlist icon section
-            Image(systemName: "music.note.list")
-                .foregroundColor(isInCue ? .green : .blue)
-                .frame(width: 40)
-                .padding(.trailing, 8)
-                .onTapGesture {
-                    onToggleCue?()
-                }
+            if isInCue {
+                Image(systemName: "music.note.list")
+                    .foregroundColor(.blue)
+                    .frame(width: 40)
+                    .padding(.leading, 10)
+                    .padding(.trailing, 8)
+                    .onTapGesture {
+                        onToggleCue?()
+                    }
+            }
             
             DownloadButton(episode: episode)
                 .frame(width: 40)
