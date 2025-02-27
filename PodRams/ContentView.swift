@@ -299,6 +299,8 @@ struct EpisodeRow: View {
     let currentTime: Double
     /// Total duration of the episode.
     let duration: Double
+    /// Reference to the audio player to check play/pause state
+    @ObservedObject var audioPlayer: AudioPlayer
     /// Optional closure to handle seeking to a new time.
     var onSeek: ((Double) -> Void)?
     /// Optional closure called when the episode is selected.
@@ -312,23 +314,23 @@ struct EpisodeRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Display a playing indicator or a play icon on hover.
+            // Play/speaker icon section
             if isPlaying {
-                Image(systemName: "speaker.3.fill")
+                // Show speaker icon when this episode is playing
+                Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
                     .frame(width: 16)
-                    .padding(.trailing, 10)
             } else if isHovering {
+                // Show play icon when hovering over a non-playing episode
                 Image(systemName: "play.fill")
                     .foregroundColor(.white)
                     .font(.system(size: 12))
                     .frame(width: 16)
-                    .padding(.trailing, 10)
             } else {
-                // Maintain spacing when no icon is visible.
+                // Empty space when not playing and not hovering
                 Spacer()
-                    .frame(width: 26) // 16 + 10 for consistent spacing
+                    .frame(width: 16)
             }
             
             // Button that selects the episode.
@@ -366,7 +368,6 @@ struct EpisodeRow: View {
                 Image(systemName: "music.note.list")
                     .foregroundColor(.blue)
                     .frame(width: 40)
-                    .padding(.leading, 10)
                     .padding(.trailing, 8)
                     .onTapGesture {
                         onToggleCue?()

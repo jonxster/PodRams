@@ -34,6 +34,7 @@ struct ConfiguredEpisodeRow: View {
             isInCue: config.isInCue,
             currentTime: config.currentTime,
             duration: config.duration,
+            audioPlayer: config.audioPlayer,
             onSeek: { newTime in
                 // Seek to the specified time using the shared audio player.
                 config.audioPlayer.seek(to: newTime)

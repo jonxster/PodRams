@@ -101,11 +101,11 @@ struct PlayerView: View {
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == 0)
             
             Button(action: {
-                if let ep = currentEpisode {
-                    if audioPlayer.isPlaying {
-                        audioPlayer.pauseAudio()
-                    } else {
-                        audioPlayer.playAudio(url: ep.url)
+                if audioPlayer.isPlaying {
+                    audioPlayer.pauseAudio()
+                } else {
+                    if let index = currentEpisodeIndex, index < episodes.count {
+                        audioPlayer.playAudio(url: episodes[index].url)
                     }
                 }
             }) {
