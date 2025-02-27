@@ -116,7 +116,10 @@ class AudioPlayer: ObservableObject {
         // If we're already playing this URL, just resume playback
         if currentURL == url && player != nil {
             player?.play()
-            isPlaying = true
+            // Update state on main thread
+            DispatchQueue.main.async {
+                self.isPlaying = true
+            }
             return
         }
         
@@ -143,7 +146,11 @@ class AudioPlayer: ObservableObject {
         
         // Start playback
         player?.play()
-        isPlaying = true
+        
+        // Update state on main thread
+        DispatchQueue.main.async {
+            self.isPlaying = true
+        }
     }
     
     /// Placeholder method for playing audio through the audio engine.

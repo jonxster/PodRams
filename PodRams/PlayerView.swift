@@ -111,6 +111,7 @@ struct PlayerView: View {
             }) {
                 Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 36))
+                    .id("play-button-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
             }
             .buttonStyle(.plain)
             .disabled(currentEpisode == nil)

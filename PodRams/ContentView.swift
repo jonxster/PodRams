@@ -7,7 +7,7 @@ struct ContentView: View {
     /// Fetches podcast data asynchronously.
     @StateObject var podcastFetcher = PodcastFetcher()
     /// Manages audio playback and related state.
-    @StateObject var audioPlayer = AudioPlayer()
+    @EnvironmentObject var audioPlayer: AudioPlayer
     
     /// User's list of favorite podcasts.
     @State private var favoritePodcasts: [Podcast] = []
@@ -350,7 +350,6 @@ struct ContentView: View {
         }
     }
     
-    /// Handles the selection of a podcast from the list of subscribed podcasts.
     /// Loads the podcast episodes, updates the UI state, and starts playback if requested.
     private func handlePodcastSelect(_ podcast: Podcast, autoPlay: Bool = false) {
         // Reset cue playing state when selecting a podcast
@@ -382,8 +381,16 @@ struct ContentView: View {
                 
                 // If autoPlay is true, start playback of the first episode
                 if autoPlay && !episodes.isEmpty {
+                    // First set the episode index
                     selectedEpisodeIndex = 0
-                    audioPlayer.playAudio(url: episodes[0].url)
+                    
+                    // Then start playback with a small delay to ensure UI is updated
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // Make sure we're still on the same podcast/episode
+                        if selectedPodcast?.id == podcast.id && selectedEpisodeIndex == 0 {
+                            audioPlayer.playAudio(url: episodes[0].url)
+                        }
+                    }
                 }
                 
                 // Mark loading as finished
@@ -471,7 +478,7 @@ struct EpisodeRow: View {
                         .foregroundColor(.white)
                         .font(.system(size: 12))
                         .frame(width: 16)
-                        .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)") // Force redraw when state changes
+                        .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
                 } else {
                     // Show play/pause icon on hover based on current state
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
@@ -532,7 +539,7 @@ struct EpisodeRow: View {
                 .frame(width: 40)
                 .padding(.trailing, 8)
         }
-        .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)") // Force redraw when state changes
+        .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
         .onAppear {
             // Force a refresh when the view appears
             hasAppeared = true
