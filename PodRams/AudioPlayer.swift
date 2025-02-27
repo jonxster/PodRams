@@ -1,23 +1,30 @@
 //
-//  AudioPlayer.swift
-//  PodRams
-//
-//  Created by Tom Björnebark on 2025-02-25.
+// AudioPlayer.swift
+// PodRams
+// Created by Tom Björnebark on 2025-02-25.
 //
 
 import Foundation
 import Combine
 import AVFoundation
 
+/// Manages audio playback using AVPlayer and AVAudioEngine.
+/// Publishes playback state and allows control over play, pause, stop, seek, volume, and pan.
 class AudioPlayer: ObservableObject {
+    /// Indicates whether audio is currently playing.
     @Published var isPlaying = false
+    /// Indicates if audio is in the process of loading.
     @Published var isLoading = false
+    /// Current playback time in seconds.
     @Published var currentTime: Double = 0
+    /// Total duration of the audio in seconds.
     @Published var duration: Double = 0
+    /// Volume level (0.0 to 1.0). Changing this updates the player and mixer.
     @Published var volume: Double = 0.5 {
         didSet { updateVolume() }
     }
-    // Pan is stored as 0 (full left) to 1 (full right), 0.5 is center.
+    /// Pan value from 0 (full left) to 1 (full right); 0.5 is centered.
+    /// Updates the audio engine and saves the setting.
     @Published var pan: Double = 0.5 {
         didSet {
             updatePan()
@@ -25,30 +32,43 @@ class AudioPlayer: ObservableObject {
         }
     }
     
+    /// Audio engine for processing audio.
     private let audioEngine = AVAudioEngine()
+    /// Audio node for routing playback through the audio engine.
     private let playerNode = AVAudioPlayerNode()
     
+    /// AVPlayer used for audio playback.
     private var player: AVPlayer?
+    /// Token for the AVPlayer's time observer.
     private var timeObserverToken: Any?
+    /// Observes changes in the player's status, especially for duration.
     private var durationObserver: NSKeyValueObservation?
+    /// Set of Combine subscriptions.
     private var cancellables = Set<AnyCancellable>()
+    /// URL of the currently playing audio.
     private var currentURL: URL?
+    /// Flag indicating whether the audio engine was successfully configured.
     private var engineConfigured = false
     
+    /// Initializes the AudioPlayer by setting up throttling, configuring the audio engine, and restoring pan.
     init() {
         setupThrottling()
         setupAudioEngine()
         
+        // Restore saved pan value if available.
         if let savedPan = UserDefaults.standard.object(forKey: "audioPan") as? Double {
             pan = savedPan
         }
         
+        // Listen for external notifications to change pan.
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(handlePanChange),
                                                name: .audioPanChanged,
                                                object: nil)
     }
     
+    /// Configures the audio engine by attaching and connecting the player node.
+    /// Also starts the engine and applies initial volume and pan settings.
     private func setupAudioEngine() {
         audioEngine.attach(playerNode)
         let format = audioEngine.mainMixerNode.outputFormat(forBus: 0)
@@ -66,13 +86,15 @@ class AudioPlayer: ObservableObject {
         }
     }
     
+    /// Updates the pan for the player node.
+    /// Converts the 0...1 range (with 0.5 as center) to the -1...1 range required by AVAudioPlayerNode.
     private func updatePan() {
-        // Convert pan from 0...1 (with 0.5 as center) to -1...1.
         let panValue = Float((pan * 2) - 1)
         playerNode.pan = panValue
         print("Player node pan set to: \(panValue)")
     }
     
+    /// Updates the volume for the player node, main mixer, and AVPlayer.
     private func updateVolume() {
         playerNode.volume = Float(volume)
         audioEngine.mainMixerNode.outputVolume = Float(volume)
@@ -80,6 +102,9 @@ class AudioPlayer: ObservableObject {
         print("Volume set to: \(volume)")
     }
     
+    /// Plays audio from the specified URL.
+    /// Cleans up previous playback, sets up a new AVPlayerItem with observers, and starts playback.
+    /// - Parameter url: URL of the audio asset (local file or HTTP/HTTPS).
     func playAudio(url: URL) {
         guard url.isFileURL || url.scheme == "http" || url.scheme == "https" else {
             print("Invalid URL: \(url)")
@@ -88,24 +113,24 @@ class AudioPlayer: ObservableObject {
         
         print("Playing audio from URL: \(url)")
         
-        // Clean up existing playback
+        // Stop existing playback and remove any observers.
         stopAudio()
         cleanupObservers()
         
-        // Reset state
+        // Reset playback state.
         isPlaying = false
         currentTime = 0
         duration = 0
         isLoading = true
         currentURL = url
         
-        // Create new player
+        // Create a new player item and set up its status observer.
         let playerItem = AVPlayerItem(url: url)
         setupPlayerItem(playerItem)
         let newPlayer = AVPlayer(playerItem: playerItem)
         player = newPlayer
         
-        // Always use AVPlayer for both remote and local files
+        // Apply current volume, add a periodic observer, and start playback.
         player?.volume = Float(volume)
         addPeriodicTimeObserver()
         player?.play()
@@ -113,19 +138,22 @@ class AudioPlayer: ObservableObject {
         isLoading = false
     }
     
+    /// Placeholder method for playing audio through the audio engine.
+    /// Currently, AVPlayer is used for both remote and local files.
     private func playThroughAudioEngine(url: URL) {
-        // Temporarily disable audio engine playback and use AVPlayer for all files
         player?.volume = Float(volume)
         player?.play()
         isPlaying = true
     }
     
+    /// Pauses the audio playback.
     func pauseAudio() {
         player?.pause()
         playerNode.pause()
         isPlaying = false
     }
     
+    /// Stops the audio playback and resets the position to the beginning.
     func stopAudio() {
         player?.pause()
         player?.seek(to: .zero)
@@ -133,6 +161,9 @@ class AudioPlayer: ObservableObject {
         isPlaying = false
     }
     
+    /// Seeks the playback to the specified time.
+    /// If the audio engine is configured, schedules a new segment on the player node starting at the given time.
+    /// - Parameter time: Time in seconds to seek to.
     func seek(to time: Double) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player?.seek(to: cmTime)
@@ -153,11 +184,14 @@ class AudioPlayer: ObservableObject {
         }
     }
     
+    /// Preloads an audio asset to reduce latency on playback start.
+    /// - Parameter url: URL of the audio asset; applicable only for local files.
     func preloadAudio(url: URL) {
         print("Preloading asset for \(url)")
         if url.isFileURL { _ = try? AVAudioFile(forReading: url) }
     }
     
+    /// Sets up throttling for published properties to limit the frequency of UI updates.
     private func setupThrottling() {
         $currentTime
             .throttle(for: .milliseconds(500), scheduler: DispatchQueue.main, latest: true)
@@ -175,6 +209,7 @@ class AudioPlayer: ObservableObject {
             .store(in: &cancellables)
     }
     
+    /// Adds a periodic time observer to the AVPlayer to update the current playback time.
     private func addPeriodicTimeObserver() {
         guard let player = player else { return }
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
@@ -183,6 +218,7 @@ class AudioPlayer: ObservableObject {
         }
     }
     
+    /// Removes the periodic time observer and invalidates the duration observer.
     private func cleanupObservers() {
         if let player = player, let token = timeObserverToken {
             player.removeTimeObserver(token)
@@ -192,12 +228,16 @@ class AudioPlayer: ObservableObject {
         durationObserver = nil
     }
     
+    /// Handles external notifications to update the pan setting.
+    /// - Parameter notification: Notification containing a new pan value.
     @objc private func handlePanChange(_ notification: Notification) {
         if let panValue = notification.userInfo?["pan"] as? Double {
             pan = panValue
         }
     }
     
+    /// Cleans up resources on deinitialization.
+    /// Removes observers, stops playback, and resets the audio engine.
     deinit {
         NotificationCenter.default.removeObserver(self)
         cleanupObservers()
@@ -209,6 +249,9 @@ class AudioPlayer: ObservableObject {
         cancellables.removeAll()
     }
     
+    /// Sets up an observer on the AVPlayerItem to monitor its status.
+    /// Updates the audio duration when the item is ready to play.
+    /// - Parameter playerItem: The AVPlayerItem to observe.
     private func setupPlayerItem(_ playerItem: AVPlayerItem) {
         durationObserver = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
             DispatchQueue.main.async {

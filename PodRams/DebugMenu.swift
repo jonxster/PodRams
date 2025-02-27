@@ -1,22 +1,21 @@
-//
-//  DebugMenu.swift
-//  PodRams
-//
-//  Created by Tom Björnebark on 2025-02-25.
-//
-
 import SwiftUI
 
+/// Provides a set of debug commands accessible via the app's menu.
+/// Includes commands to run tests and create test data for rapid testing.
 struct DebugCommands: Commands {
     var body: some Commands {
+        // The "Debug" command menu contains test and data creation options.
         CommandMenu("Debug") {
+            // Runs all tests when selected.
             Button("Run All Tests") {
                 AppTests.runAllTests()
             }
+            // Shortcut: Command + Option + T.
             .keyboardShortcut("t", modifiers: [.command, .option])
             
-            Divider()
+            Divider()  // Separates test commands from other options.
             
+            // Runs the audio player test.
             Button("Test Audio Player") {
                 do {
                     try AppTests.testAudioPlayer()
@@ -24,8 +23,10 @@ struct DebugCommands: Commands {
                     print("❌ Audio Player test failed: \(error)")
                 }
             }
+            // Shortcut: Command + Option + 1.
             .keyboardShortcut("1", modifiers: [.command, .option])
             
+            // Runs the player view test.
             Button("Test Player View") {
                 do {
                     try AppTests.testPlayerView()
@@ -33,8 +34,10 @@ struct DebugCommands: Commands {
                     print("❌ Player View test failed: \(error)")
                 }
             }
+            // Shortcut: Command + Option + 2.
             .keyboardShortcut("2", modifiers: [.command, .option])
             
+            // Runs the download manager test.
             Button("Test Download Manager") {
                 do {
                     try AppTests.testDownloadManager()
@@ -42,8 +45,10 @@ struct DebugCommands: Commands {
                     print("❌ Download Manager test failed: \(error)")
                 }
             }
+            // Shortcut: Command + Option + 3.
             .keyboardShortcut("3", modifiers: [.command, .option])
             
+            // Runs the podcast fetcher test.
             Button("Test Podcast Fetcher") {
                 do {
                     try AppTests.testPodcastFetcher()
@@ -51,32 +56,40 @@ struct DebugCommands: Commands {
                     print("❌ Podcast Fetcher test failed: \(error)")
                 }
             }
+            // Shortcut: Command + Option + 4.
             .keyboardShortcut("4", modifiers: [.command, .option])
             
-            Divider()
+            Divider()  // Separates test commands from creation commands.
             
+            // Creates a test podcast with sample episodes.
             Button("Create Test Podcast") {
                 createTestPodcast()
             }
+            // Shortcut: Command + Option + P.
             .keyboardShortcut("p", modifiers: [.command, .option])
             
+            // Creates a single test episode.
             Button("Create Test Episode") {
                 createTestEpisode()
             }
+            // Shortcut: Command + Option + E.
             .keyboardShortcut("e", modifiers: [.command, .option])
         }
     }
     
-    // Helper function to create a test podcast
+    /// Creates a test podcast populated with sample episodes.
+    /// Posts a notification to add the test podcast to subscriptions.
     private func createTestPodcast() {
+        // Instantiate a test podcast with a title and feed URL.
         let testPodcast = Podcast(
             title: "Test Podcast",
             feedUrl: "https://example.com/feed",
             episodes: []
         )
+        // Set the podcast's artwork URL.
         testPodcast.feedArtworkURL = URL(string: "https://example.com/image.jpg")
         
-        // Add some test episodes
+        // Add sample episodes to the test podcast.
         for i in 1...5 {
             let episode = PodcastEpisode(
                 title: "Test Episode \(i)",
@@ -90,7 +103,7 @@ struct DebugCommands: Commands {
             testPodcast.episodes.append(episode)
         }
         
-        // Add to subscriptions
+        // Notify the app to add the test podcast to the subscriptions.
         NotificationCenter.default.post(
             name: Notification.Name("AddTestPodcast"),
             object: nil,
@@ -100,7 +113,7 @@ struct DebugCommands: Commands {
         print("Created test podcast: \(testPodcast.title) with \(testPodcast.episodes.count) episodes")
     }
     
-    // Helper function to create a test episode
+    /// Creates a test podcast episode and posts a notification to add it to the play queue.
     private func createTestEpisode() {
         let testEpisode = PodcastEpisode(
             title: "Test Episode",
@@ -112,7 +125,7 @@ struct DebugCommands: Commands {
             podcastName: "Test Podcast"
         )
         
-        // Add to queue
+        // Post a notification to add the test episode to the cue.
         NotificationCenter.default.post(
             name: Notification.Name("AddTestEpisode"),
             object: nil,
@@ -121,4 +134,4 @@ struct DebugCommands: Commands {
         
         print("Created test episode: \(testEpisode.title)")
     }
-} 
+}

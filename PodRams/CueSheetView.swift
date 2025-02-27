@@ -1,44 +1,59 @@
 //
-//  CueSheetView.swift
-//  PodRams
-//
-//  Created by Tom Björnebark on 2025-02-25.
+// CueSheetView.swift
+// PodRams
+// Created by Tom Björnebark on 2025-02-25.
 //
 
 import SwiftUI
 import AVFoundation
-import AppKit  // Needed for NSCursor
+import AppKit  // Required for managing NSCursor during hover events
 
+/// A view that displays and manages the play queue (cue) of podcast episodes.
+/// Allows users to reorder episodes via drag-and-drop, tap to play, and view total play time.
 struct CueSheetView: View {
+    /// Binding to the list of podcast episodes in the cue.
     @Binding var cue: [PodcastEpisode]
+    /// Binding indicating whether the cue is currently being played.
     @Binding var isCuePlaying: Bool
+    /// Binding to the index of the currently selected episode.
     @Binding var selectedEpisodeIndex: Int?
+    /// The audio player responsible for playing episodes.
     @ObservedObject var audioPlayer: AudioPlayer
+    /// Environment dismiss action to close the view.
     @Environment(\.dismiss) var dismiss
 
+    /// Local state to hold the episode being dragged during a drag-and-drop operation.
     @State private var draggedEpisode: PodcastEpisode?
 
     var body: some View {
         VStack {
+            // Title for the cue sheet.
             Text("Cue")
                 .font(.title)
                 .padding()
-
+            
+            // List displaying each episode in the cue.
             List {
+                // Enumerate over cue episodes to obtain both index and episode.
                 ForEach(Array(cue.enumerated()), id: \.offset) { index, episode in
+                    // Render each row using CueRowView.
                     CueRowView(episode: episode)
+                        // Enable drag: set the draggedEpisode and return an NSItemProvider.
                         .onDrag {
                             self.draggedEpisode = episode
                             return NSItemProvider(object: episode.title as NSString)
                         }
+                        // Enable drop: use a custom drop delegate to handle reordering.
                         .onDrop(of: [.text],
                                 delegate: CueDropDelegate(item: episode, cue: $cue, draggedEpisode: $draggedEpisode))
+                        // On tap, select the episode, start cue playback, and dismiss the view.
                         .onTapGesture {
                             selectedEpisodeIndex = index
                             isCuePlaying = true
                             audioPlayer.playAudio(url: episode.url)
                             dismiss()
                         }
+                        // Change the cursor on hover to indicate interactivity.
                         .onHover { hovering in
                             if hovering {
                                 NSCursor.pointingHand.push()
@@ -48,22 +63,29 @@ struct CueSheetView: View {
                         }
                 }
             }
-
+            
+            // Display the total play time of all episodes in the cue.
             Text("Total Play Time: \(formatTotalTime(totalDuration()))")
                 .font(.footnote)
                 .foregroundColor(.gray)
                 .padding()
         }
+        // Set a minimum frame for the cue sheet.
         .frame(minWidth: 400, minHeight: 500)
+        // When the view appears, print debug information and update missing episode durations.
         .onAppear {
             debugDurations()
             updateMissingDurations()
         }
     }
-
+    
+    /// Calculates the total duration of all episodes in the cue.
+    /// It skips invalid durations and prints warnings if necessary.
+    /// - Returns: The sum of valid episode durations in seconds.
     private func totalDuration() -> Double {
         let total = cue.reduce(0.0) { (result, episode) in
             let duration = episode.duration ?? 0.0
+            // Check for invalid values such as negative, NaN, or infinite durations.
             if duration < 0 || duration.isNaN || duration.isInfinite {
                 print("Invalid duration for episode '\(episode.title)': \(duration)")
                 return result
@@ -75,7 +97,10 @@ struct CueSheetView: View {
         }
         return total.isFinite ? total : 0.0
     }
-
+    
+    /// Formats a time interval (in seconds) into a human-readable string.
+    /// - Parameter seconds: The total number of seconds.
+    /// - Returns: A formatted string in "H:MM:SS" or "M:SS" format.
     private func formatTotalTime(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds >= 0 else { return "0:00" }
         let totalSeconds = Int(seconds)
@@ -89,14 +114,18 @@ struct CueSheetView: View {
             return String(format: "%d:%02d", minutes, secs)
         }
     }
-
+    
+    /// Prints debugging information about the durations of each episode in the cue.
     private func debugDurations() {
         print("Cue contents:")
         for (index, episode) in cue.enumerated() {
             print("Episode \(index): '\(episode.title)' - Duration: \(episode.duration ?? -1) seconds")
         }
     }
-
+    
+    /// Updates episodes in the cue that are missing valid duration information.
+    /// For each episode with an unknown or zero duration, asynchronously fetch the duration
+    /// using AVURLAsset and update the cue as well as persistent storage.
     private func updateMissingDurations() {
         guard !cue.isEmpty else { return }
         Task {
@@ -107,6 +136,7 @@ struct CueSheetView: View {
                         if duration > 0 {
                             await MainActor.run {
                                 cue[index].duration = duration
+                                // Save updated cue to persistent storage.
                                 PersistenceManager.saveCue(cue, feedUrl: cue[index].feedUrl ?? "unknown")
                                 print("Updated duration for '\(cue[index].title)' to \(duration) seconds")
                             }
@@ -118,7 +148,10 @@ struct CueSheetView: View {
             }
         }
     }
-
+    
+    /// Asynchronously fetches the duration of an audio asset from a given URL.
+    /// - Parameter url: The URL of the audio asset.
+    /// - Returns: The duration of the audio in seconds, or 0.0 if invalid.
     private func fetchDuration(from url: URL) async throws -> Double {
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration)
@@ -127,10 +160,13 @@ struct CueSheetView: View {
     }
 }
 
+/// A view representing a single row in the cue list, showing the episode title and podcast name if available.
 struct CueRowView: View {
+    /// The podcast episode to display.
     let episode: PodcastEpisode
     var body: some View {
         HStack {
+            // If the episode has an associated podcast name, display it alongside the episode title.
             if let podcastName = episode.podcastName {
                 Text("\(podcastName) – \(episode.title)")
             } else {
@@ -142,31 +178,41 @@ struct CueRowView: View {
     }
 }
 
+/// A custom drop delegate to handle drag-and-drop reordering of episodes in the cue.
 struct CueDropDelegate: DropDelegate {
+    /// The target episode item over which the dragged item is dropped.
     let item: PodcastEpisode
+    /// Binding to the cue array to update the order.
     @Binding var cue: [PodcastEpisode]
+    /// Binding to the currently dragged episode.
     @Binding var draggedEpisode: PodcastEpisode?
 
+    /// Called when a dragged item enters the drop target.
+    /// If valid, it moves the dragged episode to a new position within the cue.
     func dropEntered(info: DropInfo) {
         guard let dragged = draggedEpisode, dragged != item,
               let fromIndex = cue.firstIndex(of: dragged),
               let toIndex = cue.firstIndex(of: item) else { return }
-
+        
         withAnimation {
             cue.move(fromOffsets: IndexSet(integer: fromIndex),
                      toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
         }
     }
 
+    /// Called when the drop operation is performed.
+    /// Clears the dragged episode and returns true to indicate success.
     func performDrop(info: DropInfo) -> Bool {
         draggedEpisode = nil
         return true
     }
 
+    /// Provides an updated drop proposal for the ongoing drag operation.
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
     }
 
+    /// Validates the drop operation; always returns true in this implementation.
     func validateDrop(info: DropInfo) -> Bool {
         true
     }
