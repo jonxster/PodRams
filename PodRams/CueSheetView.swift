@@ -37,7 +37,7 @@ struct CueSheetView: View {
                 // Enumerate over cue episodes to obtain both index and episode.
                 ForEach(Array(cue.enumerated()), id: \.offset) { index, episode in
                     // Render each row using CueRowView.
-                    CueRowView(episode: episode)
+                    CueRowView(episode: episode, cue: $cue)
                         // Enable drag: set the draggedEpisode and return an NSItemProvider.
                         .onDrag {
                             self.draggedEpisode = episode
@@ -164,6 +164,9 @@ struct CueSheetView: View {
 struct CueRowView: View {
     /// The podcast episode to display.
     let episode: PodcastEpisode
+    /// Binding to the cue array to enable removal of episodes.
+    @Binding var cue: [PodcastEpisode]
+    
     var body: some View {
         HStack {
             // If the episode has an associated podcast name, display it alongside the episode title.
@@ -172,6 +175,21 @@ struct CueRowView: View {
             } else {
                 Text(episode.title)
             }
+            
+            Spacer()
+            
+            // Add trashcan button to remove the episode from the cue
+            Button(action: {
+                if let index = cue.firstIndex(of: episode) {
+                    cue.remove(at: index)
+                    // Save the updated cue to persistence
+                    PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                }
+            }) {
+                Image(systemName: "trash")
+                    .foregroundColor(.gray)
+            }
+            .buttonStyle(BorderlessButtonStyle())
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
