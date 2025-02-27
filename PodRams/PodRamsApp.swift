@@ -21,7 +21,7 @@ struct PodRamsApp: App {
                     print("App launched at \(Date())")
                 }
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
         .commands {
             DebugCommands()
         }

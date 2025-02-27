@@ -93,7 +93,7 @@ struct ContentView: View {
         Group {
             if isInitialized {
                 // Main content - only show when fully initialized
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     // Player controls view.
                     PlayerView(
                         audioPlayer: audioPlayer,
@@ -101,12 +101,12 @@ struct ContentView: View {
                         currentEpisodeIndex: $selectedEpisodeIndex,
                         feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
                     )
-                    .padding(.bottom, 12)  // Extra bottom padding for separation.
+                    .padding(.bottom, 8)  // Reduced padding
                     
                     // Title display section for current playing podcast/episode.
                     currentPlayingTitle
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
+                        .padding(.vertical, 8) // Reduced padding
                     
                     // Episode list section with loading indicator overlay.
                     ZStack {
@@ -133,10 +133,11 @@ struct ContentView: View {
                                 .progressViewStyle(CircularProgressViewStyle())
                         }
                     }
-                    .frame(maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .layoutPriority(1) // Give the episode list higher layout priority
                 }
                 .padding()
-                .frame(minWidth: 600, minHeight: 400)
+                .frame(minWidth: 600, minHeight: 600)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 // Toolbar with various action buttons.
                 .toolbar { toolbarContent }
@@ -150,12 +151,12 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                .frame(minWidth: 600, minHeight: 400)
+                .frame(minWidth: 600, minHeight: 600)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         // These modifiers apply to both states
-        .frame(minWidth: 600, minHeight: 400)
+        .frame(minWidth: 600, minHeight: 600)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Popovers and other modifiers
         .popover(isPresented: $isSearching) {

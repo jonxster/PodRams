@@ -28,8 +28,8 @@ struct PlayerView: View {
     var body: some View {
         VStack {
             Text(currentEpisode?.title ?? "Select an Episode")
-                .font(.title2)
-                .padding()
+                .font(.title3)
+                .padding(.vertical, 4)
             
             ZStack {
                 frontSide
@@ -41,7 +41,7 @@ struct PlayerView: View {
                     .opacity(isFlipped ? 1 : 0)
             }
             .animation(.default, value: isFlipped)
-            .frame(width: 220, height: 220)
+            .frame(width: 180, height: 180)
             .onTapGesture {
                 withAnimation { isFlipped.toggle() }
             }
@@ -50,7 +50,7 @@ struct PlayerView: View {
             controlButtons
             volumeControls
         }
-        .frame(minHeight: 300)
+        .frame(minHeight: 260)
     }
     
     private var frontSide: some View {
@@ -77,7 +77,7 @@ struct PlayerView: View {
             }
         }
         .cornerRadius(8)
-        .frame(width: 220, height: 220)
+        .frame(width: 180, height: 180)
     }
     
     private var backSide: some View {
@@ -89,13 +89,13 @@ struct PlayerView: View {
         }
         .background(Color.gray.opacity(0.15))
         .cornerRadius(8)
-        .frame(width: 220, height: 220)
+        .frame(width: 180, height: 180)
     }
     
     private var controlButtons: some View {
-        HStack(spacing: 40) {
+        HStack(spacing: 30) {
             Button(action: { playPrevious() }) {
-                Image(systemName: "backward.fill").font(.system(size: 36))
+                Image(systemName: "backward.fill").font(.system(size: 30))
             }
             .buttonStyle(.plain)
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == 0)
@@ -110,25 +110,25 @@ struct PlayerView: View {
                 }
             }) {
                 Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 36))
+                    .font(.system(size: 30))
                     .id("play-button-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
             }
             .buttonStyle(.plain)
             .disabled(currentEpisode == nil)
             
             Button(action: { audioPlayer.stopAudio() }) {
-                Image(systemName: "stop.fill").font(.system(size: 36))
+                Image(systemName: "stop.fill").font(.system(size: 30))
             }
             .buttonStyle(.plain)
             .disabled(currentEpisode == nil)
             
             Button(action: { playNext() }) {
-                Image(systemName: "forward.fill").font(.system(size: 36))
+                Image(systemName: "forward.fill").font(.system(size: 30))
             }
             .buttonStyle(.plain)
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == episodes.count - 1)
         }
-        .padding()
+        .padding(.vertical, 8)
     }
     
     private var volumeControls: some View {
@@ -136,22 +136,24 @@ struct PlayerView: View {
             Button(action: { audioPlayer.volume = 0 }) {
                 Image(systemName: "speaker.fill")
                     .foregroundColor(.white)
+                    .font(.system(size: 12))
             }
             .buttonStyle(.borderless)
             .focusable(false)
             
             Slider(value: $audioPlayer.volume, in: 0...1)
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 160)
             
             Button(action: { audioPlayer.volume = 1 }) {
                 Image(systemName: "speaker.wave.3.fill")
                     .foregroundColor(.white)
+                    .font(.system(size: 12))
             }
             .buttonStyle(.borderless)
             .focusable(false)
         }
-        .padding(.horizontal)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
     }
     
     private func playPrevious() {
