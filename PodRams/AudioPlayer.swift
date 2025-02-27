@@ -113,29 +113,37 @@ class AudioPlayer: ObservableObject {
         
         print("Playing audio from URL: \(url)")
         
-        // Stop existing playback and remove any observers.
+        // If we're already playing this URL, just resume playback
+        if currentURL == url && player != nil {
+            player?.play()
+            isPlaying = true
+            return
+        }
+        
+        // Stop existing playback and clean up resources
         stopAudio()
         cleanupObservers()
         
-        // Reset playback state.
-        isPlaying = false
+        // Reset playback state
         currentTime = 0
         duration = 0
         isLoading = true
         currentURL = url
         
-        // Create a new player item and set up its status observer.
+        // Create a new player item
         let playerItem = AVPlayerItem(url: url)
         setupPlayerItem(playerItem)
-        let newPlayer = AVPlayer(playerItem: playerItem)
-        player = newPlayer
         
-        // Apply current volume, add a periodic observer, and start playback.
+        // Create a new player
+        player = AVPlayer(playerItem: playerItem)
+        
+        // Apply current volume and add time observer
         player?.volume = Float(volume)
         addPeriodicTimeObserver()
+        
+        // Start playback
         player?.play()
         isPlaying = true
-        isLoading = false
     }
     
     /// Placeholder method for playing audio through the audio engine.
@@ -150,15 +158,25 @@ class AudioPlayer: ObservableObject {
     func pauseAudio() {
         player?.pause()
         playerNode.pause()
-        isPlaying = false
+        
+        // Update state on main thread
+        DispatchQueue.main.async {
+            self.isPlaying = false
+        }
     }
     
     /// Stops the audio playback and resets the position to the beginning.
     func stopAudio() {
         player?.pause()
-        player?.seek(to: .zero)
+        if let player = player {
+            player.seek(to: CMTime.zero)
+        }
         playerNode.stop()
-        isPlaying = false
+        
+        DispatchQueue.main.async {
+            self.isPlaying = false
+            self.currentTime = 0
+        }
     }
     
     /// Seeks the playback to the specified time.
@@ -193,10 +211,11 @@ class AudioPlayer: ObservableObject {
     
     /// Sets up throttling for published properties to limit the frequency of UI updates.
     private func setupThrottling() {
-        $currentTime
-            .throttle(for: .milliseconds(500), scheduler: DispatchQueue.main, latest: true)
-            .sink { [weak self] time in self?.currentTime = time }
-            .store(in: &cancellables)
+        // Remove the throttling for currentTime
+        // $currentTime
+        //     .throttle(for: .milliseconds(500), scheduler: DispatchQueue.main, latest: true)
+        //     .sink { [weak self] time in self?.currentTime = time }
+        //     .store(in: &cancellables)
         
         $isPlaying
             .throttle(for: .milliseconds(100), scheduler: DispatchQueue.main, latest: true)
@@ -212,9 +231,19 @@ class AudioPlayer: ObservableObject {
     /// Adds a periodic time observer to the AVPlayer to update the current playback time.
     private func addPeriodicTimeObserver() {
         guard let player = player else { return }
-        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        // Use a shorter interval for more frequent updates (0.1 seconds)
+        let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
+        
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            self?.currentTime = time.seconds
+            guard let self = self else { return }
+            
+            // Update the current time directly on the main thread
+            self.currentTime = time.seconds
+            
+            // Debug output to verify time is updating
+            if Int(time.seconds) % 5 == 0 && time.seconds > 0 {
+                print("Current playback time: \(time.seconds) seconds")
+            }
         }
     }
     
@@ -267,6 +296,16 @@ class AudioPlayer: ObservableObject {
                     break
                 }
             }
+        }
+    }
+    
+    /// Adds proper cleanup when changing audio files
+    private func cleanupCurrentAudio() {
+        // Only clean up if we're changing audio files
+        if player != nil {
+            player?.pause()
+            playerNode.pause()
+            cleanupObservers()
         }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 /// Main content view for the podcast app.
 /// Combines podcast fetching, audio playback, and various UI states.
@@ -287,6 +288,22 @@ struct ContentView: View {
     }
 }
 
+// Add this helper function to format time durations
+extension Double {
+    func formatAsPlaybackTime() -> String {
+        let totalSeconds = Int(self)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+}
+
 /// Represents a single row in the episode list.
 struct EpisodeRow: View {
     /// The episode to display.
@@ -312,6 +329,27 @@ struct EpisodeRow: View {
     /// Local state to track whether the mouse is hovering over the row.
     @State var isHovering = false
     
+    // Add this to ensure the view updates when currentTime changes
+    private var currentTimePublisher: AnyPublisher<Double, Never> {
+        audioPlayer.$currentTime
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+    
+    var formattedTime: String {
+        if isPlaying {
+            // For playing episodes, show current time and total duration
+            // Current time counts up from 0 to duration
+            return "\(currentTime.formatAsPlaybackTime()) of \(duration.formatAsPlaybackTime())"
+        } else if duration > 0 {
+            // For non-playing episodes with known duration, just show the total time
+            return duration.formatAsPlaybackTime()
+        } else {
+            // For episodes with unknown duration
+            return "--:--"
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 0) {
             // Play/speaker icon section
@@ -333,31 +371,26 @@ struct EpisodeRow: View {
                     .frame(width: 16)
             }
             
-            // Button that selects the episode.
+            // Button that selects the episode
             Button(action: {
                 onSelect?()
             }) {
-                ZStack(alignment: .leading) {
-                    // Progress bar in the background.
-                    ProgressBarView(currentTime: currentTime, duration: duration, onSeek: { newTime in
-                        onSeek?(newTime)
-                    })
-                    .padding(.trailing, 80)
+                // Simplified layout without the progress bar
+                HStack {
+                    Text(episode.title)
+                        .lineLimit(1)
+                        .foregroundColor(isPlaying ? .white : .primary)
+                    Spacer()
                     
-                    // Episode title text.
-                    HStack {
-                        Text(episode.title)
-                            .lineLimit(1)
-                            .foregroundColor(isPlaying ? .white : .primary)
-                            .background(Color.clear)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 8)
+                    // Single time display
+                    Text(formattedTime)
+                        .font(.caption)
+                        .foregroundColor(isPlaying ? .white.opacity(0.8) : .gray)
                 }
+                .padding(.horizontal, 8)
             }
             .buttonStyle(PlainButtonStyle())
             .contentShape(Rectangle())
-            // Highlight row on hover.
             .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
             .onHover { hovering in
                 isHovering = hovering
@@ -378,6 +411,10 @@ struct EpisodeRow: View {
             DownloadButton(episode: episode)
                 .frame(width: 40)
                 .padding(.trailing, 8)
+        }
+        // Add this to force the view to update when currentTime changes
+        .onReceive(currentTimePublisher) { _ in
+            // This empty closure forces the view to update when currentTime changes
         }
     }
 }

@@ -8,46 +8,50 @@
 import SwiftUI
 
 struct ProgressBarView: View {
-    var currentTime: Double
-    var duration: Double
-    var onSeek: (Double) -> Void
-
+    let currentTime: Double
+    let duration: Double
+    var onSeek: ((Double) -> Void)?
+    @State private var isDragging = false
+    @State private var dragPosition: CGFloat = 0
+    
     var body: some View {
-        GeometryReader { geo in
+        GeometryReader { geometry in
             ZStack(alignment: .leading) {
+                // Background track
                 Rectangle()
-                    .fill(Color.clear)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 4)
+                
+                // Progress bar
                 Rectangle()
                     .fill(Color.blue)
-                    .frame(width: geo.size.width * CGFloat(duration > 0 ? currentTime / duration : 0))
+                    .frame(width: calculateWidth(in: geometry), height: 4)
+                
+                // Do NOT add any time text here
             }
-            .cornerRadius(4)
-            .overlay(
-                Text(formatTime(duration))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .padding(.trailing, 4),
-                alignment: .trailing
-            )
-            // Make entire area tappable.
-            .contentShape(Rectangle())
-            // Use onChanged so dragging or tapping immediately seeks.
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        let fraction = min(max(value.location.x / geo.size.width, 0), 1)
-                        onSeek(fraction * duration)
+                        isDragging = true
+                        dragPosition = min(max(0, value.location.x), geometry.size.width)
+                        let seekTime = (dragPosition / geometry.size.width) * duration
+                        onSeek?(seekTime)
+                    }
+                    .onEnded { _ in
+                        isDragging = false
                     }
             )
         }
-        .frame(height: 20)
+        .frame(height: 30)
     }
     
-    private func formatTime(_ seconds: Double) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "0:00" }
-        let totalSeconds = Int(seconds)
-        let minutes = totalSeconds / 60
-        let secs = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, secs)
+    private func calculateWidth(in geometry: GeometryProxy) -> CGFloat {
+        if isDragging {
+            return dragPosition
+        } else if duration > 0 {
+            return (CGFloat(currentTime) / CGFloat(duration)) * geometry.size.width
+        } else {
+            return 0
+        }
     }
 }

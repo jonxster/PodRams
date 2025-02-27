@@ -66,7 +66,10 @@ struct EpisodeListView: View {
     let selectedPodcast: Podcast?       // The podcast whose episodes are being displayed.
     @Binding var selectedIndex: Int?    // Binding to the selected episode index for external control.
     @Binding var cueList: [PodcastEpisode]  // Binding to the play queue, enabling real-time updates.
-
+    
+    // Add a timer to force UI updates
+    @State private var refreshTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
     private func handleEpisodeSelect(_ index: Int, episode: PodcastEpisode) {
@@ -123,13 +126,16 @@ struct EpisodeListView: View {
             LazyVStack(alignment: .leading, spacing: 8) {
                 // Enumerate over episodes to generate a configured row for each.
                 ForEach(Array(episodes.enumerated()), id: \.offset) { index, episode in
+                    let isPlaying = selectedEpisodeIndex == index
                     let config = EpisodeRowConfiguration(
                         episode: episode,
                         index: index,
-                        isPlaying: selectedEpisodeIndex == index,
+                        isPlaying: isPlaying,
                         isInCue: cue.contains { $0.url.absoluteString == episode.url.absoluteString },
-                        currentTime: selectedEpisodeIndex == index ? audioPlayer.currentTime : 0,
-                        duration: selectedEpisodeIndex == index ? audioPlayer.duration : 0,
+                        // For the playing episode, use the current time from the audio player
+                        currentTime: isPlaying ? audioPlayer.currentTime : 0,
+                        // For the playing episode, use the duration from the audio player
+                        duration: isPlaying ? audioPlayer.duration : (episode.duration ?? 0),
                         audioPlayer: audioPlayer,
                         selectedPodcast: selectedPodcast,
                         onSelect: { idx in handleEpisodeSelect(idx, episode: episode) },
@@ -143,6 +149,10 @@ struct EpisodeListView: View {
             }
             .padding(.top, 10)
             .padding() // Padding around the entire list.
+        }
+        // Force refresh the view periodically to update the time display
+        .onReceive(refreshTimer) { _ in
+            // This empty handler forces the view to refresh
         }
     }
 }
