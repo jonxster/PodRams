@@ -186,10 +186,13 @@ struct CueSheetView: View {
             var hasUpdates = false
             
             for index in updatedCue.indices {
-                if updatedCue[index].duration == nil || updatedCue[index].duration == 0 {
+                if updatedCue[index].duration == nil || 
+                   updatedCue[index].duration == 0 || 
+                   !(updatedCue[index].duration?.isFinite ?? false) {
                     do {
                         let duration = try await fetchDuration(from: updatedCue[index].url)
-                        if duration > 0 {
+                        // Verify the duration is valid (positive and finite)
+                        if duration > 0 && duration.isFinite {
                             updatedCue[index].duration = duration
                             hasUpdates = true
                             print("Fetched duration for '\(updatedCue[index].title)': \(duration) seconds")

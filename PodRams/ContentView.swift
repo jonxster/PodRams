@@ -410,6 +410,11 @@ struct ContentView: View {
 // Add this helper function to format time durations
 extension Double {
     func formatAsPlaybackTime() -> String {
+        // Handle invalid inputs
+        guard self.isFinite && self >= 0 else {
+            return "00:00"
+        }
+        
         let totalSeconds = Int(self)
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
@@ -449,6 +454,12 @@ struct EpisodeRow: View {
     @State private var isHovering = false
     
     var formattedTime: String {
+        // Ensure we have valid time values
+        guard currentTime.isFinite && duration.isFinite && 
+              currentTime >= 0 && duration >= 0 else {
+            return "00:00"
+        }
+        
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute, .second]
         formatter.unitsStyle = .positional
@@ -456,7 +467,8 @@ struct EpisodeRow: View {
         
         if isPlaying {
             // For playing episodes, show current time / total time
-            let currentTimeString = formatter.string(from: currentTime) ?? "00:00"
+            let safeCurrentTime = min(currentTime, duration) // Ensure current time doesn't exceed duration
+            let currentTimeString = formatter.string(from: safeCurrentTime) ?? "00:00"
             let durationString = formatter.string(from: duration) ?? "00:00"
             return "\(currentTimeString) / \(durationString)"
         } else {

@@ -48,8 +48,10 @@ struct ProgressBarView: View {
     private func calculateWidth(in geometry: GeometryProxy) -> CGFloat {
         if isDragging {
             return dragPosition
-        } else if duration > 0 {
-            return (CGFloat(currentTime) / CGFloat(duration)) * geometry.size.width
+        } else if duration > 0 && duration.isFinite && currentTime.isFinite {
+            // Ensure both values are finite and duration is positive
+            let ratio = min(max(0, currentTime / duration), 1.0) // Clamp between 0 and 1
+            return ratio * geometry.size.width
         } else {
             return 0
         }

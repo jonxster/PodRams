@@ -89,17 +89,33 @@ class AudioPlayer: ObservableObject {
     /// Updates the pan for the player node.
     /// Converts the 0...1 range (with 0.5 as center) to the -1...1 range required by AVAudioPlayerNode.
     private func updatePan() {
-        let panValue = Float((pan * 2) - 1)
+        // Validate that pan is finite and within the valid range
+        guard pan.isFinite else {
+            print("Warning: Invalid pan value: \(pan)")
+            return
+        }
+        
+        // Clamp pan to valid range
+        let safePan = max(0, min(1, pan))
+        let panValue = Float((safePan * 2) - 1)
         playerNode.pan = panValue
         print("Player node pan set to: \(panValue)")
     }
     
     /// Updates the volume for the player node, main mixer, and AVPlayer.
     private func updateVolume() {
-        playerNode.volume = Float(volume)
-        audioEngine.mainMixerNode.outputVolume = Float(volume)
-        player?.volume = Float(volume)
-        print("Volume set to: \(volume)")
+        // Validate that volume is finite and within the valid range
+        guard volume.isFinite else {
+            print("Warning: Invalid volume value: \(volume)")
+            return
+        }
+        
+        // Clamp volume to valid range
+        let safeVolume = max(0, min(1, volume))
+        playerNode.volume = Float(safeVolume)
+        audioEngine.mainMixerNode.outputVolume = Float(safeVolume)
+        player?.volume = Float(safeVolume)
+        print("Volume set to: \(safeVolume)")
     }
     
     /// Plays audio from the specified URL.
@@ -190,21 +206,40 @@ class AudioPlayer: ObservableObject {
     /// If the audio engine is configured, schedules a new segment on the player node starting at the given time.
     /// - Parameter time: Time in seconds to seek to.
     func seek(to time: Double) {
-        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+        // Validate time is finite and non-negative
+        guard time.isFinite && time >= 0 else {
+            print("Warning: Attempted to seek to invalid time: \(time)")
+            return
+        }
+        
+        // Ensure time doesn't exceed duration if duration is valid
+        let safeTime = duration > 0 ? min(time, duration) : time
+        
+        let cmTime = CMTime(seconds: safeTime, preferredTimescale: 600)
         player?.seek(to: cmTime)
-        currentTime = time
+        currentTime = safeTime
         
         if let url = currentURL, engineConfigured {
             playerNode.stop()
             guard let audioFile = try? AVAudioFile(forReading: url) else { return }
             let format = audioFile.processingFormat
-            let framePosition = AVAudioFramePosition(time * format.sampleRate)
-            let framesToPlay = AVAudioFrameCount(audioFile.length - framePosition)
+            
+            // Ensure we calculate a valid frame position
+            let sampleRate = format.sampleRate
+            guard sampleRate > 0 else { return }
+            
+            let framePosition = AVAudioFramePosition(safeTime * sampleRate)
+            
+            // Ensure we don't try to play beyond the file length
+            let audioLength = audioFile.length
+            guard framePosition <= audioLength else { return }
+            
+            let framesToPlay = AVAudioFrameCount(audioLength - framePosition)
             playerNode.scheduleSegment(audioFile,
-                                         startingFrame: framePosition,
-                                         frameCount: framesToPlay,
-                                         at: nil,
-                                         completionHandler: nil)
+                                       startingFrame: framePosition,
+                                       frameCount: framesToPlay,
+                                       at: nil,
+                                       completionHandler: nil)
             if isPlaying { playerNode.play() }
         }
     }
@@ -244,12 +279,20 @@ class AudioPlayer: ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
             
+            let seconds = time.seconds
+            
+            // Validate that the time is finite and non-negative
+            guard seconds.isFinite && seconds >= 0 else {
+                print("Warning: Received invalid time value: \(seconds)")
+                return
+            }
+            
             // Update the current time directly on the main thread
-            self.currentTime = time.seconds
+            self.currentTime = seconds
             
             // Debug output to verify time is updating
-            if Int(time.seconds) % 5 == 0 && time.seconds > 0 {
-                print("Current playback time: \(time.seconds) seconds")
+            if Int(seconds) % 5 == 0 && seconds > 0 {
+                print("Current playback time: \(seconds) seconds")
             }
         }
     }
@@ -268,7 +311,15 @@ class AudioPlayer: ObservableObject {
     /// - Parameter notification: Notification containing a new pan value.
     @objc private func handlePanChange(_ notification: Notification) {
         if let panValue = notification.userInfo?["pan"] as? Double {
-            pan = panValue
+            // Validate that the pan value is finite and within the valid range
+            guard panValue.isFinite else {
+                print("Warning: Received invalid pan value: \(panValue)")
+                return
+            }
+            
+            // Clamp pan to valid range
+            let safePan = max(0, min(1, panValue))
+            pan = safePan
         }
     }
     
@@ -294,7 +345,14 @@ class AudioPlayer: ObservableObject {
                 guard let self = self else { return }
                 switch item.status {
                 case .readyToPlay:
-                    self.duration = item.duration.seconds
+                    let seconds = item.duration.seconds
+                    // Validate that the duration is finite and non-negative
+                    if seconds.isFinite && seconds >= 0 {
+                        self.duration = seconds
+                    } else {
+                        print("Warning: Invalid duration value: \(seconds)")
+                        self.duration = 0
+                    }
                     self.isLoading = false
                 case .failed:
                     print("Player item failed: \(item.error?.localizedDescription ?? "Unknown error")")
