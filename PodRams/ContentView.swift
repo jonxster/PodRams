@@ -452,6 +452,8 @@ struct EpisodeRow: View {
     var onDownload: (() -> Void)?
     
     @State private var isHovering = false
+    @State private var showMenu = false
+    @ObservedObject private var downloadManager = DownloadManager.shared
     
     var formattedTime: String {
         // Ensure we have valid time values
@@ -475,6 +477,17 @@ struct EpisodeRow: View {
             // For non-playing episodes, just show the duration
             return formatter.string(from: duration) ?? "00:00"
         }
+    }
+    
+    /// Determines if the menu should be shown based on available actions
+    private var shouldShowMenu: Bool {
+        // Show menu if either add to cue or download options are available
+        return onToggleCue != nil || onDownload != nil
+    }
+    
+    /// Gets the current download state for this episode
+    private var downloadState: DownloadManager.DownloadState {
+        return downloadManager.downloadStates[episode.url.absoluteString] ?? .none
     }
     
     var body: some View {
@@ -531,25 +544,58 @@ struct EpisodeRow: View {
             
             Spacer(minLength: 10) // Keep spacing between buttons
             
-            // Always show the playlist icon, but with different colors based on cue state
-            Button(action: {
-                onToggleCue?()
-            }) {
-                Image(systemName: "music.note.list")
-                    .foregroundColor(isInCue ? .blue : .gray)
-                    .font(.system(size: 16))
+            // Single action button area - either menu or progress indicator
+            if case .downloading(let progress) = downloadState {
+                // Show download progress indicator when downloading
+                DeterminateLoadingIndicator(progress: progress)
                     .frame(width: 40, height: 30)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .contentShape(Rectangle())
-            // Use the system's default button hover behavior
-            
-            Spacer(minLength: 10) // Keep spacing between buttons
-            
-            // Button to download the episode.
-            DownloadButton(episode: episode)
+                    .padding(.trailing, 8)
+            } else if shouldShowMenu {
+                // Show ellipsis menu when not downloading
+                Menu {
+                    // Add to cue option
+                    if let toggleCue = onToggleCue {
+                        Button(action: toggleCue) {
+                            Label(
+                                isInCue ? "Remove from cue" : "Add to cue",
+                                systemImage: "music.note.list"
+                            )
+                        }
+                    }
+                    
+                    // Download option - show different options based on download state
+                    if let download = onDownload {
+                        switch downloadState {
+                        case .none:
+                            Button(action: download) {
+                                Label("Download", systemImage: "arrow.down.circle")
+                            }
+                        case .downloaded:
+                            Button(action: {
+                                downloadManager.removeDownload(for: episode)
+                            }) {
+                                Label("Delete download", systemImage: "trash")
+                            }
+                        case .failed:
+                            Button(action: download) {
+                                Label("Retry download", systemImage: "arrow.clockwise")
+                            }
+                        case .downloading:
+                            // No action for downloading state
+                            EmptyView()
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                        .frame(width: 40, height: 30)
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .menuIndicator(.hidden) // Hide the menu indicator arrow
                 .frame(width: 40)
                 .padding(.trailing, 8)
+            }
         }
         .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
