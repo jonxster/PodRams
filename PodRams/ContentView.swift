@@ -258,6 +258,11 @@ struct ContentView: View {
                 // No last episode to resume, just mark as initialized
                 isInitialized = true
             }
+            
+            // Prefetch episodes for subscribed podcasts in the background
+            Task(priority: .background) {
+                await prefetchSubscribedPodcasts()
+            }
         }
         // Listen for notifications to add a test podcast.
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestPodcast"))) { notification in
@@ -404,6 +409,45 @@ struct ContentView: View {
                 isPodcastLoading = false
             }
         }
+    }
+    
+    /// Prefetches episodes for all subscribed podcasts in the background
+    private func prefetchSubscribedPodcasts() async {
+        print("Starting background prefetch of \(subscribedPodcasts.count) subscribed podcasts")
+        
+        for podcast in subscribedPodcasts {
+            // Skip podcasts that already have episodes loaded
+            if !podcast.episodes.isEmpty {
+                continue
+            }
+            
+            do {
+                // Fetch episodes for this podcast
+                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+                
+                // Update the podcast with the fetched episodes
+                await MainActor.run {
+                    podcast.episodes = episodes
+                    if let feedArt = feedArt {
+                        podcast.feedArtworkURL = feedArt
+                    }
+                }
+                
+                // Preload the first episode's audio to reduce playback startup time
+                if let firstEpisode = episodes.first {
+                    audioPlayer.preloadAudio(url: firstEpisode.url)
+                }
+                
+                print("Prefetched \(episodes.count) episodes for \(podcast.title)")
+            } catch {
+                print("Error prefetching episodes for \(podcast.title): \(error)")
+            }
+            
+            // Add a small delay between fetches to avoid overwhelming the network
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        }
+        
+        print("Completed background prefetch of subscribed podcasts")
     }
 }
 

@@ -89,11 +89,20 @@ struct SubscribeView: View {
                                 Button(action: {
                                     selectPodcast(podcast)
                                 }) {
-                                    Text(podcast.title)
-                                        .foregroundColor(.primary)
-                                        .font(.headline)
+                                    HStack(spacing: 4) {
+                                        Text(podcast.title)
+                                            .foregroundColor(.primary)
+                                            .font(.headline)
+                                        
+                                        // Show loading indicator when this podcast is being loaded
+                                        if loadingPodcastId == podcast.id {
+                                            LoadingIndicator()
+                                                .frame(width: 12, height: 12)
+                                        }
+                                    }
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .disabled(loadingPodcastId == podcast.id)
                                 
                                 Spacer()
                                 
@@ -115,17 +124,20 @@ struct SubscribeView: View {
     }
     
     private func loadEpisodes(for podcast: Podcast) {
-        if podcast.episodes.isEmpty {
-            loadingPodcastId = podcast.id
-            Task {
-                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
-                await MainActor.run {
-                    podcast.episodes = episodes
-                    if let feedArt = feedArt {
-                        podcast.feedArtworkURL = feedArt
-                    }
-                    loadingPodcastId = nil
+        // Skip loading if episodes are already loaded
+        if !podcast.episodes.isEmpty {
+            return
+        }
+        
+        loadingPodcastId = podcast.id
+        Task {
+            let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+            await MainActor.run {
+                podcast.episodes = episodes
+                if let feedArt = feedArt {
+                    podcast.feedArtworkURL = feedArt
                 }
+                loadingPodcastId = nil
             }
         }
     }

@@ -9,6 +9,7 @@
 
 import Foundation
 import Combine
+import AVFoundation
 
 class PodcastFetcher: ObservableObject, @unchecked Sendable {
     @Published var searchQuery = ""
@@ -187,6 +188,11 @@ class RSSParser: NSObject, XMLParserDelegate {
                 attributes attributeDict: [String : String] = [:]) {
         currentElement = elementName
         
+        // Also check for itunes:duration specifically
+        if elementName == "duration" && namespaceURI == "http://www.itunes.com/dtds/podcast-1.0.dtd" {
+            currentElement = "itunes:duration"
+        }
+        
         if elementName == "channel" {
             insideChannel = true
         }
@@ -224,10 +230,12 @@ class RSSParser: NSObject, XMLParserDelegate {
             currentTitle += string
         }
         if insideItem && currentElement == "itunes:duration" {
+            print("Found duration element: '\(trimmed)'")
             if trimmed.isEmpty {
                 currentDuration = 0.0
             } else {
                 currentDuration = parseDuration(trimmed)
+                print("Parsed duration: \(currentDuration ?? 0.0) seconds")
             }
         }
         if insideImage && currentElement == "url" {
@@ -244,10 +252,22 @@ class RSSParser: NSObject, XMLParserDelegate {
                 didEndElement elementName: String,
                 namespaceURI: String?,
                 qualifiedName qName: String?) {
+        print("End element: \(elementName), currentElement was: \(currentElement)")
+        
+        // Reset currentElement when we're done with it
+        if currentElement == elementName {
+            currentElement = ""
+        }
+        
         if elementName == "item" {
             if let audioURL = URL(string: currentAudioURL) {
                 let artworkURL = currentArtworkURL.flatMap { URL(string: $0) }
                 let showNotes = currentDescription.htmlStripped
+                
+                // If duration is missing or zero, we'll try to fetch it later
+                let needsDurationFetch = currentDuration == nil || currentDuration == 0
+                
+                // Create episode
                 let ep = PodcastEpisode(
                     title: currentTitle.trimmingCharacters(in: .whitespacesAndNewlines),
                     url: audioURL,
@@ -256,7 +276,31 @@ class RSSParser: NSObject, XMLParserDelegate {
                     showNotes: showNotes.isEmpty ? nil : showNotes,
                     feedUrl: feedUrl
                 )
+                
+                // Add the episode to our array
                 episodes.append(ep)
+                
+                // If we need to fetch the duration, do it in the background
+                if needsDurationFetch {
+                    // Store the index of this episode for later updating
+                    let episodeIndex = episodes.count - 1
+                    
+                    Task {
+                        do {
+                            if let duration = try await fetchDurationFromAudio(url: audioURL) {
+                                // Update the episode in the array directly
+                                if episodeIndex < self.episodes.count {
+                                    self.episodes[episodeIndex].duration = duration
+                                    print("Updated duration for \(ep.title): \(duration) seconds")
+                                }
+                            }
+                        } catch {
+                            print("Error fetching duration: \(error)")
+                        }
+                    }
+                }
+                
+                print("Created episode: \(ep.title), duration: \(ep.duration ?? 0.0) seconds")
             }
             insideItem = false
         }
@@ -266,6 +310,22 @@ class RSSParser: NSObject, XMLParserDelegate {
         if elementName == "image" {
             insideImage = false
         }
+    }
+    
+    /// Fetches the duration of an audio file by loading its metadata
+    private func fetchDurationFromAudio(url: URL) async throws -> Double? {
+        // Skip for non-HTTP URLs
+        guard url.scheme == "http" || url.scheme == "https" else {
+            return nil
+        }
+        
+        // Create an asset and load its duration
+        let asset = AVURLAsset(url: url)
+        let duration = try await asset.load(.duration)
+        let seconds = CMTimeGetSeconds(duration)
+        
+        // Return the duration if it's valid
+        return seconds.isFinite && seconds > 0 ? seconds : nil
     }
     
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {

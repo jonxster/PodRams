@@ -167,9 +167,20 @@ struct SimpleEpisodeRow: View {
     
     /// Formats the duration in seconds to a human-readable string (e.g., "45:30")
     private func formatDuration(_ seconds: Double) -> String {
+        // Handle invalid or zero duration
+        guard seconds > 0, seconds.isFinite else {
+            return "00:00"
+        }
+        
         let totalSeconds = Int(seconds)
-        let minutes = totalSeconds / 60
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
         let remainingSeconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, remainingSeconds)
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, remainingSeconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, remainingSeconds)
+        }
     }
 } 
