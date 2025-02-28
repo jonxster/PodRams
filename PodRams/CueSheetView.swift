@@ -64,6 +64,7 @@ struct CueSheetView: View {
                                 cue = updatedCue
                                 
                                 PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                                 audioPlayer.playAudio(url: updatedEpisode.url)
                             } else {
                                 audioPlayer.playAudio(url: episode.url)
@@ -124,6 +125,7 @@ struct CueSheetView: View {
                     // Save the updated cue to persistent storage
                     if let feedUrl = cue.first?.feedUrl {
                         PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                        NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                     }
                 }
             }
@@ -206,6 +208,7 @@ struct CueSheetView: View {
                     // Save updated cue to persistent storage
                     if let feedUrl = cue.first?.feedUrl {
                         PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                        NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                         print("Updated cue with new durations and saved to persistent storage")
                     }
                 }
@@ -254,6 +257,7 @@ struct CueRowView: View {
                     
                     // Save the updated cue to persistence
                     PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                    NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                 }
             }) {
                 Image(systemName: "trash")
@@ -290,6 +294,12 @@ struct CueDropDelegate: DropDelegate {
             let insertIndex = toIndex > fromIndex ? toIndex - 1 : toIndex
             updatedCue.insert(movedItem, at: insertIndex)
             cue = updatedCue
+            
+            // Add notification for cue update after reordering
+            if let feedUrl = cue.first?.feedUrl {
+                PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+            }
         }
     }
 

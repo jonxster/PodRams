@@ -121,6 +121,7 @@ struct EpisodeListView: View {
         }
         let feedUrl = episode.feedUrl ?? selectedPodcast?.feedUrl
         PersistenceManager.saveCue(cueList, feedUrl: feedUrl)
+        NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
     }
     
     /// Initiates the download process for the specified episode.

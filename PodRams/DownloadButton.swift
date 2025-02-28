@@ -58,7 +58,7 @@ struct DownloadButton: View {
                     .foregroundColor(.red)
             }
         }
-        // Use a borderless style to integrate with other UI elements seamlessly.
-        .buttonStyle(BorderlessButtonStyle())
+        // Use a plain button style for consistency with other buttons
+        .buttonStyle(PlainButtonStyle())
     }
 }

@@ -279,6 +279,12 @@ struct ContentView: View {
                 updatedCue.append(testEpisode)
                 cue = updatedCue
                 
+                // Save the cue and post notification
+                if let feedUrl = testEpisode.feedUrl {
+                    PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                    NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+                }
+                
                 isCuePlaying = true
                 selectedEpisodeIndex = cue.count - 1
             }
@@ -439,32 +445,23 @@ struct EpisodeRow: View {
     var onToggleCue: (() -> Void)?
     /// Optional closure to trigger a download.
     var onDownload: (() -> Void)?
-    /// Local state to track whether the mouse is hovering over the row.
-    @State var isHovering = false
     
-    // Add this to force an update when the view appears
-    @State private var hasAppeared = false
-    
-    // Add this to ensure we're tracking both currentTime and isPlaying changes
-    private var audioPlayerStatePublisher: AnyPublisher<(Double, Bool), Never> {
-        Publishers.CombineLatest(
-            audioPlayer.$currentTime.removeDuplicates(),
-            audioPlayer.$isPlaying.removeDuplicates()
-        )
-        .eraseToAnyPublisher()
-    }
+    @State private var isHovering = false
     
     var formattedTime: String {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute, .second]
+        formatter.unitsStyle = .positional
+        formatter.zeroFormattingBehavior = .pad
+        
         if isPlaying {
-            // For playing episodes, show current time and total duration
-            // Current time counts up from 0 to duration
-            return "\(currentTime.formatAsPlaybackTime()) of \(duration.formatAsPlaybackTime())"
-        } else if duration > 0 {
-            // For non-playing episodes with known duration, just show the total time
-            return duration.formatAsPlaybackTime()
+            // For playing episodes, show current time / total time
+            let currentTimeString = formatter.string(from: currentTime) ?? "00:00"
+            let durationString = formatter.string(from: duration) ?? "00:00"
+            return "\(currentTimeString) / \(durationString)"
         } else {
-            // For episodes with unknown duration
-            return "--:--"
+            // For non-playing episodes, just show the duration
+            return formatter.string(from: duration) ?? "00:00"
         }
     }
     
@@ -479,7 +476,7 @@ struct EpisodeRow: View {
                         .foregroundColor(.white)
                         .font(.system(size: 12))
                         .frame(width: 16)
-                        .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
+                        .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)") // Force redraw with unique ID
                 } else {
                     // Show play/pause icon on hover based on current state
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
@@ -519,35 +516,36 @@ struct EpisodeRow: View {
             }
             .buttonStyle(PlainButtonStyle())
             .contentShape(Rectangle())
-            .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
-            .onHover { hovering in
-                isHovering = hovering
-            }
             
-            // If the episode is in the cue, show an icon that can be tapped to toggle its cue state.
-            if isInCue {
+            Spacer(minLength: 10) // Keep spacing between buttons
+            
+            // Always show the playlist icon, but with different colors based on cue state
+            Button(action: {
+                onToggleCue?()
+            }) {
                 Image(systemName: "music.note.list")
-                    .foregroundColor(.blue)
-                    .frame(width: 40)
-                    .padding(.trailing, 8)
-                    .onTapGesture {
-                        onToggleCue?()
-                    }
+                    .foregroundColor(isInCue ? .blue : .gray)
+                    .font(.system(size: 16))
+                    .frame(width: 40, height: 30)
             }
+            .buttonStyle(PlainButtonStyle())
+            .contentShape(Rectangle())
+            // Use the system's default button hover behavior
+            
+            Spacer(minLength: 10) // Keep spacing between buttons
             
             // Button to download the episode.
             DownloadButton(episode: episode)
                 .frame(width: 40)
                 .padding(.trailing, 8)
         }
-        .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
-        .onAppear {
-            // Force a refresh when the view appears
-            hasAppeared = true
+        .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+            // Let the system handle cursor behavior naturally
         }
-        // Update to use the combined publisher
-        .onReceive(audioPlayerStatePublisher) { _, _ in
-            // This empty closure forces the view to update when audio player state changes
-        }
+        // Use a stable ID that only changes when necessary
+        .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)")
     }
 }
