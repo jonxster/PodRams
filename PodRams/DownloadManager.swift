@@ -7,6 +7,7 @@
 import Foundation
 import Combine
 import CryptoKit
+import os.log
 
 /// Manages downloading of podcast episodes.
 /// This singleton class uses URLSession to download episodes and tracks their download states.
@@ -48,6 +49,34 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// File manager used for file operations.
     private let fileManager = FileManager.default
     
+    /// Logger for download operations
+    private let logger = Logger(subsystem: "com.podrams", category: "DownloadManager")
+    
+    /// Dedicated queue for file operations
+    private let fileOperationQueue = DispatchQueue(label: "com.podrams.fileOperations", 
+                                                  qos: .utility, 
+                                                  attributes: .concurrent)
+    
+    /// Cache for file existence checks to reduce disk I/O
+    private var fileExistenceCache: [String: (exists: Bool, timestamp: Date)] = [:]
+    private let cacheValidityDuration: TimeInterval = 5.0 // Cache valid for 5 seconds
+    
+    /// Custom URLSession for downloads
+    private lazy var downloadSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        // Optimize for large file downloads
+        config.httpMaximumConnectionsPerHost = 6
+        config.timeoutIntervalForResource = 60 * 60 // 1 hour timeout for large files
+        config.waitsForConnectivity = true
+        
+        // Use a larger memory capacity for better performance on Apple Silicon
+        config.urlCache = URLCache(memoryCapacity: 50_000_000, // 50MB memory cache
+                                  diskCapacity: 1_000_000_000, // 1GB disk cache
+                                  directory: nil)
+        
+        return URLSession(configuration: config)
+    }()
+    
     /// Private initializer to enforce singleton pattern.
     private init() {
         // Ensure required directories are available on initialization.
@@ -61,26 +90,29 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     
     /// Creates necessary directories (Downloads and tmp) inside the user's document directory.
     private func createRequiredDirectories() {
-        let fileManager = FileManager.default
-        // Obtain the user's document directory.
-        let containerURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let downloadsURL = containerURL.appendingPathComponent("Downloads")
-        let tmpURL = containerURL.appendingPathComponent("tmp")
-        
-        do {
-            // Create the Downloads directory if it doesn't exist.
-            if !fileManager.fileExists(atPath: downloadsURL.path) {
-                try fileManager.createDirectory(at: downloadsURL, withIntermediateDirectories: true)
-                print("Created Downloads directory at: \(downloadsURL.path)")
-            }
+        // Use the file operation queue for disk operations
+        fileOperationQueue.async {
+            let fileManager = FileManager.default
+            // Obtain the user's document directory.
+            let containerURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let downloadsURL = containerURL.appendingPathComponent("Downloads")
+            let tmpURL = containerURL.appendingPathComponent("tmp")
             
-            // Create the temporary directory if it doesn't exist.
-            if !fileManager.fileExists(atPath: tmpURL.path) {
-                try fileManager.createDirectory(at: tmpURL, withIntermediateDirectories: true)
-                print("Created tmp directory at: \(tmpURL.path)")
+            do {
+                // Create the Downloads directory if it doesn't exist.
+                if !fileManager.fileExists(atPath: downloadsURL.path) {
+                    try fileManager.createDirectory(at: downloadsURL, withIntermediateDirectories: true)
+                    self.logger.info("Created Downloads directory at: \(downloadsURL.path)")
+                }
+                
+                // Create the temporary directory if it doesn't exist.
+                if !fileManager.fileExists(atPath: tmpURL.path) {
+                    try fileManager.createDirectory(at: tmpURL, withIntermediateDirectories: true)
+                    self.logger.info("Created tmp directory at: \(tmpURL.path)")
+                }
+            } catch {
+                self.logger.error("Error creating directories: \(error.localizedDescription)")
             }
-        } catch {
-            print("Error creating directories: \(error)")
         }
     }
     
@@ -105,9 +137,9 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         if !fileManager.fileExists(atPath: downloadsDir.path) {
             do {
                 try fileManager.createDirectory(at: downloadsDir, withIntermediateDirectories: true, attributes: nil)
-                print("Created Downloads directory at: \(downloadsDir.path)")
+                logger.info("Created Downloads directory at: \(downloadsDir.path)")
             } catch {
-                print("Error creating Downloads directory: \(error)")
+                logger.error("Error creating Downloads directory: \(error.localizedDescription)")
             }
         }
         
@@ -123,15 +155,39 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     private func loadDownloadStates() async {
         let savedDownloads = await PersistenceManager.loadDownloads()
         
-        for download in savedDownloads {
-            let fileURL = URL(fileURLWithPath: download.localFilePath)
+        // Process downloads in batches for better cache utilization
+        let batchSize = 20
+        for i in stride(from: 0, to: savedDownloads.count, by: batchSize) {
+            let endIndex = min(i + batchSize, savedDownloads.count)
+            let batch = Array(savedDownloads[i..<endIndex])
             
-            // Verify the file still exists
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                // Capture self as a local variable to avoid Sendable warning
-                let downloadManager = self
-                DispatchQueue.main.async {
-                    downloadManager.downloadStates[download.episodeUrl] = .downloaded(fileURL)
+            // Process each batch concurrently
+            await withTaskGroup(of: (String, URL?).self) { group in
+                for download in batch {
+                    group.addTask {
+                        let fileURL = URL(fileURLWithPath: download.localFilePath)
+                        
+                        // Check file existence on a background thread
+                        let exists = FileManager.default.fileExists(atPath: fileURL.path)
+                        return (download.episodeUrl, exists ? fileURL : nil)
+                    }
+                }
+                
+                // Collect results and update states
+                var updates: [(String, URL)] = []
+                for await (episodeUrl, fileURL) in group {
+                    if let url = fileURL {
+                        updates.append((episodeUrl, url))
+                    }
+                }
+                
+                // Update states on main thread in a single batch
+                if !updates.isEmpty {
+                    await MainActor.run {
+                        for (episodeUrl, url) in updates {
+                            self.downloadStates[episodeUrl] = .downloaded(url)
+                        }
+                    }
                 }
             }
         }
@@ -139,18 +195,21 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     
     /// Saves the current download states to persistence
     private func saveDownloadStates() {
-        var downloads: [PersistedDownload] = []
-        
-        for (episodeUrl, state) in downloadStates {
-            if case let .downloaded(url) = state {
-                downloads.append(PersistedDownload(
-                    episodeUrl: episodeUrl,
-                    localFilePath: url.path
-                ))
+        // Use the file operation queue for disk operations
+        fileOperationQueue.async {
+            var downloads: [PersistedDownload] = []
+            
+            for (episodeUrl, state) in self.downloadStates {
+                if case let .downloaded(url) = state {
+                    downloads.append(PersistedDownload(
+                        episodeUrl: episodeUrl,
+                        localFilePath: url.path
+                    ))
+                }
             }
+            
+            PersistenceManager.saveDownloads(downloads)
         }
-        
-        PersistenceManager.saveDownloads(downloads)
     }
     
     /// Starts downloading a podcast episode.
@@ -163,20 +222,20 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         let key = episode.url.absoluteString
         // If a download is already in progress or completed, do nothing.
         guard downloadStates[key] == nil else {
-            print("Episode is already being downloaded or has been downloaded")
+            logger.info("Episode is already being downloaded or has been downloaded: \(episode.title)")
             return
         }
         
-        print("Starting download for episode: \(episode.title)")
+        logger.info("Starting download for episode: \(episode.title)")
         downloadStates[key] = .downloading(progress: 0.0)
         
-        // Create a download task for the episode.
-        let task = URLSession.shared.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
+        // Create a download task for the episode using the optimized session
+        let task = downloadSession.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
             guard let downloadManager = self else { return }
             
             // Handle error scenario.
             if let error = error {
-                print("Download error for episode '\(episode.title)': \(error)")
+                downloadManager.logger.error("Download error for episode '\(episode.title)': \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(error)
                     downloadManager.saveDownloadStates()
@@ -186,7 +245,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             
             // Ensure a temporary URL is provided.
             guard let tempURL = tempURL else {
-                print("No temporary URL provided for downloaded file")
+                downloadManager.logger.error("No temporary URL provided for downloaded file: \(episode.title)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
                     downloadManager.saveDownloadStates()
@@ -194,47 +253,54 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 return
             }
             
-            let fileManager = FileManager.default
-            let containerURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let downloadsURL = containerURL.appendingPathComponent("Downloads")
-            
-            // Generate destination filename using SHA256 hash with a ".mp3" extension.
-            let filename = downloadManager.sha256(episode.url.absoluteString) + ".mp3"
-            let destinationURL = downloadsURL.appendingPathComponent(filename)
-            
-            do {
-                // Remove any existing file at the destination.
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                }
+            // Use the file operation queue for file operations
+            downloadManager.fileOperationQueue.async {
+                let fileManager = FileManager.default
+                let containerURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+                let downloadsURL = containerURL.appendingPathComponent("Downloads")
                 
-                // Move the downloaded file from the temporary location to the final destination.
-                try fileManager.moveItem(at: tempURL, to: destinationURL)
-                print("Successfully moved downloaded file to: \(destinationURL.path)")
+                // Generate destination filename using SHA256 hash with a ".mp3" extension.
+                let filename = downloadManager.sha256(episode.url.absoluteString) + ".mp3"
+                let destinationURL = downloadsURL.appendingPathComponent(filename)
                 
-                DispatchQueue.main.async {
-                    downloadManager.downloadStates[key] = .downloaded(destinationURL)
-                    downloadManager.saveDownloadStates()
-                }
-            } catch {
-                print("Error moving file for episode '\(episode.title)': \(error)")
-                print("Temp URL: \(tempURL.path)")
-                print("Destination URL: \(destinationURL.path)")
-                
-                // Fallback: Try copying the file instead of moving.
                 do {
-                    try fileManager.copyItem(at: tempURL, to: destinationURL)
-                    print("Successfully copied file using fallback method")
+                    // Remove any existing file at the destination.
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+                    
+                    // Move the downloaded file from the temporary location to the final destination.
+                    try fileManager.moveItem(at: tempURL, to: destinationURL)
+                    downloadManager.logger.info("Successfully moved downloaded file to: \(destinationURL.path)")
+                    
+                    // Update the file existence cache
+                    downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
                     
                     DispatchQueue.main.async {
                         downloadManager.downloadStates[key] = .downloaded(destinationURL)
                         downloadManager.saveDownloadStates()
                     }
                 } catch {
-                    print("Fallback copy also failed: \(error)")
-                    DispatchQueue.main.async {
-                        downloadManager.downloadStates[key] = .failed(error)
-                        downloadManager.saveDownloadStates()
+                    downloadManager.logger.error("Error moving file for episode '\(episode.title)': \(error.localizedDescription)")
+                    
+                    // Fallback: Try copying the file instead of moving.
+                    do {
+                        try fileManager.copyItem(at: tempURL, to: destinationURL)
+                        downloadManager.logger.info("Successfully copied file using fallback method")
+                        
+                        // Update the file existence cache
+                        downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
+                        
+                        DispatchQueue.main.async {
+                            downloadManager.downloadStates[key] = .downloaded(destinationURL)
+                            downloadManager.saveDownloadStates()
+                        }
+                    } catch {
+                        downloadManager.logger.error("Fallback copy also failed: \(error.localizedDescription)")
+                        DispatchQueue.main.async {
+                            downloadManager.downloadStates[key] = .failed(error)
+                            downloadManager.saveDownloadStates()
+                        }
                     }
                 }
             }
@@ -243,8 +309,17 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         // Observe download progress and update the download state accordingly.
         progressObservations[key] = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             guard let downloadManager = self else { return }
+            
+            // Throttle UI updates for better performance
+            // Only update UI when progress changes by at least 1%
+            let newProgress = progress.fractionCompleted
+            if case let .downloading(oldProgress) = downloadManager.downloadStates[key],
+               abs(newProgress - oldProgress) < 0.01 && oldProgress > 0 && newProgress < 1.0 {
+                return
+            }
+            
             DispatchQueue.main.async {
-                downloadManager.downloadStates[key] = .downloading(progress: progress.fractionCompleted)
+                downloadManager.downloadStates[key] = .downloading(progress: newProgress)
             }
         }
         
@@ -262,17 +337,27 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         progressObservations[key] = nil
         
         let destinationURL = localFileURL(for: episode)
-        do {
-            if fileManager.fileExists(atPath: destinationURL.path) {
-                try fileManager.removeItem(at: destinationURL)
-                print("Removed downloaded file for episode '\(episode.title)' at: \(destinationURL.path)")
+        
+        // Use the file operation queue for file operations
+        fileOperationQueue.async {
+            do {
+                if self.fileManager.fileExists(atPath: destinationURL.path) {
+                    try self.fileManager.removeItem(at: destinationURL)
+                    self.logger.info("Removed downloaded file for episode '\(episode.title)' at: \(destinationURL.path)")
+                    
+                    // Update the file existence cache
+                    self.updateFileExistenceCache(path: destinationURL.path, exists: false)
+                }
+                
+                // Explicitly set the state to .none after removal.
+                // Use explicit type to avoid ambiguity with Optional.none
+                DispatchQueue.main.async {
+                    self.downloadStates[key] = DownloadState.none
+                    self.saveDownloadStates()
+                }
+            } catch {
+                self.logger.error("Error removing downloaded episode '\(episode.title)': \(error.localizedDescription)")
             }
-            // Explicitly set the state to .none after removal.
-            // Use explicit type to avoid ambiguity with Optional.none
-            downloadStates[key] = DownloadState.none
-            saveDownloadStates()
-        } catch {
-            print("Error removing downloaded episode '\(episode.title)': \(error)")
         }
     }
     
@@ -284,25 +369,56 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         // First check if we have the download state in memory
         if case let .downloaded(url) = downloadStates[key] {
-            // Verify the file still exists
+            // Check the file existence cache first
+            if let (exists, _) = checkFileExistenceCache(path: url.path) {
+                return exists ? url : nil
+            }
+            
+            // If not in cache, check the file system
             if FileManager.default.fileExists(atPath: url.path) {
+                // Update the cache
+                updateFileExistenceCache(path: url.path, exists: true)
                 return url
             } else {
-                // File doesn't exist anymore, update state
-                // Use explicit type to avoid ambiguity with Optional.none
-                downloadStates[key] = DownloadState.none
-                saveDownloadStates()
+                // File doesn't exist anymore, update state and cache
+                updateFileExistenceCache(path: url.path, exists: false)
+                DispatchQueue.main.async {
+                    self.downloadStates[key] = DownloadState.none
+                    self.saveDownloadStates()
+                }
                 return nil
             }
         }
         
         // If not in memory, check if the file exists on disk
         let potentialURL = localFileURL(for: episode)
+        
+        // Check the cache first
+        if let (exists, _) = checkFileExistenceCache(path: potentialURL.path) {
+            if exists {
+                DispatchQueue.main.async {
+                    self.downloadStates[key] = .downloaded(potentialURL)
+                    self.saveDownloadStates()
+                }
+                return potentialURL
+            }
+            return nil
+        }
+        
+        // If not in cache, check the file system
         if FileManager.default.fileExists(atPath: potentialURL.path) {
+            // Update the cache
+            updateFileExistenceCache(path: potentialURL.path, exists: true)
+            
             // File exists, update the state and return the URL
-            downloadStates[key] = .downloaded(potentialURL)
-            saveDownloadStates()
+            DispatchQueue.main.async {
+                self.downloadStates[key] = .downloaded(potentialURL)
+                self.saveDownloadStates()
+            }
             return potentialURL
+        } else {
+            // Update the cache
+            updateFileExistenceCache(path: potentialURL.path, exists: false)
         }
         
         return nil
@@ -316,13 +432,70 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         // First check if we have the download state in memory
         if case let .downloaded(url) = downloadStates[key] {
-            // Verify the file still exists
-            return FileManager.default.fileExists(atPath: url.path)
+            // Check the cache first
+            if let (exists, _) = checkFileExistenceCache(path: url.path) {
+                return exists
+            }
+            
+            // If not in cache, check the file system
+            let exists = FileManager.default.fileExists(atPath: url.path)
+            updateFileExistenceCache(path: url.path, exists: exists)
+            return exists
         }
         
         // If not in memory, check if the file exists on disk
         let potentialURL = localFileURL(for: episode)
-        return FileManager.default.fileExists(atPath: potentialURL.path)
+        
+        // Check the cache first
+        if let (exists, _) = checkFileExistenceCache(path: potentialURL.path) {
+            return exists
+        }
+        
+        // If not in cache, check the file system
+        let exists = FileManager.default.fileExists(atPath: potentialURL.path)
+        updateFileExistenceCache(path: potentialURL.path, exists: exists)
+        return exists
+    }
+    
+    /// Checks the file existence cache for a given path
+    /// - Parameter path: The file path to check
+    /// - Returns: A tuple containing whether the file exists and the timestamp of the cache entry, or nil if not in cache
+    private func checkFileExistenceCache(path: String) -> (exists: Bool, timestamp: Date)? {
+        guard let cacheEntry = fileExistenceCache[path] else {
+            return nil
+        }
+        
+        // Check if the cache entry is still valid
+        if Date().timeIntervalSince(cacheEntry.timestamp) > cacheValidityDuration {
+            return nil
+        }
+        
+        return cacheEntry
+    }
+    
+    /// Updates the file existence cache for a given path
+    /// - Parameters:
+    ///   - path: The file path to update
+    ///   - exists: Whether the file exists
+    private func updateFileExistenceCache(path: String, exists: Bool) {
+        fileExistenceCache[path] = (exists: exists, timestamp: Date())
+        
+        // Periodically clean up the cache
+        if fileExistenceCache.count > 1000 {
+            cleanupFileExistenceCache()
+        }
+    }
+    
+    /// Cleans up expired entries from the file existence cache
+    private func cleanupFileExistenceCache() {
+        let now = Date()
+        let keysToRemove = fileExistenceCache.filter { 
+            now.timeIntervalSince($0.value.timestamp) > cacheValidityDuration
+        }.keys
+        
+        for key in keysToRemove {
+            fileExistenceCache.removeValue(forKey: key)
+        }
     }
     
     deinit {
