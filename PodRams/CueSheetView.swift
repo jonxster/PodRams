@@ -90,6 +90,22 @@ struct CueSheetView: View {
                 .font(.footnote)
                 .foregroundColor(.gray)
                 .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(
+                    // Only show the clear button if the cue is not empty
+                    !cue.isEmpty ? 
+                    Button(action: {
+                        clearCue()
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                            .opacity(0.7)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    .padding(.trailing, 20)
+                    : nil,
+                    alignment: .trailing
+                )
         }
         // Set a minimum frame for the cue sheet.
         .frame(minWidth: 400, minHeight: 500)
@@ -227,6 +243,19 @@ struct CueSheetView: View {
         let duration = try await asset.load(.duration)
         let seconds = CMTimeGetSeconds(duration)
         return seconds.isFinite && seconds > 0 ? seconds : 0.0
+    }
+    
+    /// Clears all episodes from the cue and updates persistence.
+    private func clearCue() {
+        // Create a new empty array to clear the cue
+        let feedUrl = cue.first?.feedUrl
+        cue = []
+        
+        // Save the empty cue to persistence
+        if let feedUrl = feedUrl {
+            PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+            NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+        }
     }
 }
 
