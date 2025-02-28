@@ -18,7 +18,6 @@ struct SubscribeView: View {
     
     @State private var expandedPodcasts: Set<UUID> = []
     @State private var loadingPodcastId: UUID?
-    @State private var cue: [PodcastEpisode] = []
     
     var body: some View {
         VStack {
@@ -55,16 +54,10 @@ struct SubscribeView: View {
                                     let isPlaying = selectedPodcast == podcast && 
                                                    selectedEpisodeIndex == podcast.episodes.firstIndex(where: { $0.id == episode.id })
                                     
-                                    let config = EpisodeRowConfiguration(
+                                    SimpleEpisodeRow(
                                         episode: episode,
-                                        index: podcast.episodes.firstIndex(where: { $0.id == episode.id }) ?? 0,
                                         isPlaying: isPlaying,
-                                        isInCue: cue.contains { $0.url.absoluteString == episode.url.absoluteString },
-                                        currentTime: isPlaying ? audioPlayer.currentTime : 0,
-                                        duration: isPlaying ? audioPlayer.duration : (episode.duration ?? 0),
-                                        audioPlayer: audioPlayer,
-                                        selectedPodcast: podcast,
-                                        onSelect: { idx in
+                                        onSelect: {
                                             selectedPodcast = podcast
                                             if let index = podcast.episodes.firstIndex(where: { $0.id == episode.id }) {
                                                 selectedEpisodeIndex = index
@@ -79,46 +72,9 @@ struct SubscribeView: View {
                                                     PersistenceManager.saveLastPlayback(episode: episode, feedUrl: feedUrl)
                                                 }
                                             }
-                                        },
-                                        onToggleCue: { episode in
-                                            // Add or remove from cue
-                                            if let idx = cue.firstIndex(where: { $0.url.absoluteString == episode.url.absoluteString }) {
-                                                var updatedCue = cue
-                                                updatedCue.remove(at: idx)
-                                                cue = updatedCue
-                                                PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
-                                                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-                                            } else {
-                                                var newEpisode = episode
-                                                newEpisode.podcastName = podcast.title
-                                                
-                                                // Generate a unique ID for the cue version of the episode
-                                                let cueId = "cue_\(UUID().uuidString)_\(episode.url.absoluteString)"
-                                                newEpisode = PodcastEpisode(
-                                                    id: cueId,
-                                                    title: newEpisode.title,
-                                                    url: newEpisode.url,
-                                                    artworkURL: newEpisode.artworkURL,
-                                                    duration: newEpisode.duration,
-                                                    showNotes: newEpisode.showNotes,
-                                                    feedUrl: newEpisode.feedUrl,
-                                                    podcastName: newEpisode.podcastName
-                                                )
-                                                var updatedCue = cue
-                                                updatedCue.append(newEpisode)
-                                                cue = updatedCue
-                                                PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
-                                                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-                                            }
-                                        },
-                                        onDownload: { episode in
-                                            DownloadManager.shared.downloadEpisode(episode)
                                         }
                                     )
-                                    
-                                    // Render the episode row using the configured settings
-                                    ConfiguredEpisodeRow(config: config)
-                                        .padding(.vertical, 4)
+                                    .padding(.vertical, 4)
                                 }
                             }
                         } label: {
@@ -130,10 +86,14 @@ struct SubscribeView: View {
                                 )
                                 .cornerRadius(4)
                                 
-                                Text(podcast.title)
-                                    .onTapGesture {
-                                        selectPodcast(podcast)
-                                    }
+                                Button(action: {
+                                    selectPodcast(podcast)
+                                }) {
+                                    Text(podcast.title)
+                                        .foregroundColor(.primary)
+                                        .font(.headline)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                                 
                                 Spacer()
                                 
@@ -152,16 +112,6 @@ struct SubscribeView: View {
             }
         }
         .frame(minWidth: 400, minHeight: 500)
-        .onAppear {
-            Task {
-                cue = await PersistenceManager.loadCue()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("CueUpdated"))) { _ in
-            Task {
-                cue = await PersistenceManager.loadCue()
-            }
-        }
     }
     
     private func loadEpisodes(for podcast: Podcast) {
