@@ -51,10 +51,15 @@ struct PersistenceManager {
     }
     
     private static func saveData<T: Encodable>(_ data: T, to key: PersistenceKeys) {
+        print("PersistenceManager: saveData called for key: \(key.rawValue)")
+        
         queue.async {
             do {
                 let encoded = try encoder.encode(data)
-                try encoded.write(to: fileURL(for: key), options: [.atomic])
+                let url = fileURL(for: key)
+                print("PersistenceManager: Saving data to \(url.path)")
+                try encoded.write(to: url, options: [.atomic])
+                print("PersistenceManager: Successfully saved data to \(key.rawValue)")
             } catch {
                 print("Error saving \(key.rawValue): \(error)")
             }
@@ -124,10 +129,27 @@ struct PersistenceManager {
     
     // Cue
     static func saveCue(_ episodes: [PodcastEpisode], feedUrl: String?) {
-        guard let feedUrl = feedUrl, !feedUrl.isEmpty else {
+        print("PersistenceManager: saveCue called with \(episodes.count) episodes and feedUrl: \(feedUrl ?? "nil")")
+        
+        // Check if we have a valid feedUrl
+        let validFeedUrl = feedUrl ?? episodes.first?.feedUrl ?? ""
+        
+        // Only proceed if we have a valid feedUrl or at least one episode with a feedUrl
+        guard !validFeedUrl.isEmpty || episodes.contains(where: { $0.feedUrl != nil && !$0.feedUrl!.isEmpty }) else {
+            print("Warning: Cannot save cue without a valid feedUrl")
             queue.async { try? fileManager.removeItem(at: fileURL(for: .cue)) }
             cueCache = nil
             return
+        }
+        
+        // Use the first valid feedUrl we can find if the provided one is empty
+        let effectiveFeedUrl = !validFeedUrl.isEmpty ? validFeedUrl : 
+                              (episodes.first(where: { $0.feedUrl != nil && !$0.feedUrl!.isEmpty })?.feedUrl ?? "")
+        
+        print("PersistenceManager: Saving cue with \(episodes.count) episodes using feedUrl: \(effectiveFeedUrl)")
+        
+        if !episodes.isEmpty {
+            print("PersistenceManager: First episode in cue: \(episodes[0].title), URL: \(episodes[0].url.absoluteString)")
         }
         
         let persistedEpisodes = episodes.compactMap { episode -> PersistedEpisode? in
@@ -136,21 +158,44 @@ struct PersistenceManager {
                 print("Warning: Skipping episode with invalid URL: \(episode.title)")
                 return nil
             }
+            
+            print("PersistenceManager: Persisting episode: \(episode.title), URL: \(urlString)")
+            
             return PersistedEpisode(
-                feedUrl: feedUrl,
+                feedUrl: effectiveFeedUrl,
                 title: episode.title,
                 audioURL: urlString,
                 duration: episode.duration,
                 podcastName: episode.podcastName
             )
         }
+        
+        print("PersistenceManager: Created \(persistedEpisodes.count) persisted episodes")
+        
+        // Update the cache before saving to disk
         cueCache = episodes
+        
+        // Save to disk
         saveData(persistedEpisodes, to: .cue)
+        
+        // Post a notification that the cue has been updated
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+            print("PersistenceManager: Posted CueUpdated notification")
+        }
     }
     
     static func loadCue() async -> [PodcastEpisode] {
-        if let cached = cueCache { return cached }
+        // Return cached cue if available and not empty
+        if let cached = cueCache, !cached.isEmpty { 
+            print("PersistenceManager: Returning cached cue with \(cached.count) episodes")
+            return cached 
+        }
+        
+        // Load from disk
         let persisted: [PersistedEpisode]? = await loadData(from: .cue)
+        
+        // Process the loaded data
         let result = persisted?.compactMap { pe -> PodcastEpisode? in
             guard pe.isValid, let url = URL(string: pe.audioURL) else {
                 print("Warning: Invalid persisted episode: \(pe.title)")
@@ -166,6 +211,10 @@ struct PersistenceManager {
                 podcastName: pe.podcastName
             )
         } ?? []
+        
+        print("PersistenceManager: Loaded cue from disk with \(result.count) episodes")
+        
+        // Update the cache
         cueCache = result
         return result
     }
@@ -244,6 +293,43 @@ struct PersistenceManager {
         return result
     }
     
+    /// Synchronous version of loadSubscriptions that doesn't use async/await
+    /// This is used in places where async/await cannot be used
+    static func loadSubscriptionsSync() -> [Podcast] {
+        // Return cached subscriptions if available
+        if let cached = subscriptionsCache { return cached }
+        
+        // Try to load from file synchronously
+        let url = fileURL(for: .subscriptions)
+        guard fileManager.fileExists(atPath: url.path) else {
+            return []
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let persisted = try decoder.decode([PersistedPodcast].self, from: data)
+            
+            let result = persisted.compactMap { p -> Podcast? in
+                guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
+                    print("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl)")
+                    return nil
+                }
+                let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
+                if let artStr = p.feedArtworkURL, let artURL = URL(string: artStr) {
+                    podcast.feedArtworkURL = artURL
+                }
+                return podcast
+            }
+            
+            // Update the cache
+            subscriptionsCache = result
+            return result
+        } catch {
+            print("Error loading subscriptions synchronously: \(error)")
+            return []
+        }
+    }
+    
     // Downloads
     static func saveDownloads(_ downloads: [PersistedDownload]) {
         downloadsCache = downloads
@@ -256,6 +342,12 @@ struct PersistenceManager {
         let result = persisted ?? []
         downloadsCache = result
         return result
+    }
+    
+    /// Clears the cue cache, forcing a reload from disk on next access
+    static func clearCueCache() {
+        print("PersistenceManager: Clearing cue cache")
+        cueCache = nil
     }
     
     static func clearAll() {
@@ -276,5 +368,17 @@ struct PersistenceManager {
         if favoritesCache != nil || cueCache != nil || lastPlaybackCache != nil { return true }
         let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback]
         return keys.contains { fileManager.fileExists(atPath: fileURL(for: $0).path) }
+    }
+    
+    /// Loads a single podcast by feed URL
+    /// - Parameter feedUrl: The feed URL of the podcast to load
+    /// - Returns: The podcast if found, nil otherwise
+    static func loadPodcast(feedUrl: String?) -> Podcast? {
+        guard let feedUrl = feedUrl, !feedUrl.isEmpty else {
+            return nil
+        }
+        
+        let podcasts = loadSubscriptionsSync()
+        return podcasts.first(where: { $0.feedUrl == feedUrl })
     }
 }

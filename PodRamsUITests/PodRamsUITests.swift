@@ -15,7 +15,7 @@ final class PodRamsUITests: XCTestCase {
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
 
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        // In UI tests it's important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
     override func tearDownWithError() throws {
@@ -28,7 +28,14 @@ final class PodRamsUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // Verify that the app window exists
+        XCTAssertTrue(app.windows.firstMatch.exists)
+        
+        // Add a small delay to ensure the app is fully loaded
+        Thread.sleep(forTimeInterval: 1.0)
+        
+        // Terminate the app
+        app.terminate()
     }
 
     @MainActor

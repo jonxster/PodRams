@@ -90,9 +90,13 @@ class AudioPlayer: ObservableObject {
     
     /// Initializes the AudioPlayer by setting up throttling, configuring the audio engine, and restoring pan.
     init() {
-        // No longer calling determineOptimalBufferSize() here
+        // Initialize properties before any operations
+        engineConfigured = false
         
+        // Setup throttling first
         setupThrottling()
+        
+        // Safely setup audio engine
         setupAudioEngine()
         
         // Restore saved pan value if available.
@@ -110,22 +114,23 @@ class AudioPlayer: ObservableObject {
     /// Configures the audio engine by attaching and connecting the player node.
     /// Also starts the engine and applies initial volume and pan settings.
     private func setupAudioEngine() {
-        audioEngine.attach(playerNode)
-        let format = audioEngine.mainMixerNode.outputFormat(forBus: 0)
-        audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
-        
-        // macOS doesn't use AVAudioSession, so we skip this configuration
-        // which is only needed for iOS
-        
-        updatePan()
-        updateVolume()
-        
+        // Safely attach and connect nodes
         do {
+            audioEngine.attach(playerNode)
+            let format = audioEngine.mainMixerNode.outputFormat(forBus: 0)
+            audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
+            
+            // Apply initial settings
+            updatePan()
+            updateVolume()
+            
+            // Start the engine
             try audioEngine.start()
             engineConfigured = true
             print("Audio engine started successfully")
         } catch {
             print("Failed to start audio engine: \(error)")
+            // Don't set engineConfigured to true if we failed
         }
     }
     

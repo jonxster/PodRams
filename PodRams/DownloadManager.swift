@@ -174,7 +174,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 }
                 
                 // Collect results and update states
-                var updates: [(String, URL)] = []
+                var updates = [(String, URL)]()
                 for await (episodeUrl, fileURL) in group {
                     if let url = fileURL {
                         updates.append((episodeUrl, url))
@@ -182,9 +182,10 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 }
                 
                 // Update states on main thread in a single batch
-                if !updates.isEmpty {
+                let finalUpdates = updates // Create a local copy to avoid capture issues
+                if !finalUpdates.isEmpty {
                     await MainActor.run {
-                        for (episodeUrl, url) in updates {
+                        for (episodeUrl, url) in finalUpdates {
                             self.downloadStates[episodeUrl] = .downloaded(url)
                         }
                     }
@@ -212,6 +213,18 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         }
     }
     
+    /// Posts a notification that a download has been completed
+    private func postDownloadCompletedNotification(for episode: PodcastEpisode) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: Notification.Name("DownloadCompleted"),
+                object: nil,
+                userInfo: ["episodeUrl": episode.url.absoluteString]
+            )
+            print("DownloadManager: Posted DownloadCompleted notification for \(episode.title)")
+        }
+    }
+    
     /// Starts downloading a podcast episode.
     /// Sets up progress observation and moves the downloaded file to the Downloads directory upon completion.
     /// - Parameter episode: The podcast episode to download.
@@ -223,11 +236,16 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         // If a download is already in progress or completed, do nothing.
         guard downloadStates[key] == nil else {
             logger.info("Episode is already being downloaded or has been downloaded: \(episode.title)")
+            print("DownloadManager: Episode is already being downloaded or has been downloaded: \(episode.title)")
             return
         }
         
         logger.info("Starting download for episode: \(episode.title)")
+        print("DownloadManager: Starting download for episode: \(episode.title)")
+        
+        // Set the initial state to downloading with 0 progress
         downloadStates[key] = .downloading(progress: 0.0)
+        print("DownloadManager: Set initial state to downloading for \(episode.title)")
         
         // Create a download task for the episode using the optimized session
         let task = downloadSession.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
@@ -236,6 +254,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             // Handle error scenario.
             if let error = error {
                 downloadManager.logger.error("Download error for episode '\(episode.title)': \(error.localizedDescription)")
+                print("DownloadManager: Download error for episode '\(episode.title)': \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(error)
                     downloadManager.saveDownloadStates()
@@ -279,6 +298,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                     DispatchQueue.main.async {
                         downloadManager.downloadStates[key] = .downloaded(destinationURL)
                         downloadManager.saveDownloadStates()
+                        downloadManager.postDownloadCompletedNotification(for: episode)
                     }
                 } catch {
                     downloadManager.logger.error("Error moving file for episode '\(episode.title)': \(error.localizedDescription)")
@@ -294,6 +314,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                         DispatchQueue.main.async {
                             downloadManager.downloadStates[key] = .downloaded(destinationURL)
                             downloadManager.saveDownloadStates()
+                            downloadManager.postDownloadCompletedNotification(for: episode)
                         }
                     } catch {
                         downloadManager.logger.error("Fallback copy also failed: \(error.localizedDescription)")
@@ -318,6 +339,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 return
             }
             
+            print("DownloadManager: Progress update for \(episode.title): \(newProgress)")
+            
             DispatchQueue.main.async {
                 downloadManager.downloadStates[key] = .downloading(progress: newProgress)
             }
@@ -325,6 +348,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         downloadTasks[key] = task
         task.resume()
+        print("DownloadManager: Download task started for \(episode.title)")
     }
     
     /// Removes a downloaded episode from local storage and updates its download state.
@@ -496,6 +520,38 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         for key in keysToRemove {
             fileExistenceCache.removeValue(forKey: key)
         }
+    }
+    
+    /// Gets the current download state for an episode
+    /// - Parameter episode: The podcast episode to check
+    /// - Returns: The current download state
+    func downloadState(for episode: PodcastEpisode) -> DownloadState {
+        let key = episode.url.absoluteString
+        
+        // First check if we have a state in memory
+        if let state = downloadStates[key] {
+            // For downloaded state, verify the file still exists
+            if case let .downloaded(url) = state {
+                if FileManager.default.fileExists(atPath: url.path) {
+                    return state
+                } else {
+                    // File no longer exists, update state
+                    DispatchQueue.main.async {
+                        self.downloadStates[key] = DownloadState.none
+                        self.saveDownloadStates()
+                    }
+                    return DownloadState.none
+                }
+            }
+            return state
+        }
+        
+        // If not in memory, check if the file exists on disk
+        if let url = localURL(for: episode) {
+            return .downloaded(url)
+        }
+        
+        return DownloadState.none
     }
     
     deinit {

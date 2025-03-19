@@ -26,7 +26,7 @@ class Podcast: Identifiable, Equatable, ObservableObject, @unchecked Sendable {
     }
 }
 
-struct PodcastEpisode: Identifiable, Equatable {
+struct PodcastEpisode: Identifiable, Equatable, Codable {
     // If no id is provided, use url.absoluteString as a stable identifier.
     let id: String
     let title: String
@@ -35,7 +35,7 @@ struct PodcastEpisode: Identifiable, Equatable {
     var duration: Double?
     let showNotes: String?
     let feedUrl: String?
-    var podcastName: String? // Holds the parent podcast’s title
+    var podcastName: String? // Holds the parent podcast's title
 
     init(id: String? = nil, title: String, url: URL, artworkURL: URL?, duration: Double?, showNotes: String?, feedUrl: String? = nil, podcastName: String? = nil) {
         self.id = id ?? url.absoluteString
@@ -46,6 +46,44 @@ struct PodcastEpisode: Identifiable, Equatable {
         self.showNotes = showNotes
         self.feedUrl = feedUrl
         self.podcastName = podcastName
+    }
+    
+    // Add coding keys to handle URL encoding/decoding
+    enum CodingKeys: String, CodingKey {
+        case id, title, url, artworkURL, duration, showNotes, feedUrl, podcastName
+    }
+    
+    // Custom encoding to handle URL properties
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(url.absoluteString, forKey: .url)
+        try container.encode(artworkURL?.absoluteString, forKey: .artworkURL)
+        try container.encode(duration, forKey: .duration)
+        try container.encode(showNotes, forKey: .showNotes)
+        try container.encode(feedUrl, forKey: .feedUrl)
+        try container.encode(podcastName, forKey: .podcastName)
+    }
+    
+    // Custom decoding to handle URL properties
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        let urlString = try container.decode(String.self, forKey: .url)
+        guard let decodedUrl = URL(string: urlString) else {
+            throw DecodingError.dataCorruptedError(forKey: .url, in: container, debugDescription: "Invalid URL string")
+        }
+        url = decodedUrl
+        
+        let artworkURLString = try container.decodeIfPresent(String.self, forKey: .artworkURL)
+        artworkURL = artworkURLString.flatMap { URL(string: $0) }
+        
+        duration = try container.decodeIfPresent(Double.self, forKey: .duration)
+        showNotes = try container.decodeIfPresent(String.self, forKey: .showNotes)
+        feedUrl = try container.decodeIfPresent(String.self, forKey: .feedUrl)
+        podcastName = try container.decodeIfPresent(String.self, forKey: .podcastName)
     }
     
     static func == (lhs: PodcastEpisode, rhs: PodcastEpisode) -> Bool {

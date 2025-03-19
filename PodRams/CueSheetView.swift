@@ -79,11 +79,13 @@ struct CueSheetView: View {
                                 NSCursor.pop()
                             }
                         }
+                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
                         .listRowBackground(Color.clear) // Clear background for each row
                 }
             }
             .listStyle(PlainListStyle()) // Use plain style to minimize default styling
             .background(Color.clear) // Clear background for the list
+            .padding(.vertical, 4)
             
             // Display the total play time of all episodes in the cue.
             Text("Total Play Time: \(formatTotalTime(totalDuration()))")
@@ -92,16 +94,33 @@ struct CueSheetView: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(
-                    // Only show the clear button if the cue is not empty
+                    // Only show the buttons if the cue is not empty
                     !cue.isEmpty ? 
-                    Button(action: {
-                        clearCue()
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .opacity(0.7)
+                    HStack {
+                        // Download All button
+                        Button(action: {
+                            downloadAllEpisodes()
+                        }) {
+                            Image(systemName: "square.and.arrow.down.on.square")
+                                .foregroundColor(.blue)
+                                .opacity(0.7)
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                        .help("Download all episodes in the cue")
+                        
+                        Spacer().frame(width: 10)
+                        
+                        // Clear button
+                        Button(action: {
+                            clearCue()
+                        }) {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                                .opacity(0.7)
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                        .help("Clear all episodes from the cue")
                     }
-                    .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 20)
                     : nil,
                     alignment: .trailing
@@ -257,6 +276,42 @@ struct CueSheetView: View {
             NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
         }
     }
+    
+    /// Downloads all episodes in the cue
+    private func downloadAllEpisodes() {
+        print("CueSheetView: Starting download of all episodes in cue")
+        
+        // Create a counter for successful downloads
+        var successCount = 0
+        
+        // Create a task group to handle downloads
+        Task {
+            for episode in cue {
+                // Check if the episode is already downloaded
+                let currentState = DownloadManager.shared.downloadState(for: episode)
+                
+                if case .downloaded = currentState {
+                    print("CueSheetView: Episode already downloaded: \(episode.title)")
+                    successCount += 1
+                    continue
+                }
+                
+                if case .downloading = currentState {
+                    print("CueSheetView: Episode already downloading: \(episode.title)")
+                    continue
+                }
+                
+                // Start the download
+                print("CueSheetView: Starting download for episode: \(episode.title)")
+                DownloadManager.shared.downloadEpisode(episode)
+            }
+            
+            // Post a notification that downloads have been initiated
+            await MainActor.run {
+                NotificationCenter.default.post(name: Notification.Name("DownloadsInitiated"), object: nil)
+            }
+        }
+    }
 }
 
 /// A view representing a single row in the cue list, showing the episode title and podcast name if available.
@@ -265,41 +320,136 @@ struct CueRowView: View {
     let episode: PodcastEpisode
     /// Binding to the cue array to enable removal of episodes.
     @Binding var cue: [PodcastEpisode]
+    @ObservedObject private var downloadManager = DownloadManager.shared
+    
+    /// Gets the current download state for this episode
+    private var downloadState: DownloadManager.DownloadState {
+        return downloadManager.downloadStates[episode.url.absoluteString] ?? DownloadManager.DownloadState.none
+    }
+    
+    /// Gets the podcast artwork URL, falling back to the episode artwork if needed
+    private var podcastArtworkURL: URL? {
+        if let feedUrl = episode.feedUrl,
+           let podcast = PersistenceManager.loadPodcast(feedUrl: feedUrl),
+           let artworkURL = podcast.feedArtworkURL {
+            return artworkURL
+        }
+        return episode.artworkURL
+    }
     
     var body: some View {
-        HStack {
-            // If the episode has an associated podcast name, display it alongside the episode title.
-            if let podcastName = episode.podcastName {
-                Text("\(podcastName) – \(episode.title)")
-                    .foregroundColor(.white)
-            } else {
+        HStack(spacing: 8) {
+            // Podcast artwork
+            CachedAsyncImage(
+                url: podcastArtworkURL,
+                width: 40,
+                height: 40
+            )
+            .cornerRadius(4)
+            
+            // Episode title and podcast name
+            VStack(alignment: .leading, spacing: 2) {
                 Text(episode.title)
-                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .font(.body)
+                
+                if let podcastName = episode.podcastName {
+                    Text(podcastName)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                
+                // Show duration if available
+                if let duration = episode.duration {
+                    Text(formatDuration(duration))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
             }
             
             Spacer()
             
-            // Add trashcan button to remove the episode from the cue
-            Button(action: {
-                if let index = cue.firstIndex(of: episode) {
-                    // Create a new array to avoid direct binding modification
-                    var updatedCue = cue
-                    updatedCue.remove(at: index)
-                    cue = updatedCue
+            // Show download progress indicator or ellipsis menu
+            if case .downloading(let progress) = downloadState {
+                // Show download progress indicator when downloading
+                DeterminateLoadingIndicator(progress: progress)
+                    .frame(width: 20, height: 20)
+            } else {
+                // Show ellipsis menu
+                Menu {
+                    // Remove from cue option
+                    Button(action: {
+                        if let idx = cue.firstIndex(where: { $0.url.absoluteString == episode.url.absoluteString }) {
+                            cue.remove(at: idx)
+                            PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                        }
+                    }) {
+                        Label("Remove from cue", systemImage: "minus.circle")
+                    }
                     
-                    // Save the updated cue to persistence
-                    PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
-                    NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+                    // Download options based on download state
+                    switch downloadState {
+                    case .none:
+                        Button(action: {
+                            print("CueRowView: Starting download for \(episode.title)")
+                            downloadManager.downloadEpisode(episode)
+                        }) {
+                            Label("Download", systemImage: "arrow.down.circle")
+                        }
+                    case .downloaded:
+                        Button(action: {
+                            print("CueRowView: Removing download for \(episode.title)")
+                            downloadManager.removeDownload(for: episode)
+                        }) {
+                            Label("Delete download", systemImage: "trash")
+                        }
+                    case .failed:
+                        Button(action: {
+                            print("CueRowView: Retrying download for \(episode.title)")
+                            downloadManager.downloadEpisode(episode)
+                        }) {
+                            Label("Retry download", systemImage: "arrow.clockwise")
+                        }
+                    case .downloading:
+                        // No action for downloading state
+                        EmptyView()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                        .frame(width: 20, height: 20)
                 }
-            }) {
-                Image(systemName: "trash")
-                    .foregroundColor(.gray)
+                .menuStyle(BorderlessButtonMenuStyle())
+                .menuIndicator(.hidden) // Hide the menu indicator arrow
             }
-            .buttonStyle(BorderlessButtonStyle())
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.clear) // Ensure no background color
+        .padding(.vertical, 4)
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("DownloadCompleted"))) { notification in
+            if let episodeUrl = notification.userInfo?["episodeUrl"] as? String,
+               episodeUrl == episode.url.absoluteString {
+                print("CueRowView: Received download completed notification for \(episode.title)")
+            }
+        }
+    }
+    
+    /// Formats a duration in seconds to a human-readable string
+    private func formatDuration(_ seconds: Double) -> String {
+        guard seconds > 0, seconds.isFinite else {
+            return "00:00"
+        }
+        
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let remainingSeconds = totalSeconds % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, remainingSeconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, remainingSeconds)
+        }
     }
 }
 

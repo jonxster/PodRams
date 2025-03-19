@@ -38,21 +38,22 @@ struct ContentView: View {
     
     /// Computes the list of episodes to display.
     /// If the cue is playing, returns the cue episodes; otherwise, returns episodes from the selected podcast.
-    var activeEpisodes: [PodcastEpisode] {
+    private var activeEpisodes: [PodcastEpisode] {
         if isCuePlaying {
-            // Create a new array instead of modifying the original cue
-            return cue.map { episode in
-                if episode.podcastName == nil {
-                    var updatedEpisode = episode
-                    updatedEpisode.podcastName = selectedPodcast?.title ?? "Unknown Podcast"
-                    return updatedEpisode
-                }
-                return episode
-            }
-        } else if let p = selectedPodcast {
-            return p.episodes
+            return cue
+        } else if let podcast = selectedPodcast {
+            return podcast.episodes
         }
         return []
+    }
+    
+    // Add a binding for episodes to keep them in sync with the app state
+    @Binding var appEpisodes: [PodcastEpisode]
+    @Binding var appCurrentEpisodeIndex: Int?
+    
+    init(appEpisodes: Binding<[PodcastEpisode]> = .constant([]), appCurrentEpisodeIndex: Binding<Int?> = .constant(nil)) {
+        _appEpisodes = appEpisodes
+        _appCurrentEpisodeIndex = appCurrentEpisodeIndex
     }
     
     /// Builds a view that displays the title of the currently playing podcast or episode.
@@ -294,6 +295,13 @@ struct ContentView: View {
                 selectedEpisodeIndex = cue.count - 1
             }
         }
+        // Keep app state in sync with ContentView state
+        .onChange(of: activeEpisodes) { newEpisodes in
+            appEpisodes = newEpisodes
+        }
+        .onChange(of: selectedEpisodeIndex) { newIndex in
+            appCurrentEpisodeIndex = newIndex
+        }
     }
     
     /// Defines the toolbar items including buttons for audio output, subscription, settings, favorites, cue, and search.
@@ -421,27 +429,23 @@ struct ContentView: View {
                 continue
             }
             
-            do {
-                // Fetch episodes for this podcast
-                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
-                
-                // Update the podcast with the fetched episodes
-                await MainActor.run {
-                    podcast.episodes = episodes
-                    if let feedArt = feedArt {
-                        podcast.feedArtworkURL = feedArt
-                    }
+            // Fetch episodes for this podcast
+            let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+            
+            // Update the podcast with the fetched episodes
+            await MainActor.run {
+                podcast.episodes = episodes
+                if let feedArt = feedArt {
+                    podcast.feedArtworkURL = feedArt
                 }
-                
-                // Preload the first episode's audio to reduce playback startup time
-                if let firstEpisode = episodes.first {
-                    audioPlayer.preloadAudio(url: firstEpisode.url)
-                }
-                
-                print("Prefetched \(episodes.count) episodes for \(podcast.title)")
-            } catch {
-                print("Error prefetching episodes for \(podcast.title): \(error)")
             }
+            
+            // Preload the first episode's audio to reduce playback startup time
+            if let firstEpisode = episodes.first {
+                audioPlayer.preloadAudio(url: firstEpisode.url)
+            }
+            
+            print("Prefetched \(episodes.count) episodes for \(podcast.title)")
             
             // Add a small delay between fetches to avoid overwhelming the network
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
@@ -531,7 +535,7 @@ struct EpisodeRow: View {
     
     /// Gets the current download state for this episode
     private var downloadState: DownloadManager.DownloadState {
-        return downloadManager.downloadStates[episode.url.absoluteString] ?? .none
+        return downloadManager.downloadStates[episode.url.absoluteString] ?? DownloadManager.DownloadState.none
     }
     
     var body: some View {

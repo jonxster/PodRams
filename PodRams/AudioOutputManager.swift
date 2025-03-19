@@ -74,9 +74,23 @@ final class AudioOutputManager: ObservableObject {
     
     // Initializes the manager by setting up throttling, performing an initial update, and registering the property listener.
     init() {
+        // Initialize properties first
+        propertyListenerAdded = false
+        lastUpdateTime = .distantPast
+        deviceCache = DeviceInfoCache()
+        
+        // Setup throttling
         setupThrottling()
-        updateOutput()
-        addPropertyListener()
+        
+        // Perform initial update safely
+        DispatchQueue.main.async { [weak self] in
+            self?.updateOutput()
+        }
+        
+        // Add property listener on a background queue to avoid blocking main thread during initialization
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.addPropertyListener()
+        }
     }
     
     // Cleans up resources by removing the property listener and cancelling subscriptions.
