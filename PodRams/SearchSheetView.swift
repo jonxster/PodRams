@@ -43,44 +43,46 @@ struct SearchSheetView: View {
                     .foregroundColor(.gray)
                     .padding()
             } else {
-                List(podcastFetcher.podcasts) { podcast in
-                    HStack(spacing: 8) {
-                        CachedAsyncImage(
-                            url: podcast.feedArtworkURL,
-                            width: 40,
-                            height: 40
-                        )
-                        .cornerRadius(4)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(podcastFetcher.podcasts) { podcast in
+                            HStack(spacing: 8) {
+                                CachedAsyncImage(
+                                    url: podcast.feedArtworkURL,
+                                    width: 40,
+                                    height: 40
+                                )
+                                .cornerRadius(4)
 
-                        Text(podcast.title)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Image(systemName: isFavorite(podcast) ? "star.fill" : "star")
-                            .foregroundColor(.yellow)
-                            .onTapGesture {
-                                toggleFavorite(podcast)
-                            }
-                        
-                        // Only show subscription button if not already subscribed
-                        if !isSubscribed(podcast) {
-                            Image(systemName: "rectangle.and.paperclip")
-                                .foregroundColor(.blue)
-                                .onTapGesture {
-                                    toggleSubscription(podcast)
+                                Text(podcast.title)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Image(systemName: isFavorite(podcast) ? "star.fill" : "star")
+                                    .foregroundColor(.yellow)
+                                    .onTapGesture {
+                                        toggleFavorite(podcast)
+                                    }
+
+                                if !isSubscribed(podcast) {
+                                    Image(systemName: "rectangle.and.paperclip")
+                                        .foregroundColor(.blue)
+                                        .onTapGesture {
+                                            toggleSubscription(podcast)
+                                        }
+                                } else {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
                                 }
-                        } else {
-                            // Show a checkmark or other indicator that it's already subscribed
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectPodcast(podcast)
+                            }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectPodcast(podcast)
-                    }
-                    .padding(.vertical, 4)
+                    .padding(.horizontal)
                 }
-                .listStyle(PlainListStyle())
             }
 
             Spacer()
