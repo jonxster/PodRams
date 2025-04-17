@@ -33,3 +33,21 @@
 "Download" = "Ladda ner";
 "Delete download" = "Ta bort nedladdning";
 "Retry download" = "Ladda ner igen";
+/* Help menu translations */
+"Getting Started" = "Komma igång";
+"Playback Controls" = "Uppspelningskontroller";
+"Episode Management" = "Avsnittshantering";
+"Podcast Management" = "Podcasthantering";
+"Keyboard Shortcuts" = "Kortkommandon";
+"About PodRams" = "Om PodRams";
+/* Play menu translations */
+"Play" = "Spela";
+"Pause" = "Pausa";
+"Stop" = "Stoppa";
+"Previous Episode" = "Föregående avsnitt";
+"Next Episode" = "Nästa avsnitt";
+"Skip Backward 30 Seconds" = "Hoppa bakåt 30 sekunder";
+"Skip Forward 30 Seconds" = "Hoppa framåt 30 sekunder";
+"Volume Up" = "Höj volym";
+"Volume Down" = "Sänk volym";
+"Mute/Unmute" = "Ljud av/på";

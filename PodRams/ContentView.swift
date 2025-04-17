@@ -75,7 +75,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         .background(Color.clear)
-                    } else {
+        } else {
                         // Display the selected podcast title.
                         Text(selectedPodcast?.title ?? "Unknown Podcast")
                             .font(.headline)
@@ -96,8 +96,8 @@ struct ContentView: View {
                 // Main content - only show when fully initialized
                 VStack(spacing: 8) {
                     // Player controls view.
-                    PlayerView(
-                        audioPlayer: audioPlayer,
+            PlayerView(
+                audioPlayer: audioPlayer, 
                         episodes: activeEpisodes,
                         currentEpisodeIndex: $selectedEpisodeIndex,
                         feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
@@ -387,7 +387,7 @@ struct ContentView: View {
         selectedEpisodeIndex = nil
         
         // Fetch episodes for the selected podcast
-        Task {
+            Task {
             let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
             
             await MainActor.run {

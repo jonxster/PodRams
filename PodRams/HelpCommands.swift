@@ -3,7 +3,8 @@ import SwiftUI
 /// Provides help documentation accessible via the app's menu.
 struct HelpCommands: Commands {
     var body: some Commands {
-        CommandMenu("Help") {
+        // Replace the default Help menu with our custom help items
+        CommandGroup(replacing: .help) {
             // Getting Started section
             Button("Getting Started") {
                 showHelp(section: .gettingStarted)

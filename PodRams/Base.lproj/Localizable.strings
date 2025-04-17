@@ -1,3 +1,22 @@
 /* Localizable strings for Base (English) */
 "No available output devices" = "No available output devices";
 "Switch to:" = "Switch to:";
+/* Help menu translations */
+"Getting Started" = "Getting Started";
+"Playback Controls" = "Playback Controls";
+"Episode Management" = "Episode Management";
+"Podcast Management" = "Podcast Management";
+"Keyboard Shortcuts" = "Keyboard Shortcuts";
+"About PodRams" = "About PodRams";
+
+/* Play menu translations */
+"Play" = "Play";
+"Pause" = "Pause";
+"Stop" = "Stop";
+"Previous Episode" = "Previous Episode";
+"Next Episode" = "Next Episode";
+"Skip Backward 30 Seconds" = "Skip Backward 30 Seconds";
+"Skip Forward 30 Seconds" = "Skip Forward 30 Seconds";
+"Volume Up" = "Volume Up";
+"Volume Down" = "Volume Down";
+"Mute/Unmute" = "Mute/Unmute";
