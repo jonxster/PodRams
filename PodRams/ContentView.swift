@@ -311,6 +311,7 @@ struct ContentView: View {
             Button(action: { isAudioOutputSelectionVisible.toggle() }) {
                 Image(systemName: AudioOutputManager.shared.currentRouteIcon)
             }
+            .accessibilityIdentifier("AudioOutputButton")
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
             }

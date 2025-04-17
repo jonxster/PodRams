@@ -81,6 +81,7 @@ struct AudioOutputSelectionView: View {
                                 .padding(.horizontal)
                                 .padding(.vertical, 8)
                             }
+                            .accessibilityIdentifier("AudioOutput_SelectedDeviceRow")
                             .buttonStyle(PlainButtonStyle())
                         }
 
@@ -91,8 +92,9 @@ struct AudioOutputSelectionView: View {
                                 .foregroundColor(.secondary)
                                 .padding(.horizontal)
                                 .padding(.top, 12)
+                                .accessibilityIdentifier("AudioOutput_SwitchToHeader")
 
-                            ForEach(devices.filter { $0.id != selectedDeviceID }) { device in
+                            ForEach(Array(devices.filter { $0.id != selectedDeviceID }.enumerated()), id: \.element.id) { index, device in
                                 Button(action: {
                                     selectedDeviceID = device.id
                                     AudioOutputManager.shared.setOutputDevice(deviceID: device.id)
@@ -107,6 +109,7 @@ struct AudioOutputSelectionView: View {
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
                                 }
+                                .accessibilityIdentifier("AudioOutput_DeviceRow_\(index)")
                                 .buttonStyle(PlainButtonStyle())
                             }
                         }
@@ -114,6 +117,7 @@ struct AudioOutputSelectionView: View {
                 }
             }
         }
+        .accessibilityIdentifier("AudioOutputSelectionView")
         // On view appearance, populate the list of devices.
         .onAppear {
             devices = getOutputDevices()
