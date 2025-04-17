@@ -8,6 +8,8 @@ import Foundation
 import Combine
 import AVFoundation
 import Accelerate // Added for optimized audio processing
+import AudioToolbox
+import CoreMedia
 
 /// Manages audio playback using AVPlayer and AVAudioEngine.
 /// Publishes playback state and allows control over play, pause, stop, seek, volume, and pan.
@@ -40,6 +42,8 @@ class AudioPlayer: ObservableObject {
     
     /// AVPlayer used for audio playback.
     private var player: AVPlayer?
+    /// Tap for streaming audio pan adjustments
+    private var panTap: Unmanaged<MTAudioProcessingTap>?
     /// Token for the AVPlayer's time observer.
     private var timeObserverToken: Any?
     /// Observes changes in the player's status, especially for duration.
@@ -110,6 +114,76 @@ class AudioPlayer: ObservableObject {
                                                name: .audioPanChanged,
                                                object: nil)
     }
+    
+    // MARK: - Pan AudioProcessingTap
+    /// Creates an MTAudioProcessingTap that applies the current pan to stereo audio frames.
+    private func createPanTap() -> Unmanaged<MTAudioProcessingTap>? {
+        // Define callbacks
+        let initCb: MTAudioProcessingTapInitCallback = { (tap, clientInfo, tapStorageOut) in
+            guard let ci = clientInfo else { return }
+            let player = Unmanaged<AudioPlayer>.fromOpaque(ci).takeUnretainedValue()
+            let storage = UnsafeMutablePointer<Float>.allocate(capacity: 1)
+            storage.initialize(to: Float(player.pan))
+            tapStorageOut.pointee = UnsafeMutableRawPointer(storage)
+        }
+        let finalizeCb: MTAudioProcessingTapFinalizeCallback = { tap in
+            let storageRaw = MTAudioProcessingTapGetStorage(tap)
+            storageRaw.assumingMemoryBound(to: Float.self).deallocate()
+        }
+        let prepareCb: MTAudioProcessingTapPrepareCallback = { _, _, _ in }
+        let unprepareCb: MTAudioProcessingTapUnprepareCallback = { _ in }
+        let processCb: MTAudioProcessingTapProcessCallback = { (tap, numberFrames, flags, bufferListInOut, numberFramesOut, flagsOut) in
+            // Fetch source audio
+            MTAudioProcessingTapGetSourceAudio(tap,
+                                                numberFrames,
+                                                bufferListInOut,
+                                                flagsOut,
+                                                nil,
+                                                numberFramesOut)
+            // Apply pan
+            let storageRaw = MTAudioProcessingTapGetStorage(tap)
+            let panVal: Float = storageRaw.assumingMemoryBound(to: Float.self).pointee
+            let leftGain = 1.0 - panVal
+            let rightGain = panVal
+            let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
+            for (i, buf) in abl.enumerated() {
+                let chans = Int(buf.mNumberChannels)
+                let data = buf.mData!.assumingMemoryBound(to: Float.self)
+                let frames = Int(numberFrames)
+                if chans == 2 {
+                    for f in 0..<frames {
+                        let idx = f * 2
+                        data[idx] *= leftGain
+                        data[idx+1] *= rightGain
+                    }
+                } else {
+                    let gain = (i == 0 ? leftGain : rightGain)
+                    for f in 0..<frames {
+                        data[f] *= gain
+                    }
+                }
+            }
+        }
+        var callbacks = MTAudioProcessingTapCallbacks(version: kMTAudioProcessingTapCallbacksVersion_0,
+                                                     clientInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()),
+                                                     init: initCb,
+                                                     finalize: finalizeCb,
+                                                     prepare: prepareCb,
+                                                     unprepare: unprepareCb,
+                                                     process: processCb)
+        // Create tap
+        var tap: Unmanaged<MTAudioProcessingTap>?
+        let err = MTAudioProcessingTapCreate(kCFAllocatorDefault,
+                                              &callbacks,
+                                              kMTAudioProcessingTapCreationFlag_PostEffects,
+                                              &tap)
+        if err != noErr {
+            print("Failed to create pan tap: \(err)")
+        }
+        panTap = tap
+        return tap
+    }
+    
     
     /// Configures the audio engine by attaching and connecting the player node.
     /// Also starts the engine and applies initial volume and pan settings.
@@ -472,6 +546,13 @@ class AudioPlayer: ObservableObject {
             // Clamp pan to valid range
             let safePan = max(0, min(1, panValue))
             pan = safePan
+            // Update storage for existing audio tap so streaming pan updates live
+            if let tapUn = panTap {
+                let tapRef = tapUn.takeUnretainedValue()
+                let storageRaw = MTAudioProcessingTapGetStorage(tapRef)
+                storageRaw.assumingMemoryBound(to: Float.self).pointee = Float(safePan)
+            }
+            // Pan change will apply to audioEngine playerNode; AVPlayer streaming does not support pan
         }
     }
     
@@ -492,7 +573,21 @@ class AudioPlayer: ObservableObject {
     /// Updates the audio duration when the item is ready to play.
     /// - Parameter playerItem: The AVPlayerItem to observe.
     private func setupPlayerItem(_ playerItem: AVPlayerItem) {
-        // Use a more efficient observation approach
+        // Note: panning via AVPlayerItem.audioMix is not supported; audioEngine pan applies only to local playback
+        // Install audio tap for pan control on streaming
+        let mix = AVMutableAudioMix()
+        var paramsList: [AVAudioMixInputParameters] = []
+        for track in playerItem.asset.tracks(withMediaType: .audio) {
+            let params = AVMutableAudioMixInputParameters(track: track)
+            if let tapUnmanaged = createPanTap() {
+                let tapRef = tapUnmanaged.takeUnretainedValue()
+                params.audioTapProcessor = tapRef
+            }
+            paramsList.append(params)
+        }
+        mix.inputParameters = paramsList
+        playerItem.audioMix = mix
+        // Observe status for updating duration
         durationObserver = playerItem.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard let self = self, item.status == .readyToPlay else { return }
             
