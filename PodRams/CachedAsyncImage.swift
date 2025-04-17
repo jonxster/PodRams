@@ -18,6 +18,8 @@ public struct CachedAsyncImage: View {
     /// Desired height of the displayed image.
     let height: CGFloat
 
+    /// In-memory cache for loaded images to avoid repeated disk I/O.
+    private static let imageCache = NSCache<NSURL, NSImage>()
     /// The loaded image (if available) represented as an NSImage.
     @State private var loadedImage: NSImage?
     /// Tracks whether an image load operation is currently in progress.
@@ -54,7 +56,8 @@ public struct CachedAsyncImage: View {
                             .frame(width: width/4, height: height/4)
                         : nil)
                     // Start loading the image when the view appears.
-                    .onAppear { loadImage() }
+                // Start loading the image when the view appears
+                .onAppear(perform: loadImage)
             }
         }
     }
@@ -66,24 +69,40 @@ public struct CachedAsyncImage: View {
         guard let url = url, !isLoading else { return }
         isLoading = true
 
-        // Attempt to retrieve the image from the cache.
-        if let cached = loadCachedImage(for: url) {
-            loadedImage = cached
+        // Check in-memory cache first.
+        if let memImage = Self.imageCache.object(forKey: url as NSURL) {
+            loadedImage = memImage
             isLoading = false
             return
         }
 
-        // If not cached, download the image using URLSession.
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            // Ensure UI updates are executed on the main thread.
-            DispatchQueue.main.async { self.isLoading = false }
-            // Validate that data exists and can be converted into an NSImage.
-            guard let data = data, let image = NSImage(data: data) else { return }
-            // Cache the downloaded image data for future use.
-            storeImage(data: data, for: url)
-            // Update the loaded image on the main thread.
-            DispatchQueue.main.async { self.loadedImage = image }
-        }.resume()
+        // Perform disk or network loading on a background queue to avoid blocking the UI.
+        let fileURL = cachedFileURL(for: url)
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Attempt to load from disk cache.
+            if let data = try? Data(contentsOf: fileURL), let image = NSImage(data: data) {
+                Self.imageCache.setObject(image, forKey: url as NSURL)
+                DispatchQueue.main.async {
+                    self.loadedImage = image
+                    self.isLoading = false
+                }
+                return
+            }
+            // Otherwise, download the image.
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                guard let data = data, let image = NSImage(data: data) else {
+                    DispatchQueue.main.async { self.isLoading = false }
+                    return
+                }
+                // Store in both disk and in-memory caches.
+                storeImage(data: data, for: url)
+                Self.imageCache.setObject(image, forKey: url as NSURL)
+                DispatchQueue.main.async {
+                    self.loadedImage = image
+                    self.isLoading = false
+                }
+            }.resume()
+        }
     }
 
     /// Generates a unique cache file name by computing a SHA256 hash of the URL's absolute string.

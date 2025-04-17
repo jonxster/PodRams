@@ -70,19 +70,14 @@ struct PersistenceManager {
         await withCheckedContinuation { continuation in
             queue.async {
                 let url = fileURL(for: key)
-                guard fileManager.fileExists(atPath: url.path) else {
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: nil)
-                    }
-                    return
-                }
                 do {
                     let data = try Data(contentsOf: url)
-                    let result = try decoder.decode(T.self, from: data)
+                    let result = try JSONDecoder().decode(T.self, from: data)
                     DispatchQueue.main.async {
                         continuation.resume(returning: result)
                     }
                 } catch {
+                    // File missing or decoding error
                     print("Error loading \(key.rawValue): \(error)")
                     DispatchQueue.main.async {
                         continuation.resume(returning: nil)
@@ -350,9 +345,11 @@ struct PersistenceManager {
         cueCache = nil
     }
     
+    /// Clears all persisted data, synchronously removing files and resetting caches.
     static func clearAll() {
         let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback, .subscriptions, .downloads]
-        queue.async {
+        // Perform removal synchronously to ensure files are deleted before returning
+        queue.sync {
             for key in keys {
                 try? fileManager.removeItem(at: fileURL(for: key))
             }

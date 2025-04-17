@@ -13,32 +13,103 @@ struct AudioOutputDevice: Identifiable {
     let name: String
 }
 
+// MARK: - Helpers
+extension AudioOutputSelectionView {
+    /// Returns the current default output device ID.
+    func getDefaultOutputDeviceID() -> AudioDeviceID? {
+        let systemObjectID = AudioObjectID(kAudioObjectSystemObject)
+        var defaultID = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        let status = AudioObjectGetPropertyData(systemObjectID, &address, 0, nil, &size, &defaultID)
+        return (status == noErr && defaultID != 0) ? defaultID : nil
+    }
+
+    /// Returns a SF Symbol name representing the transport type of the device.
+    func iconNameForDevice(_ id: AudioDeviceID) -> String {
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        let status = AudioObjectGetPropertyData(id, &address, 0, nil, &size, &transport)
+        let iconMap: [UInt32: String] = [
+            kAudioDeviceTransportTypeBluetooth: "headphones",
+            kAudioDeviceTransportTypeBuiltIn: "speaker.fill",
+            kAudioDeviceTransportTypeAirPlay: "airplayaudio"
+        ]
+        return (status == noErr ? iconMap[transport] : nil) ?? "speaker"
+    }
+}
+
 /// A SwiftUI view that displays available audio output devices and lets the user select one.
 struct AudioOutputSelectionView: View {
     /// Environment property to dismiss the current view.
     @Environment(\.dismiss) var dismiss
     /// Local state holding the list of discovered audio output devices.
     @State private var devices: [AudioOutputDevice] = []
+    @State private var selectedDeviceID: AudioDeviceID? = nil
     
     var body: some View {
-        VStack {
-            // Header text for the selection view.
-            Text("Select Audio Output")
-                .font(.headline)
-                .padding()
-            
-            // Display a message if no devices are available, otherwise list the devices.
+        VStack(alignment: .leading, spacing: 0) {
             if devices.isEmpty {
                 Text("No available output devices")
                     .padding()
             } else {
-                List(devices) { device in
-                    // Each device is rendered as a button. Tapping the button sets the device as default and dismisses the view.
-                    Button(action: {
-                        AudioOutputManager.shared.setOutputDevice(deviceID: device.id)
-                        dismiss()
-                    }) {
-                        Text(device.name)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        // Selected device first
+                        if let selID = selectedDeviceID,
+                           let selDevice = devices.first(where: { $0.id == selID }) {
+                            Button(action: {
+                                selectedDeviceID = selDevice.id
+                                AudioOutputManager.shared.setOutputDevice(deviceID: selDevice.id)
+                                dismiss()
+                            }) {
+                                HStack {
+                                    Image(systemName: iconNameForDevice(selDevice.id))
+                                        .frame(width: 24, height: 24)
+                                    Text(selDevice.name)
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.accentColor)
+                                }
+                                .padding(.horizontal)
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+
+                        // Other devices header and list
+                        if devices.count > 1 {
+                            Text("Switch to:")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal)
+                                .padding(.top, 12)
+
+                            ForEach(devices.filter { $0.id != selectedDeviceID }) { device in
+                                Button(action: {
+                                    selectedDeviceID = device.id
+                                    AudioOutputManager.shared.setOutputDevice(deviceID: device.id)
+                                    dismiss()
+                                }) {
+                                    HStack {
+                                        Image(systemName: iconNameForDevice(device.id))
+                                            .frame(width: 24, height: 24)
+                                        Text(device.name)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
                     }
                 }
             }
@@ -46,6 +117,8 @@ struct AudioOutputSelectionView: View {
         // On view appearance, populate the list of devices.
         .onAppear {
             devices = getOutputDevices()
+            // Load current default output
+            selectedDeviceID = getDefaultOutputDeviceID()
         }
         .frame(minWidth: 300, minHeight: 400)
     }
@@ -104,27 +177,15 @@ struct AudioOutputSelectionView: View {
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: 0)
         
-        // Iterate over each device to determine if it supports output.
+        // List all audio devices by name; system will handle valid output targets
         for id in deviceIDs {
-            if AudioObjectHasProperty(id, &outputAddress) {
-                var streamSize: UInt32 = 0
-                let status3 = AudioObjectGetPropertyDataSize(id, &outputAddress, 0, nil, &streamSize)
-                if status3 == noErr, streamSize > 0 {
-                    // Ensure the device has at least one valid output stream.
-                    let streamCount = streamSize / UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-                    if streamCount > 0 {
-                        var nameSize = UInt32(MemoryLayout<CFString?>.size)
-                        var nameAddress = AudioObjectPropertyAddress(
-                            mSelector: kAudioObjectPropertyName,
-                            mScope: kAudioObjectPropertyScopeGlobal,
-                            mElement: kAudioObjectPropertyElementMain)
-                        // Retrieve the device's name.
-                        if let deviceName = getDeviceName(for: id, address: &nameAddress, size: &nameSize) {
-                            let name = deviceName as String
-                            outputDevices.append(AudioOutputDevice(id: id, name: name))
-                        }
-                    }
-                }
+            var nameSize = UInt32(MemoryLayout<CFString?>.size)
+            var nameAddress = AudioObjectPropertyAddress(
+                mSelector: kAudioObjectPropertyName,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain)
+            if let deviceName = getDeviceName(for: id, address: &nameAddress, size: &nameSize) {
+                outputDevices.append(AudioOutputDevice(id: id, name: deviceName as String))
             }
         }
         
@@ -149,6 +210,21 @@ struct AudioOutputSelectionView: View {
                 }
             }
         }
-        return outputDevices
+        // Deduplicate devices by name, preferring the current default output device.
+        var finalDevices: [AudioOutputDevice] = []
+        var seenNames = Set<String>()
+        // Ensure the default device appears first
+        if let defaultID = getDefaultOutputDeviceID(), let defaultDevice = outputDevices.first(where: { $0.id == defaultID }) {
+            finalDevices.append(defaultDevice)
+            seenNames.insert(defaultDevice.name)
+        }
+        // Append remaining devices, skipping duplicates by name
+        for device in outputDevices {
+            if !seenNames.contains(device.name) {
+                finalDevices.append(device)
+                seenNames.insert(device.name)
+            }
+        }
+        return finalDevices
     }
 }

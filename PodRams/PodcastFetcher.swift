@@ -230,12 +230,10 @@ class RSSParser: NSObject, XMLParserDelegate {
             currentTitle += string
         }
         if insideItem && currentElement == "itunes:duration" {
-            print("Found duration element: '\(trimmed)'")
             if trimmed.isEmpty {
                 currentDuration = 0.0
             } else {
                 currentDuration = parseDuration(trimmed)
-                print("Parsed duration: \(currentDuration ?? 0.0) seconds")
             }
         }
         if insideImage && currentElement == "url" {
@@ -252,7 +250,7 @@ class RSSParser: NSObject, XMLParserDelegate {
                 didEndElement elementName: String,
                 namespaceURI: String?,
                 qualifiedName qName: String?) {
-        print("End element: \(elementName), currentElement was: \(currentElement)")
+        // Removed debug logging for XML parsing performance.
         
         // Reset currentElement when we're done with it
         if currentElement == elementName {
@@ -291,7 +289,6 @@ class RSSParser: NSObject, XMLParserDelegate {
                                 // Update the episode in the array directly
                                 if episodeIndex < self.episodes.count {
                                     self.episodes[episodeIndex].duration = duration
-                                    print("Updated duration for \(ep.title): \(duration) seconds")
                                 }
                             }
                         } catch {
@@ -300,7 +297,7 @@ class RSSParser: NSObject, XMLParserDelegate {
                     }
                 }
                 
-                print("Created episode: \(ep.title), duration: \(ep.duration ?? 0.0) seconds")
+                // Episode created.
             }
             insideItem = false
         }
