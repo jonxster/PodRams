@@ -43,7 +43,8 @@ class AudioPlayer: ObservableObject {
     /// AVPlayer used for audio playback.
     private var player: AVPlayer?
     /// Tap for streaming audio pan adjustments
-    private var panTap: Unmanaged<MTAudioProcessingTap>?
+    /// Stored as a CF tap reference; ownership is managed by the audio mix property.
+    private var panTap: MTAudioProcessingTap?
     /// Token for the AVPlayer's time observer.
     private var timeObserverToken: Any?
     /// Observes changes in the player's status, especially for duration.
@@ -117,7 +118,8 @@ class AudioPlayer: ObservableObject {
     
     // MARK: - Pan AudioProcessingTap
     /// Creates an MTAudioProcessingTap that applies the current pan to stereo audio frames.
-    private func createPanTap() -> Unmanaged<MTAudioProcessingTap>? {
+    /// Returns a tap reference managed via the audio mix. The initial retained reference is consumed.
+    private func createPanTap() -> MTAudioProcessingTap? {
         // Define callbacks
         let initCb: MTAudioProcessingTapInitCallback = { (tap, clientInfo, tapStorageOut) in
             guard let ci = clientInfo else { return }
@@ -172,16 +174,19 @@ class AudioPlayer: ObservableObject {
                                                      unprepare: unprepareCb,
                                                      process: processCb)
         // Create tap
-        var tap: Unmanaged<MTAudioProcessingTap>?
+        var unmanagedTap: Unmanaged<MTAudioProcessingTap>?
         let err = MTAudioProcessingTapCreate(kCFAllocatorDefault,
                                               &callbacks,
                                               kMTAudioProcessingTapCreationFlag_PostEffects,
-                                              &tap)
-        if err != noErr {
+                                              &unmanagedTap)
+        guard err == noErr, let uTap = unmanagedTap else {
             print("Failed to create pan tap: \(err)")
+            return nil
         }
-        panTap = tap
-        return tap
+        // Consume the initial retain, audio mix will hold its own reference
+        let tapRef = uTap.takeRetainedValue()
+        panTap = tapRef
+        return tapRef
     }
     
     
@@ -531,6 +536,12 @@ class AudioPlayer: ObservableObject {
         }
         durationObserver?.invalidate()
         durationObserver = nil
+        // Remove the audio mix from the current item to tear down taps and release MediaToolbox resources
+        if let item = player?.currentItem {
+            item.audioMix = nil
+            // Remove reference to the item so it can deallocate
+            player?.replaceCurrentItem(with: nil)
+        }
     }
     
     /// Handles external notifications to update the pan setting.
@@ -547,8 +558,8 @@ class AudioPlayer: ObservableObject {
             let safePan = max(0, min(1, panValue))
             pan = safePan
             // Update storage for existing audio tap so streaming pan updates live
-            if let tapUn = panTap {
-                let tapRef = tapUn.takeUnretainedValue()
+            if let tapRef = panTap {
+                // Update storage for existing audio tap so streaming pan updates live
                 let storageRaw = MTAudioProcessingTapGetStorage(tapRef)
                 storageRaw.assumingMemoryBound(to: Float.self).pointee = Float(safePan)
             }
@@ -579,8 +590,8 @@ class AudioPlayer: ObservableObject {
         var paramsList: [AVAudioMixInputParameters] = []
         for track in playerItem.asset.tracks(withMediaType: .audio) {
             let params = AVMutableAudioMixInputParameters(track: track)
-            if let tapUnmanaged = createPanTap() {
-                let tapRef = tapUnmanaged.takeUnretainedValue()
+            // Install a tap for pan control on the audio track
+            if let tapRef = createPanTap() {
                 params.audioTapProcessor = tapRef
             }
             paramsList.append(params)

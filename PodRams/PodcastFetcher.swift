@@ -278,24 +278,6 @@ class RSSParser: NSObject, XMLParserDelegate {
                 // Add the episode to our array
                 episodes.append(ep)
                 
-                // If we need to fetch the duration, do it in the background
-                if needsDurationFetch {
-                    // Store the index of this episode for later updating
-                    let episodeIndex = episodes.count - 1
-                    
-                    Task {
-                        do {
-                            if let duration = try await fetchDurationFromAudio(url: audioURL) {
-                                // Update the episode in the array directly
-                                if episodeIndex < self.episodes.count {
-                                    self.episodes[episodeIndex].duration = duration
-                                }
-                            }
-                        } catch {
-                            print("Error fetching duration: \(error)")
-                        }
-                    }
-                }
                 
                 // Episode created.
             }
