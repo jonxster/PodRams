@@ -17,8 +17,20 @@ struct SettingsView: View {
             Text("Settings")
                 .font(.title)
             
-            Toggle("Skip silence in podcasts", isOn: $skipSilence)
-            Toggle("Reduce loud sounds", isOn: $reduceLoudSounds)
+            // Use HStack for custom layout with checkbox on the right
+            HStack {
+                Text("Skip silence in podcasts")
+                Spacer() // Pushes the toggle to the right
+                Toggle("", isOn: $skipSilence)
+                    .labelsHidden() // Hide the toggle's default label
+            }
+            
+            HStack {
+                Text("Reduce loud sounds")
+                Spacer()
+                Toggle("", isOn: $reduceLoudSounds)
+                    .labelsHidden()
+            }
             
             VStack(alignment: .leading) {
                 Text("Audio Balance")

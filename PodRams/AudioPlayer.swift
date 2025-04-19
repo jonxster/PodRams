@@ -13,6 +13,7 @@ import CoreMedia
 
 /// Manages audio playback using AVPlayer and AVAudioEngine.
 /// Publishes playback state and allows control over play, pause, stop, seek, volume, and pan.
+@MainActor // Ensure all methods and properties are accessed on the main actor
 class AudioPlayer: ObservableObject {
     /// Indicates whether audio is currently playing.
     @Published var isPlaying = false
@@ -84,6 +85,7 @@ class AudioPlayer: ObservableObject {
         var volume: Float = 1.0
         var isPlaying: Bool = false
         var rate: Float = 1.0
+        var isLoading: Bool = false
         
         // Less frequently accessed variables
         var url: URL?
@@ -252,13 +254,15 @@ class AudioPlayer: ObservableObject {
             return
         }
         
-        // If we're already playing this URL, just resume playback
+        // If we're already playing this URL, just resume playback if paused
         if currentURL == url && player != nil {
-            player?.play()
-            // Update state on main thread
-            DispatchQueue.main.async {
-                self.isPlaying = true
-                self.audioState.isPlaying = true
+            if !isPlaying {
+                player?.play()
+                playerNode.play()
+                DispatchQueue.main.async {
+                    self.isPlaying = true
+                    self.audioState.isPlaying = true
+                }
             }
             return
         }
@@ -267,102 +271,70 @@ class AudioPlayer: ObservableObject {
         stopAudio()
         cleanupObservers()
         
-        // Reset playback state
-        currentTime = 0
-        duration = 0
-        isLoading = true
-        currentURL = url
+        // Reset playback state immediately on main thread for responsiveness
+        DispatchQueue.main.async { 
+            self.currentTime = 0
+            self.duration = 0
+            self.isLoading = true // Indicate loading starts
+            self.isPlaying = false
+        }
+        
+        currentURL = url // Update current URL
         
         // Update cached state
         audioState.currentTime = 0
         audioState.duration = 0
         audioState.url = url
+        audioState.isPlaying = false
         
-        // Use a concurrent queue for loading audio to avoid blocking the main thread
-        audioProcessingQueue.async {
-            // For local files, consider memory mapping for large files
-            if url.isFileURL {
-                self.loadLocalAudioFile(url)
-            } else {
-                // Create a new player item on a background thread
-                let playerItem = AVPlayerItem(url: url)
+        // *** Start Asynchronous Preparation ***
+        Task(priority: .userInitiated) { 
+            do {
+                // Create player item and asset
+                let asset = AVURLAsset(url: url)
+                let playerItem = AVPlayerItem(asset: asset)
                 
-                // Switch back to main thread for UI updates
-                DispatchQueue.main.async {
-                    self.setupPlayerItem(playerItem)
-                    
-                    // Create a new player
+                // Load asset duration asynchronously
+                let loadedDuration = try await asset.load(.duration)
+                let durationSeconds = CMTimeGetSeconds(loadedDuration)
+                let safeDuration = (durationSeconds.isFinite && durationSeconds >= 0) ? durationSeconds : 0
+                
+                // Setup observers and audio mix for the item
+                await setupPlayerItemObservers(playerItem, duration: safeDuration)
+                
+                // Ensure player is created and configured on the main thread
+                await MainActor.run { 
+                    // Create a new player with the prepared item
                     self.player = AVPlayer(playerItem: playerItem)
-                    
-                    // Apply current volume and add time observer
-                    self.player?.volume = Float(self.volume)
-                    self.addPeriodicTimeObserver()
+                    self.player?.volume = Float(self.volume) // Apply current volume
+                    self.addPeriodicTimeObserver() // Add time observer
                     
                     // Start playback
                     self.player?.play()
+                    if self.engineConfigured { self.playerNode.play() }
                     
-                    // Update state
+                    // Update final state
                     self.isPlaying = true
+                    self.isLoading = false
+                    self.duration = safeDuration
+                    
+                    // Update cached state
                     self.audioState.isPlaying = true
+                    self.audioState.isLoading = false
+                    self.audioState.duration = safeDuration
+                }
+                
+            } catch {
+                // Handle errors during async loading
+                print("Error preparing audio item: \(error)")
+                await MainActor.run { 
+                    self.isLoading = false
+                    self.isPlaying = false
+                    // Potentially show an error state to the user
                 }
             }
         }
-    }
-    
-    /// Loads a local audio file with optimizations for Apple Silicon
-    private func loadLocalAudioFile(_ url: URL) {
-        do {
-            // Check file size to determine if memory mapping is appropriate
-            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            let fileSize = attributes[.size] as? UInt64 ?? 0
-            
-            // For large files (>50MB), use memory mapping
-            if fileSize > 50_000_000 {
-                let fileHandle = try FileHandle(forReadingFrom: url)
-                let _ = fileHandle.mapDataAvailableForReading() // Keep in memory
-                
-                // Create player item from the URL
-                let playerItem = AVPlayerItem(url: url)
-                
-                DispatchQueue.main.async {
-                    self.setupPlayerItem(playerItem)
-                    self.player = AVPlayer(playerItem: playerItem)
-                    self.player?.volume = Float(self.volume)
-                    self.addPeriodicTimeObserver()
-                    self.player?.play()
-                    self.isPlaying = true
-                    self.audioState.isPlaying = true
-                }
-            } else {
-                // For smaller files, use standard AVPlayer
-                let playerItem = AVPlayerItem(url: url)
-                
-                DispatchQueue.main.async {
-                    self.setupPlayerItem(playerItem)
-                    self.player = AVPlayer(playerItem: playerItem)
-                    self.player?.volume = Float(self.volume)
-                    self.addPeriodicTimeObserver()
-                    self.player?.play()
-                    self.isPlaying = true
-                    self.audioState.isPlaying = true
-                }
-            }
-        } catch {
-            print("Error loading local audio file: \(error)")
-            
-            // Fallback to standard method
-            let playerItem = AVPlayerItem(url: url)
-            
-            DispatchQueue.main.async {
-                self.setupPlayerItem(playerItem)
-                self.player = AVPlayer(playerItem: playerItem)
-                self.player?.volume = Float(self.volume)
-                self.addPeriodicTimeObserver()
-                self.player?.play()
-                self.isPlaying = true
-                self.audioState.isPlaying = true
-            }
-        }
+        // *** End Asynchronous Preparation ***
     }
     
     /// Pauses the audio playback.
@@ -511,24 +483,28 @@ class AudioPlayer: ObservableObject {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self else { return }
-            
-            let seconds = time.seconds
-            
-            // Validate that the time is finite and non-negative
-            guard seconds.isFinite && seconds >= 0 else { return }
-            
-            // Only update if the time has changed significantly (more than 0.4 seconds)
-            // This prevents unnecessary UI updates
-            if abs(self.currentTime - seconds) > 0.4 {
-                // Update the current time directly on the main thread
-                self.currentTime = seconds
-                self.audioState.currentTime = seconds
+            // Use Task @MainActor to ensure property updates are safe
+            Task { @MainActor [weak self] in 
+                guard let self = self else { return }
+                
+                let seconds = time.seconds
+                
+                // Validate that the time is finite and non-negative
+                guard seconds.isFinite && seconds >= 0 else { return }
+                
+                // Only update if the time has changed significantly (more than 0.4 seconds)
+                // This prevents unnecessary UI updates
+                if abs(self.currentTime - seconds) > 0.4 {
+                    // Update the current time directly on the main thread
+                    self.currentTime = seconds
+                    self.audioState.currentTime = seconds
+                }
             }
         }
     }
     
     /// Removes the periodic time observer and invalidates the duration observer.
+    @MainActor
     private func cleanupObservers() {
         if let player = player, let token = timeObserverToken {
             player.removeTimeObserver(token)
@@ -570,61 +546,73 @@ class AudioPlayer: ObservableObject {
     /// Cleans up resources on deinitialization.
     /// Removes observers, stops playback, and resets the audio engine.
     deinit {
+        // Perform synchronous cleanup that is safe from deinit
         NotificationCenter.default.removeObserver(self)
-        cleanupObservers()
-        player?.pause()
-        player = nil
-        playerNode.stop()
-        audioEngine.stop()
-        audioEngine.reset()
-        cancellables.removeAll()
+        // player?.pause() // Avoid potentially unsafe calls from deinit
+        // playerNode.stop()
+        // audioEngine.stop()
+        // cleanupObservers() cannot be safely called from here
+        // Rely on ARC and Combine to clean up remaining resources
     }
     
     /// Sets up an observer on the AVPlayerItem to monitor its status.
     /// Updates the audio duration when the item is ready to play.
     /// - Parameter playerItem: The AVPlayerItem to observe.
-    private func setupPlayerItem(_ playerItem: AVPlayerItem) {
+    /// - Parameter duration: The pre-loaded duration (optional)
+    private func setupPlayerItemObservers(_ playerItem: AVPlayerItem, duration: Double?) async {
         // Note: panning via AVPlayerItem.audioMix is not supported; audioEngine pan applies only to local playback
-        // Install audio tap for pan control on streaming
-        let mix = AVMutableAudioMix()
-        var paramsList: [AVAudioMixInputParameters] = []
-        for track in playerItem.asset.tracks(withMediaType: .audio) {
-            let params = AVMutableAudioMixInputParameters(track: track)
-            // Install a tap for pan control on the audio track
-            if let tapRef = createPanTap() {
-                params.audioTapProcessor = tapRef
+        // Prepare params list in background
+        var paramsListInBackground: [AVAudioMixInputParameters] = []
+        
+        do {
+            // Load tracks asynchronously
+            let tracks = try await playerItem.asset.load(.tracks)
+            for track in tracks where track.mediaType == .audio {
+                let params = AVMutableAudioMixInputParameters(track: track)
+                // Install a tap for pan control on the audio track
+                if let tapRef = createPanTap() {
+                    params.audioTapProcessor = tapRef
+                }
+                paramsListInBackground.append(params)
             }
-            paramsList.append(params)
+        } catch {
+            print("Error loading tracks for audio mix: \(error)")
         }
-        mix.inputParameters = paramsList
-        playerItem.audioMix = mix
-        // Observe status for updating duration
-        durationObserver = playerItem.observe(\.status, options: [.new]) { [weak self] item, _ in
-            guard let self = self, item.status == .readyToPlay else { return }
-            
-            // Only proceed if status is readyToPlay to avoid unnecessary processing
-            DispatchQueue.main.async {
-                Task {
-                    do {
-                        let duration = try await item.asset.load(.duration)
-                        let seconds = duration.seconds
-                        // Validate that the duration is finite and non-negative
-                        if seconds.isFinite && seconds >= 0 {
-                            self.duration = seconds
-                            self.audioState.duration = seconds
-                        } else {
-                            self.duration = 0
-                            self.audioState.duration = 0
-                        }
-                    } catch {
-                        print("Error loading duration: \(error)")
-                        self.duration = 0
-                        self.audioState.duration = 0
+        
+        // Create and assign mix on the main actor
+        await MainActor.run { 
+            let mix = AVMutableAudioMix()
+            mix.inputParameters = paramsListInBackground
+            playerItem.audioMix = mix
+        }
+        
+        // Observe status for potential errors or buffering states
+        durationObserver = playerItem.observe(\.status, options: [.new, .old]) { [weak self] item, change in
+            guard let self = self else { return }
+            Task { @MainActor in // Ensure UI updates are on main thread
+                switch item.status {
+                case .readyToPlay:
+                    // If duration wasn't pre-loaded or differs, update it
+                    let currentDuration = item.duration.seconds
+                    if self.duration != currentDuration && currentDuration.isFinite && currentDuration >= 0 {
+                        self.duration = currentDuration
+                        self.audioState.duration = currentDuration
                     }
+                    self.isLoading = false // Ready, no longer loading
+                case .failed:
+                    print("Error: AVPlayerItem failed: \(item.error?.localizedDescription ?? "Unknown error")")
                     self.isLoading = false
+                    self.isPlaying = false
+                    // Maybe reset player or show error
+                case .unknown:
+                    self.isLoading = true // Still loading or unknown state
+                @unknown default:
+                    self.isLoading = true
                 }
             }
         }
+        
+        // Optionally observe other properties like playbackBufferEmpty, playbackLikelyToKeepUp
     }
     
     /// Adds proper cleanup when changing audio files

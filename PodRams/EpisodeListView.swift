@@ -87,9 +87,14 @@ struct EpisodeListView: View {
         let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
         
         // Add a small delay to ensure the previous playback is fully stopped
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // Call playAudio directly (it now handles async loading)
+        // Save last playback in a background task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { 
             audioPlayer.playAudio(url: playURL)
-            PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
+            // Move persistence saving to background task
+            Task(priority: .background) { 
+                PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
+            }
         }
     }
     

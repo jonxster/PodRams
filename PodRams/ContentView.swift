@@ -219,45 +219,42 @@ struct ContentView: View {
             cue = await PersistenceManager.loadCue()
             subscribedPodcasts = await PersistenceManager.loadSubscriptions()
             lastPlayedEpisode = await PersistenceManager.loadLastPlayback()
-            
+            // Handle resume of last played episode if available
+            var cachedPodcast: Podcast?
             if let lastEp = lastPlayedEpisode,
                let feedUrl = lastEp.feedUrl, !feedUrl.isEmpty {
-                // Create a temporary podcast object from the last played episode
-                let cachedPodcast = Podcast(title: lastEp.title, feedUrl: feedUrl, episodes: [lastEp])
-                cachedPodcast.feedArtworkURL = lastEp.artworkURL
-                
-                // Set initial state
-                selectedPodcast = cachedPodcast
+                let tmpPodcast = Podcast(title: lastEp.title, feedUrl: feedUrl, episodes: [lastEp])
+                tmpPodcast.feedArtworkURL = lastEp.artworkURL
+                cachedPodcast = tmpPodcast
+                // Set initial state without blocking UI
+                selectedPodcast = tmpPodcast
                 selectedEpisodeIndex = 0
+            }
+
+            // Mark initialization complete to show main UI
+            isInitialized = true
+
+            // If resuming, fetch full episodes in background
+            if let lastEp = lastPlayedEpisode,
+               let podcast = cachedPodcast {
                 isPodcastLoading = true
-                
-                // Fetch the full list of episodes first
-                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: cachedPodcast)
-                
+                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
                 await MainActor.run {
                     // Update podcast with fetched data
-                    cachedPodcast.episodes = episodes
+                    podcast.episodes = episodes
                     if let feedArt = feedArt {
-                        cachedPodcast.feedArtworkURL = feedArt
+                        podcast.feedArtworkURL = feedArt
                     }
-                    
-                    // Update selected podcast and episode index
-                    selectedPodcast = cachedPodcast
+                    // Update selected episode index to last played
                     if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
                         selectedEpisodeIndex = index
                     }
-                    
-                    // Now that everything is loaded, start playback
+                    // Start playback of last episode
                     audioPlayer.setPlayingState(true)
                     audioPlayer.playAudio(url: lastEp.url)
-                    
-                    // Mark initialization as complete and loading as finished
+                    // Loading finished
                     isPodcastLoading = false
-                    isInitialized = true
                 }
-            } else {
-                // No last episode to resume, just mark as initialized
-                isInitialized = true
             }
             
             // Prefetch episodes for subscribed podcasts in the background
@@ -296,10 +293,12 @@ struct ContentView: View {
             }
         }
         // Keep app state in sync with ContentView state
-        .onChange(of: activeEpisodes) { newEpisodes in
+        .onChange(of: activeEpisodes) {
+            let newEpisodes = activeEpisodes // Capture current value inside closure
             appEpisodes = newEpisodes
         }
-        .onChange(of: selectedEpisodeIndex) { newIndex in
+        .onChange(of: selectedEpisodeIndex) {
+            let newIndex = selectedEpisodeIndex // Capture current value inside closure
             appCurrentEpisodeIndex = newIndex
         }
     }
@@ -308,18 +307,24 @@ struct ContentView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup {
             // Button to toggle audio output selection.
-            Button(action: { isAudioOutputSelectionVisible.toggle() }) {
+            Button {
+                isAudioOutputSelectionVisible.toggle()
+            } label: {
                 Image(systemName: AudioOutputManager.shared.currentRouteIcon)
             }
             .accessibilityIdentifier("AudioOutputButton")
+            .buttonStyle(.plain)
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
             }
             
             // Button to open the subscribe popover.
-            Button(action: { isSubscribeVisible = true }) {
+            Button {
+                isSubscribeVisible = true
+            } label: {
                 Image(systemName: "rectangle.and.paperclip")
             }
+            .buttonStyle(.plain)
             .popover(isPresented: $isSubscribeVisible) {
                 SubscribeView(
                     subscribedPodcasts: $subscribedPodcasts,
@@ -332,31 +337,43 @@ struct ContentView: View {
             }
             
             // Button to open the settings popover.
-            Button(action: { isSettingsVisible = true }) {
+            Button {
+                isSettingsVisible = true
+            } label: {
                 Image(systemName: "gear")
             }
+            .buttonStyle(.plain)
             .popover(isPresented: $isSettingsVisible) {
                 SettingsView()
             }
             
             // Button to show favorites; disabled if there are no favorites.
-            Button(action: { isFavoritesVisible = true }) {
+            Button {
+                isFavoritesVisible = true
+            } label: {
                 Image(systemName: "star")
             }
+            .buttonStyle(.plain)
             .disabled(favoritePodcasts.isEmpty)
             .help("Favorites (\(favoritePodcasts.count))")
             
             // Button to show the cue (play queue); disabled if cue is empty.
-            Button(action: { if !cue.isEmpty { isCueVisible.toggle() } }) {
+            Button {
+                if !cue.isEmpty { isCueVisible.toggle() }
+            } label: {
                 Image(systemName: "list.bullet")
             }
+            .buttonStyle(.plain)
             .disabled(cue.isEmpty)
             .help("Cue (\(cue.count))")
             
             // Button to toggle the search popover.
-            Button(action: { isSearching.toggle() }) {
+            Button {
+                isSearching.toggle()
+            } label: {
                 Image(systemName: "magnifyingglass")
             }
+            .buttonStyle(.plain)
             .help("Search for Podcasts")
         }
     }

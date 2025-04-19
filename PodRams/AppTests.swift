@@ -17,6 +17,7 @@ class AppTests {
         }
     }
     
+    @MainActor
     static func runAllTests() {
         print("Running PodRams tests...")
         
@@ -33,6 +34,7 @@ class AppTests {
         }
     }
     
+    @MainActor
     static func testAudioPlayer() throws {
         print("Testing AudioPlayer...")
         
@@ -59,6 +61,7 @@ class AppTests {
         print("✅ AudioPlayer tests passed!")
     }
     
+    @MainActor
     static func testPlayerView() throws {
         print("Testing PlayerView...")
         

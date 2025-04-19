@@ -20,6 +20,10 @@ struct PlayerView: View {
     /// Controls whether to show the front (artwork) or back (show notes).
     @State private var isFlipped = false
     
+    // Add state to track loaded show notes and loading state
+    @State private var loadedShowNotes: String = "Loading show notes..."
+    @State private var isLoadingNotes = false
+    
     var currentEpisode: PodcastEpisode? {
         guard let idx = currentEpisodeIndex, idx >= 0, idx < episodes.count else { return nil }
         return episodes[idx]
@@ -32,18 +36,29 @@ struct PlayerView: View {
                 .padding(.vertical, 4)
             
             ZStack {
+                // Front side: always built for quick display
                 frontSide
                     .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
                     .opacity(isFlipped ? 0 : 1)
-                
-                backSide
-                    .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
-                    .opacity(isFlipped ? 1 : 0)
+                // Back side: build only when flipped to avoid initial layout cost
+                Group {
+                    if isFlipped {
+                        backSide
+                    }
+                }
+                .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
+                .opacity(isFlipped ? 1 : 0)
             }
             .animation(.default, value: isFlipped)
             .frame(width: 180, height: 180)
             .onTapGesture {
-                withAnimation { isFlipped.toggle() }
+                withAnimation { 
+                    isFlipped.toggle() 
+                    // Load notes when flipped to back
+                    if isFlipped && !isLoadingNotes {
+                        loadShowNotes()
+                    }
+                }
             }
             
             // Removed audio output icon from here.
@@ -59,19 +74,12 @@ struct PlayerView: View {
                 LoadingIndicator()
                     .frame(width: 32, height: 32)
             } else if let artworkURL = currentEpisode?.artworkURL ?? feedArtworkURL {
-                AsyncImage(url: artworkURL) { phase in
-                    switch phase {
-                    case .empty:
-                        LoadingIndicator()
-                            .frame(width: 32, height: 32)
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    case .failure:
-                        Image(systemName: "photo").resizable().scaledToFit().foregroundColor(.gray)
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
+                // Use cached async image loading to avoid main-thread delays
+                CachedAsyncImage(
+                    url: artworkURL,
+                    width: 180,
+                    height: 180
+                )
             } else {
                 Image(systemName: "music.note").resizable().scaledToFit().foregroundColor(.gray)
             }
@@ -81,15 +89,38 @@ struct PlayerView: View {
     }
     
     private var backSide: some View {
-        let notes = currentEpisode?.showNotes ?? "No show notes"
-        return ScrollView {
-            Text(notes)
+        ScrollView {
+            Text(loadedShowNotes)
                 .padding()
                 .multilineTextAlignment(.leading)
         }
         .background(Color.gray.opacity(0.15))
         .cornerRadius(8)
         .frame(width: 180, height: 180)
+    }
+    
+    private func loadShowNotes() {
+        guard let episode = currentEpisode, !isLoadingNotes else { return }
+        
+        isLoadingNotes = true
+        
+        // Use background thread for processing
+        DispatchQueue.global(qos: .userInitiated).async {
+            let notes: String
+            
+            if let showNotes = episode.showNotes, !showNotes.isEmpty {
+                // Process on background thread to avoid UI blocking
+                notes = showNotes.htmlStripped
+            } else {
+                notes = "No show notes available"
+            }
+            
+            // Return to main thread for UI update
+            DispatchQueue.main.async {
+                loadedShowNotes = notes
+                isLoadingNotes = false
+            }
+        }
     }
     
     private var controlButtons: some View {
@@ -170,5 +201,18 @@ struct PlayerView: View {
         if let episode = currentEpisode {
             audioPlayer.playAudio(url: episode.url)
         }
+    }
+}
+
+// Add a helper struct for lazy loading content
+struct LazyView<Content: View>: View {
+    let build: () -> Content
+    
+    init(_ build: @escaping () -> Content) {
+        self.build = build
+    }
+    
+    var body: Content {
+        build()
     }
 }

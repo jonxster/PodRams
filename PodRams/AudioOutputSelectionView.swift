@@ -175,12 +175,6 @@ struct AudioOutputSelectionView: View {
             return []
         }
         
-        // Prepare the property address to query for output streams.
-        var outputAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyStreams,
-            mScope: kAudioDevicePropertyScopeOutput,
-            mElement: 0)
-        
         // List all audio devices by name; system will handle valid output targets
         for id in deviceIDs {
             var nameSize = UInt32(MemoryLayout<CFString?>.size)
