@@ -14,9 +14,6 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Settings")
-                .font(.title)
-            
             // Use HStack for custom layout with checkbox on the right
             HStack {
                 Text("Skip silence in podcasts")

@@ -138,34 +138,54 @@ class AudioPlayer: ObservableObject {
         let unprepareCb: MTAudioProcessingTapUnprepareCallback = { _ in }
         let processCb: MTAudioProcessingTapProcessCallback = { (tap, numberFrames, flags, bufferListInOut, numberFramesOut, flagsOut) in
             // Fetch source audio
-            MTAudioProcessingTapGetSourceAudio(tap,
-                                                numberFrames,
-                                                bufferListInOut,
-                                                flagsOut,
-                                                nil,
-                                                numberFramesOut)
+            let status = MTAudioProcessingTapGetSourceAudio(tap,
+                                                            numberFrames,
+                                                            bufferListInOut,
+                                                            flagsOut,
+                                                            nil,
+                                                            numberFramesOut)
+            guard status == noErr else {
+                print("Error getting source audio: \(status)")
+                return
+            }
+            
             // Apply pan
             let storageRaw = MTAudioProcessingTapGetStorage(tap)
             let panVal: Float = storageRaw.assumingMemoryBound(to: Float.self).pointee
-            let leftGain = 1.0 - panVal
-            let rightGain = panVal
+            // Convert 0...1 pan (0.5 center) to gain multipliers
+            // Ensure panVal is clamped between 0 and 1 first for safety
+            let clampedPan = max(0.0, min(1.0, panVal))
+            var leftGain = 1.0 - clampedPan // Gain for left channel
+            var rightGain = clampedPan      // Gain for right channel
+
             let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
-            for (i, buf) in abl.enumerated() {
-                let chans = Int(buf.mNumberChannels)
-                let data = buf.mData!.assumingMemoryBound(to: Float.self)
-                let frames = Int(numberFrames)
-                if chans == 2 {
-                    for f in 0..<frames {
-                        let idx = f * 2
-                        data[idx] *= leftGain
-                        data[idx+1] *= rightGain
-                    }
-                } else {
-                    let gain = (i == 0 ? leftGain : rightGain)
-                    for f in 0..<frames {
-                        data[f] *= gain
-                    }
+            
+            // Check if bufferListInOut is valid
+            guard abl.count > 0 else {
+                 print("Error: AudioBufferList is empty.")
+                 return // Or handle appropriately
+            }
+
+            for buf in abl {
+                // Safely unwrap mData
+                guard let data = buf.mData?.assumingMemoryBound(to: Float.self) else {
+                    print("Warning: Encountered nil mData in audio buffer, skipping processing for this buffer.")
+                    continue // Skip this buffer if mData is nil
                 }
+                
+                let chans = Int(buf.mNumberChannels)
+                let frames = Int(numberFrames)
+                
+                // Apply gain based on channel configuration
+                if chans == 2 { // Stereo
+                    vDSP_vsmul(data, 2, &leftGain, data, 2, vDSP_Length(frames)) // Apply left gain to L channel (stride 2)
+                    vDSP_vsmul(data.advanced(by: 1), 2, &rightGain, data.advanced(by: 1), 2, vDSP_Length(frames)) // Apply right gain to R channel (stride 2)
+                } else if chans == 1 { // Mono or other (apply averaged gain or handle differently)
+                     // Simplified: apply average gain for mono, could be adapted
+                     var averageGain = (leftGain + rightGain) / 2.0
+                     vDSP_vsmul(data, 1, &averageGain, data, 1, vDSP_Length(frames))
+                }
+                // Handle other channel counts if necessary
             }
         }
         var callbacks = MTAudioProcessingTapCallbacks(version: kMTAudioProcessingTapCallbacksVersion_0,

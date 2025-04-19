@@ -33,6 +33,12 @@ PodRams is a native macOS podcast player built with SwiftUI, offering a clean an
 - macOS 11.0 or later
 - Xcode 13.0 or later (for development)
 
+## Supported Languages
+
+PodRams supports a wide variety of languages thanks to community contributions and localization efforts. Currently supported languages include:
+
+- Arabic (ar), Bulgarian (bg), Basque (eu), Catalan (ca), Czech (cs), Danish (da), German (de), Greek (el), English (en), Spanish (es), Finnish (fi), French (fr), Hebrew (he), Hindi (hi), Croatian (hr), Hungarian (hu), Indonesian (id), Italian (it), Japanese (ja), Korean (ko), Malay (ms), Norwegian Bokmål (nb), Dutch (nl), Polish (pl), Portuguese (pt), Brazilian Portuguese (pt-BR), Romanian (ro), Russian (ru), Slovak (sk), Slovenian (sl), Serbian (sr), Swedish (sv), Thai (th), Turkish (tr), Ukrainian (uk), Vietnamese (vi), Simplified Chinese (zh-Hans), Traditional Chinese (zh-Hant)
+
 ## Installation
 
 1. Clone the repository

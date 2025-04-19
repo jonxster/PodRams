@@ -223,7 +223,7 @@ public struct CachedAsyncImage: View {
                 Self.loadingTasks.removeValue(forKey: urlKey)
                 Self.loadingTaskLock.unlock()
                 
-                if let error = error {
+                if let _ = error {
                     DispatchQueue.main.async { 
                         isLoading = false 
                         loadError = true
@@ -446,7 +446,7 @@ public struct CachedAsyncImage: View {
             if fileManager.fileExists(atPath: cacheDir.path) {
                 try fileManager.removeItem(at: cacheDir)
             }
-        } catch { // Ignore error, variable not needed
+        } catch { // Ignore error, variable not needed - CHANGED
             // Ignore errors when clearing cache
         }
     }
