@@ -7,6 +7,8 @@ struct SimpleEpisodeRow: View {
     let isPlaying: Bool
     let onSelect: () -> Void
     
+    @Environment(\.colorScheme) var colorScheme
+    
     @ObservedObject private var downloadManager = DownloadManager.shared
     @ObservedObject private var cueState = CueState.shared // Use the shared instance
     
@@ -39,7 +41,7 @@ struct SimpleEpisodeRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title)
                             .lineLimit(1)
-                            .foregroundColor(isPlaying ? .accentColor : .primary)
+                            .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .primary)
                             .font(isPlaying ? .body.bold() : .body)
                         
                         if let podcastName = episode.podcastName {

@@ -517,6 +517,9 @@ struct EpisodeRow: View {
     /// Optional closure to trigger a download.
     var onDownload: (() -> Void)?
     
+    // ADD environment variable for color scheme
+    @Environment(\.colorScheme) var colorScheme
+    
     @State private var isHovering = false
     @State private var showMenu = false
     @ObservedObject private var downloadManager = DownloadManager.shared
@@ -595,14 +598,16 @@ struct EpisodeRow: View {
                 HStack {
                     Text(episode.title)
                         .lineLimit(1)
-                        .foregroundColor(isPlaying ? .accentColor : .primary)
+                        // Use black in light mode, accentColor in dark mode when playing
+                        .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .primary)
                         .font(isPlaying ? .body.bold() : .body)
                     Spacer()
                     
                     // Single time display
                     Text(formattedTime)
                         .font(.caption)
-                        .foregroundColor(isPlaying ? .accentColor : .gray)
+                        // Use black in light mode, accentColor in dark mode when playing
+                        .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .gray)
                 }
                 .padding(.horizontal, 8)
             }
@@ -654,7 +659,7 @@ struct EpisodeRow: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.blue)
                         .font(.system(size: 16))
                         .frame(width: 40, height: 30)
                 }
