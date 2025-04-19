@@ -499,10 +499,10 @@ class AudioPlayer: ObservableObject {
     /// Adds a periodic time observer to the AVPlayer to update the current playback time.
     private func addPeriodicTimeObserver() {
         guard let player = player else { return }
-        // Reduce update frequency from 0.1 to 0.5 seconds to decrease CPU load
-        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        // Update more frequently for smoother UI (e.g., every 0.1 seconds)
+        let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         
-        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: nil) { [weak self] time in
             // Use Task @MainActor to ensure property updates are safe
             Task { @MainActor [weak self] in 
                 guard let self = self else { return }
@@ -512,13 +512,12 @@ class AudioPlayer: ObservableObject {
                 // Validate that the time is finite and non-negative
                 guard seconds.isFinite && seconds >= 0 else { return }
                 
-                // Only update if the time has changed significantly (more than 0.4 seconds)
-                // This prevents unnecessary UI updates
-                if abs(self.currentTime - seconds) > 0.4 {
-                    // Update the current time directly on the main thread
-                    self.currentTime = seconds
-                    self.audioState.currentTime = seconds
-                }
+                // *** ADD LOGGING HERE ***
+                print("AudioPlayer Time Observer: Updating currentTime to \(seconds)")
+
+                // Update the current time directly on the main thread whenever the observer fires
+                self.currentTime = seconds
+                self.audioState.currentTime = seconds
             }
         }
     }

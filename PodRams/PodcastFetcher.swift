@@ -10,9 +10,7 @@
 import Foundation
 import Combine
 import AVFoundation
-#if canImport(FeedKit)
 import FeedKit
-#endif
 
 class PodcastFetcher: ObservableObject, @unchecked Sendable {
     @Published var searchQuery = ""
@@ -84,38 +82,9 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
             
-            #if canImport(FeedKit)
-            // Try FeedKitRSSParser first
+            // Directly use FeedKitRSSParser
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
             let (eps, fArt, chTitle) = parser.parse(data: data)
-            
-            // If no episodes were returned, try the legacy parser as fallback
-            if eps.isEmpty {
-                print("FeedKit parser returned no episodes, trying legacy parser")
-                let legacyParser = RSSParser(feedUrl: feedUrlString)
-                let (legacyEps, legacyArt, legacyTitle) = legacyParser.parse(data: data)
-                
-                // If legacy parser found episodes, use those
-                if !legacyEps.isEmpty {
-                    cacheQueue.async(flags: .barrier) { [weak self] in
-                        guard let self = self else { return }
-                        self.episodeCache[feedUrlString] = (legacyEps, legacyArt)
-                        if self.episodeCache.count > 20 { self.episodeCache.removeValue(forKey: self.episodeCache.keys.first!) }
-                    }
-                    
-                    DispatchQueue.main.async {
-                        podcast.episodes = legacyEps
-                        if let feedArt = legacyArt { podcast.feedArtworkURL = feedArt }
-                        if let chTitle = legacyTitle, !chTitle.isEmpty { podcast.title = chTitle }
-                    }
-                    return
-                }
-            }
-            #else
-            // If FeedKit is not available, use the legacy parser directly
-            let parser = RSSParser(feedUrl: feedUrlString)
-            let (eps, fArt, chTitle) = parser.parse(data: data)
-            #endif
             
             cacheQueue.async(flags: .barrier) { [weak self] in
                 guard let self = self else { return }
@@ -147,35 +116,9 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
             
-            #if canImport(FeedKit)
-            // Try FeedKitRSSParser first
+            // Directly use FeedKitRSSParser
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
             let (eps, fArt, chTitle) = parser.parse(data: data)
-            
-            // If no episodes were returned, try the legacy parser as fallback
-            if eps.isEmpty {
-                print("FeedKit parser returned no episodes, trying legacy parser")
-                let legacyParser = RSSParser(feedUrl: feedUrlString)
-                let (legacyEps, legacyArt, legacyTitle) = legacyParser.parse(data: data)
-                
-                // If legacy parser found episodes, use those
-                if !legacyEps.isEmpty {
-                    if let chTitle = legacyTitle, !chTitle.isEmpty { podcast.title = chTitle }
-                    
-                    cacheQueue.async(flags: .barrier) { [weak self] in
-                        guard let self = self else { return }
-                        self.episodeCache[feedUrlString] = (legacyEps, legacyArt)
-                        if self.episodeCache.count > 20 { self.episodeCache.removeValue(forKey: self.episodeCache.keys.first!) }
-                    }
-                    
-                    return (legacyEps, legacyArt)
-                }
-            }
-            #else
-            // If FeedKit is not available, use the legacy parser directly
-            let parser = RSSParser(feedUrl: feedUrlString)
-            let (eps, fArt, chTitle) = parser.parse(data: data)
-            #endif
             
             if let chTitle = chTitle, !chTitle.isEmpty { podcast.title = chTitle }
             
@@ -206,23 +149,9 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
             
-            #if canImport(FeedKit)
-            // Try FeedKitRSSParser first
+            // Directly use FeedKitRSSParser
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
             let (_, fArt, chTitle) = parser.parse(data: data)
-            
-            // If no title was returned, try the legacy parser as fallback
-            if chTitle == nil {
-                print("FeedKit parser returned no channel title, trying legacy parser")
-                let legacyParser = RSSParser(feedUrl: feedUrlString)
-                let (_, legacyArt, legacyTitle) = legacyParser.parse(data: data)
-                return (legacyTitle, legacyArt)
-            }
-            #else
-            // If FeedKit is not available, use the legacy parser directly
-            let parser = RSSParser(feedUrl: feedUrlString)
-            let (_, fArt, chTitle) = parser.parse(data: data)
-            #endif
             
             return (chTitle, fArt)
         } catch {
@@ -258,7 +187,9 @@ class RSSParser: NSObject, XMLParserDelegate {
         parser.delegate = self
         parser.parse()
         let feedURL = feedArtworkURL.flatMap { URL(string: $0) }
-        return (episodes, feedURL, channelTitle)
+        // Return only the first 10 episodes
+        let limitedEpisodes = Array(episodes.prefix(10))
+        return (limitedEpisodes, feedURL, channelTitle)
     }
     
     func parser(_ parser: XMLParser,

@@ -83,6 +83,9 @@ struct EpisodeListView: View {
         // Then set the new index and start playback
         selectedIndex = index
         
+        // MARK the episode as played
+        PlayedEpisodesManager.shared.markAsPlayed(episode)
+        
         // Get the local URL if available, otherwise use the remote URL
         let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
         
@@ -135,14 +138,42 @@ struct EpisodeListView: View {
     }
     
     var body: some View {
+        // Sort episodes: playing episode first, then unplayed, then played.
+        let sortedEpisodes = episodes.enumerated().sorted { (lhs, rhs) -> Bool in
+            let lhsIndex = lhs.offset
+            let rhsIndex = rhs.offset
+            
+            let lhsIsPlaying = selectedIndex == lhsIndex
+            let rhsIsPlaying = selectedIndex == rhsIndex
+            
+            // Prioritize the currently playing episode
+            if lhsIsPlaying { return true } // lhs (playing) comes before rhs (not playing)
+            if rhsIsPlaying { return false } // rhs (playing) comes before lhs (not playing)
+            
+            // If neither is playing, sort by played status
+            let lhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(lhs.element)
+            let rhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(rhs.element)
+            
+            if lhsPlayed == rhsPlayed {
+                return lhsIndex < rhsIndex // Maintain original order if played status is the same
+            } else {
+                return !lhsPlayed && rhsPlayed // Unplayed first
+            }
+        }.map { $0.element } // Extract only the episodes after sorting
+        
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                // Enumerate over episodes to generate a configured row for each.
-                ForEach(Array(episodes.enumerated()), id: \.offset) { index, episode in
-                    let isPlaying = selectedEpisodeIndex == index
+                // Iterate over the sorted episodes, relying on PodcastEpisode's Identifiable conformance
+                ForEach(sortedEpisodes) { episode in
+                    // Find the original index for selection handling if needed
+                    // Note: This might be inefficient for very large lists, but is simple.
+                    // If performance becomes an issue, consider passing the sorted index or using a different approach.
+                    let originalIndex = episodes.firstIndex { $0.id == episode.id }
+                    
+                    let isPlaying = selectedIndex == originalIndex
                     let config = EpisodeRowConfiguration(
                         episode: episode,
-                        index: index,
+                        index: originalIndex ?? -1, // Use original index or -1 if not found
                         isPlaying: isPlaying,
                         isInCue: cue.contains { $0.url.absoluteString == episode.url.absoluteString },
                         // For the playing episode, use the current time from the audio player
@@ -165,6 +196,7 @@ struct EpisodeListView: View {
         }
         // Force refresh the view periodically to update the time display
         .onReceive(refreshTimer) { _ in
+            print("EpisodeListView: Refresh timer fired at \(Date())")
             // This empty handler forces the view to refresh
         }
     }

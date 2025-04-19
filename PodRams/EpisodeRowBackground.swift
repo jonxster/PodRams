@@ -9,21 +9,27 @@ import SwiftUI
 struct EpisodeRowBackground: View {
     var currentTime: Double
     var duration: Double
+    let progressBarHeight: CGFloat = 3 // Define height for the progress bar
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                // Base black background.
-                Rectangle()
-                    .fill(Color.clear)
-                // Blue overlay fills according to progress.
-                Rectangle()
-                    .fill(Color.blue)
-                    .frame(width: calculateProgressWidth(geo: geo))
-
+                // Background Track (thin gray capsule)
+                Capsule()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: progressBarHeight)
+                
+                // Progress Segment (thin accentColor capsule)
+                Capsule()
+                    .fill(Color.accentColor) // Use accent color for adaptability
+                    .frame(width: calculateProgressWidth(geo: geo), height: progressBarHeight)
             }
-            .cornerRadius(4)
+            // Center the progress bar vertically within the geometry reader space if needed
+            // Or adjust the frame of the GeometryReader itself in the parent view
+            // .frame(height: progressBarHeight) // Optionally constrain ZStack height
         }
+        // Ensure the GeometryReader itself takes up minimal vertical space
+        .frame(height: progressBarHeight)
     }
     
     // Calculate progress width with proper handling of edge cases

@@ -96,8 +96,8 @@ struct ContentView: View {
                 // Main content - only show when fully initialized
                 VStack(spacing: 8) {
                     // Player controls view.
-            PlayerView(
-                audioPlayer: audioPlayer, 
+                    PlayerView(
+                        audioPlayer: audioPlayer, 
                         episodes: activeEpisodes,
                         currentEpisodeIndex: $selectedEpisodeIndex,
                         feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
@@ -108,6 +108,17 @@ struct ContentView: View {
                     currentPlayingTitle
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8) // Reduced padding
+
+                    // *** MOVE ProgressBarView HERE (below title) ***
+                    ProgressBarView(
+                        currentTime: audioPlayer.currentTime,
+                        duration: audioPlayer.duration,
+                        onSeek: { newTime in
+                            audioPlayer.seek(to: newTime)
+                        }
+                    )
+                    .padding(.horizontal) // Add some horizontal padding
+                    .disabled(activeEpisodes.isEmpty || selectedEpisodeIndex == nil) // Disable if nothing is playing
                     
                     // Episode list section with loading indicator overlay.
                     ZStack {
@@ -523,6 +534,8 @@ struct EpisodeRow: View {
     @State private var isHovering = false
     @State private var showMenu = false
     @ObservedObject private var downloadManager = DownloadManager.shared
+    // ADD PlayedEpisodesManager observer
+    @ObservedObject private var playedManager = PlayedEpisodesManager.shared
     
     var formattedTime: String {
         // Ensure we have valid time values
@@ -557,6 +570,42 @@ struct EpisodeRow: View {
     /// Gets the current download state for this episode
     private var downloadState: DownloadManager.DownloadState {
         return downloadManager.downloadStates[episode.url.absoluteString] ?? DownloadManager.DownloadState.none
+    }
+    
+    // ADD @ViewBuilder computed property for the indicator
+    @ViewBuilder
+    private var playedIndicatorView: some View {
+        // Determine if the indicator should be visible (dot or non-zero spacer)
+        let isIndicatorVisible = !playedManager.hasBeenPlayed(episode) || spacerWidthForPlayedEpisode() > 0
+        
+        // Add leading padding only if the indicator will be visible
+        // Apply padding here instead of on the Circle/Spacer directly
+        Group {
+            if !playedManager.hasBeenPlayed(episode) {
+                Circle()
+                    // Use white in dark mode, blue in light mode
+                    .fill(colorScheme == .dark ? Color.white : Color.blue)
+                    .frame(width: 8, height: 8)
+                    // .padding(.trailing, 6) // REMOVE padding from here
+            } else {
+                // Spacer to maintain layout consistency when dot is hidden
+                Spacer()
+                    .frame(width: spacerWidthForPlayedEpisode()) // Use helper function
+            }
+        }
+        .padding(.leading, isIndicatorVisible ? 6 : 0) // Add conditional leading padding
+    }
+    
+    // Helper function to calculate spacer width
+    private func spacerWidthForPlayedEpisode() -> CGFloat {
+        let isDownloadingState: Bool
+        if case .downloading = downloadState {
+            isDownloadingState = true
+        } else {
+            isDownloadingState = false
+        }
+        let showNextElement = shouldShowMenu || isDownloadingState
+        return showNextElement ? (8 + 6) : 0 // Match dot width + padding, or 0
     }
     
     var body: some View {
@@ -621,7 +670,8 @@ struct EpisodeRow: View {
                 // Show download progress indicator when downloading
                 DeterminateLoadingIndicator(progress: progress)
                     .frame(width: 40, height: 30)
-                    .padding(.trailing, 8)
+                    // Remove trailing padding here if indicator is last element
+                    // .padding(.trailing, 8)
             } else if shouldShowMenu {
                 // Show ellipsis menu when not downloading
                 Menu {
@@ -666,8 +716,14 @@ struct EpisodeRow: View {
                 .menuStyle(BorderlessButtonMenuStyle())
                 .menuIndicator(.hidden) // Hide the menu indicator arrow
                 .frame(width: 40)
-                .padding(.trailing, 8)
+                // Remove trailing padding here if indicator is last element
+                // .padding(.trailing, 8)
             }
+
+            // Use the computed property for the played indicator (NOW AT THE END)
+            playedIndicatorView
+                .padding(.trailing, 8) // Add overall trailing padding here
+            
         }
         .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
