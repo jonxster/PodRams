@@ -39,7 +39,7 @@ struct SimpleEpisodeRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title)
                             .lineLimit(1)
-                            .foregroundColor(isPlaying ? .blue : .primary)
+                            .foregroundColor(isPlaying ? .accentColor : .primary)
                             .font(isPlaying ? .body.bold() : .body)
                         
                         if let podcastName = episode.podcastName {

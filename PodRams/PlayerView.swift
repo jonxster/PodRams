@@ -166,7 +166,7 @@ struct PlayerView: View {
         HStack {
             Button(action: { audioPlayer.volume = 0 }) {
                 Image(systemName: "speaker.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .font(.system(size: 12))
             }
             .buttonStyle(.borderless)
@@ -177,7 +177,7 @@ struct PlayerView: View {
             
             Button(action: { audioPlayer.volume = 1 }) {
                 Image(systemName: "speaker.wave.3.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .font(.system(size: 12))
             }
             .buttonStyle(.borderless)

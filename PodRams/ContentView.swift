@@ -564,21 +564,21 @@ struct EpisodeRow: View {
                 if !isHovering {
                     // Force display of speaker icon for playing episodes
                     Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(.accentColor)
                         .font(.system(size: 12))
                         .frame(width: 16)
                         .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)") // Force redraw with unique ID
                 } else {
                     // Show play/pause icon on hover based on current state
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(.accentColor)
                         .font(.system(size: 12))
                         .frame(width: 16)
                 }
             } else if isHovering {
                 // Show play icon when hovering over non-playing episodes
                 Image(systemName: "play.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(.accentColor)
                     .font(.system(size: 12))
                     .frame(width: 16)
             } else {
@@ -595,13 +595,14 @@ struct EpisodeRow: View {
                 HStack {
                     Text(episode.title)
                         .lineLimit(1)
-                        .foregroundColor(isPlaying ? .white : .primary)
+                        .foregroundColor(isPlaying ? .accentColor : .primary)
+                        .font(isPlaying ? .body.bold() : .body)
                     Spacer()
                     
                     // Single time display
                     Text(formattedTime)
                         .font(.caption)
-                        .foregroundColor(isPlaying ? .white.opacity(0.8) : .gray)
+                        .foregroundColor(isPlaying ? .accentColor : .gray)
                 }
                 .padding(.horizontal, 8)
             }

@@ -65,7 +65,7 @@ struct SearchSheetView: View {
 
                                 if !isSubscribed(podcast) {
                                     Image(systemName: "rectangle.and.paperclip")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.accentColor)
                                         .onTapGesture {
                                             toggleSubscription(podcast)
                                         }

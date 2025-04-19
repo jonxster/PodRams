@@ -102,7 +102,7 @@ struct CueSheetView: View {
                             downloadAllEpisodes()
                         }) {
                             Image(systemName: "square.and.arrow.down.on.square")
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accentColor)
                                 .opacity(0.7)
                         }
                         .buttonStyle(BorderlessButtonStyle())

@@ -50,7 +50,7 @@ struct DownloadButton: View {
                     // Show a download icon when no download is in progress.
                     Image(systemName: "arrow.down.circle")
                         .font(.system(size: 16))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentColor)
                 case .downloading(let progress):
                     // Show a determinate loading indicator with the current progress.
                     // Log outside the view builder
