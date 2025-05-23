@@ -3,6 +3,7 @@ import SwiftUI
 @testable import PodRams
 
 // Mock AudioPlayer for testing
+@MainActor
 class MockAudioPlayer: AudioPlayer {
     override func playAudio(url: URL) {
         isPlaying = true
@@ -30,6 +31,7 @@ final class PlayCommandsTests: XCTestCase {
     var currentEpisodeIndex: Int?
     var playCommands: PlayCommands!
     
+    @MainActor
     override func setUp() {
         super.setUp()
         audioPlayer = MockAudioPlayer()
@@ -76,6 +78,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Playback Control Tests
     
+    @MainActor
     func testPlayPauseToggle() {
         // Initial state
         XCTAssertFalse(audioPlayer.isPlaying)
@@ -93,6 +96,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertFalse(audioPlayer.isPlaying)
     }
     
+    @MainActor
     func testStopPlayback() {
         // Setup initial state
         audioPlayer.currentTime = 50
@@ -108,6 +112,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Episode Navigation Tests
     
+    @MainActor
     func testPreviousEpisode() {
         // Setup with a mutable binding
         var currentIndex: Int? = 1
@@ -133,6 +138,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertTrue(audioPlayer.isPlaying)
     }
     
+    @MainActor
     func testNextEpisode() {
         // Setup with a mutable binding
         var currentIndex: Int? = 1
@@ -160,6 +166,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Seeking Tests
     
+    @MainActor
     func testSkipBackward() {
         // Setup initial state
         audioPlayer.currentTime = 100
@@ -172,6 +179,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.currentTime, 70)
     }
     
+    @MainActor
     func testSkipForward() {
         // Setup initial state
         audioPlayer.currentTime = 100
@@ -186,6 +194,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Volume Control Tests
     
+    @MainActor
     func testVolumeUp() {
         // Setup initial state
         audioPlayer.volume = 0.5
@@ -196,6 +205,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.volume, 0.6, accuracy: 0.001)
     }
     
+    @MainActor
     func testVolumeDown() {
         // Setup initial state
         audioPlayer.volume = 0.5
@@ -206,6 +216,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.volume, 0.4, accuracy: 0.001)
     }
     
+    @MainActor
     func testMuteUnmute() {
         // Setup initial state
         audioPlayer.volume = 0.8
@@ -226,6 +237,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Edge Case Tests
     
+    @MainActor
     func testSkipBackwardAtStart() {
         // Setup initial state
         audioPlayer.currentTime = 0
@@ -238,6 +250,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.currentTime, 0)
     }
     
+    @MainActor
     func testSkipForwardAtEnd() {
         // Setup initial state
         audioPlayer.duration = 200
@@ -250,6 +263,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.currentTime, 200)
     }
     
+    @MainActor
     func testVolumeUpAtMax() {
         // Setup initial state
         audioPlayer.volume = 1.0
@@ -260,6 +274,7 @@ final class PlayCommandsTests: XCTestCase {
         XCTAssertEqual(audioPlayer.volume, 1.0)
     }
     
+    @MainActor
     func testVolumeDownAtMin() {
         // Setup initial state
         audioPlayer.volume = 0.0
@@ -272,6 +287,7 @@ final class PlayCommandsTests: XCTestCase {
     
     // MARK: - Disabled State Tests
     
+    @MainActor
     func testDisabledStateWithNoEpisode() {
         var currentIndex: Int? = nil
         let binding = Binding(

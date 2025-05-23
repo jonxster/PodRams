@@ -8,6 +8,8 @@ struct ContentView: View {
     @StateObject var podcastFetcher = PodcastFetcher()
     /// Manages audio playback and related state.
     @EnvironmentObject var audioPlayer: AudioPlayer
+    /// Memory optimization manager to reduce app memory footprint
+    @StateObject private var memoryOptimizer = MemoryOptimizationManager.shared
     
     /// User's list of favorite podcasts.
     @State private var favoritePodcasts: [Podcast] = []
@@ -50,10 +52,14 @@ struct ContentView: View {
     // Add a binding for episodes to keep them in sync with the app state
     @Binding var appEpisodes: [PodcastEpisode]
     @Binding var appCurrentEpisodeIndex: Int?
+    @Binding var appSelectedPodcast: Podcast?
     
-    init(appEpisodes: Binding<[PodcastEpisode]> = .constant([]), appCurrentEpisodeIndex: Binding<Int?> = .constant(nil)) {
+    init(appEpisodes: Binding<[PodcastEpisode]> = .constant([]), 
+         appCurrentEpisodeIndex: Binding<Int?> = .constant(nil),
+         appSelectedPodcast: Binding<Podcast?> = .constant(nil)) {
         _appEpisodes = appEpisodes
         _appCurrentEpisodeIndex = appCurrentEpisodeIndex
+        _appSelectedPodcast = appSelectedPodcast
     }
     
     /// Builds a view that displays the title of the currently playing podcast or episode.
@@ -225,48 +231,107 @@ struct ContentView: View {
         })
         // Task to load persisted data on view startup.
         .task {
-            // Load persisted data
+            print("🔄 ContentView: Starting app initialization...")
+            
+            // Initialize memory optimization system
+            PersistenceManager.setupMemoryOptimization()
+            
+            // Load persisted data first
             favoritePodcasts = await PersistenceManager.loadFavorites()
             cue = await PersistenceManager.loadCue()
             subscribedPodcasts = await PersistenceManager.loadSubscriptions()
             lastPlayedEpisode = await PersistenceManager.loadLastPlayback()
-            // Handle resume of last played episode if available
-            var cachedPodcast: Podcast?
-            if let lastEp = lastPlayedEpisode,
-               let feedUrl = lastEp.feedUrl, !feedUrl.isEmpty {
-                let tmpPodcast = Podcast(title: lastEp.title, feedUrl: feedUrl, episodes: [lastEp])
-                tmpPodcast.feedArtworkURL = lastEp.artworkURL
-                cachedPodcast = tmpPodcast
-                // Set initial state without blocking UI
-                selectedPodcast = tmpPodcast
-                selectedEpisodeIndex = 0
-            }
-
-            // Mark initialization complete to show main UI
-            isInitialized = true
-
-            // If resuming, fetch full episodes in background
-            if let lastEp = lastPlayedEpisode,
-               let podcast = cachedPodcast {
-                isPodcastLoading = true
-                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+            
+            print("📱 ContentView: Loaded persisted data - Favorites: \(favoritePodcasts.count), Cue: \(cue.count), Subscriptions: \(subscribedPodcasts.count), Last episode: \(lastPlayedEpisode?.title ?? "none")")
+            
+            // Optimize memory usage after loading data
+            Task.detached(priority: .background) {
                 await MainActor.run {
-                    // Update podcast with fetched data
-                    podcast.episodes = episodes
-                    if let feedArt = feedArt {
-                        podcast.feedArtworkURL = feedArt
+                    // Optimize podcast episode collections to reduce memory usage
+                    for podcast in favoritePodcasts {
+                        podcast.optimizeMemoryUsage()
                     }
-                    // Update selected episode index to last played
-                    if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
-                        selectedEpisodeIndex = index
+                    for podcast in subscribedPodcasts {
+                        podcast.optimizeMemoryUsage()
                     }
-                    // Start playback of last episode
-                    audioPlayer.setPlayingState(true)
-                    audioPlayer.playAudio(url: lastEp.url)
-                    // Loading finished
-                    isPodcastLoading = false
                 }
             }
+            
+            // Handle resume of last played episode if available
+            if let lastEp = lastPlayedEpisode,
+               let feedUrl = lastEp.feedUrl, !feedUrl.isEmpty {
+                
+                print("🎵 ContentView: Attempting to restore last played episode: \(lastEp.title)")
+                
+                // Find the podcast in subscriptions first
+                if let subscribedPodcast = subscribedPodcasts.first(where: { $0.feedUrl == feedUrl }) {
+                    print("✅ ContentView: Found podcast in subscriptions: \(subscribedPodcast.title)")
+                    
+                    // Use the subscribed podcast and fetch its episodes
+                    selectedPodcast = subscribedPodcast
+                    isPodcastLoading = true
+                    
+                    let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: subscribedPodcast)
+                    
+                    await MainActor.run {
+                        // Update podcast with fetched data
+                        subscribedPodcast.episodes = episodes
+                        if let feedArt = feedArt {
+                            subscribedPodcast.feedArtworkURL = feedArt
+                        }
+                        
+                        // Find and set the correct episode index
+                        if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
+                            selectedEpisodeIndex = index
+                            print("🎯 ContentView: Restored episode index: \(index)")
+                            
+                            // Restore playback
+                            audioPlayer.playAudio(url: lastEp.url)
+                            print("▶️ ContentView: Started playback of restored episode")
+                        } else {
+                            // Episode not found in current episodes, play first episode if available
+                            if !episodes.isEmpty {
+                                selectedEpisodeIndex = 0
+                                print("⚠️ ContentView: Last episode not found, using first episode")
+                            }
+                        }
+                        
+                        isPodcastLoading = false
+                    }
+                } else {
+                    // Podcast not in subscriptions, create a temporary one
+                    print("⚠️ ContentView: Podcast not found in subscriptions, creating temporary podcast")
+                    let tmpPodcast = Podcast(title: lastEp.podcastName ?? "Unknown Podcast", feedUrl: feedUrl)
+                    tmpPodcast.feedArtworkURL = lastEp.artworkURL
+                    
+                    selectedPodcast = tmpPodcast
+                    isPodcastLoading = true
+                    
+                    let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: tmpPodcast)
+                    
+                    await MainActor.run {
+                        tmpPodcast.episodes = episodes
+                        if let feedArt = feedArt {
+                            tmpPodcast.feedArtworkURL = feedArt
+                        }
+                        
+                        if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
+                            selectedEpisodeIndex = index
+                            audioPlayer.playAudio(url: lastEp.url)
+                        } else if !episodes.isEmpty {
+                            selectedEpisodeIndex = 0
+                        }
+                        
+                        isPodcastLoading = false
+                    }
+                }
+            } else {
+                print("ℹ️ ContentView: No last played episode to restore")
+            }
+
+            // Mark initialization complete AFTER restoration is done
+            print("✅ ContentView: App initialization complete")
+            isInitialized = true
             
             // Prefetch episodes for subscribed podcasts in the background
             Task(priority: .background) {
@@ -311,6 +376,10 @@ struct ContentView: View {
         .onChange(of: selectedEpisodeIndex) {
             let newIndex = selectedEpisodeIndex // Capture current value inside closure
             appCurrentEpisodeIndex = newIndex
+        }
+        .onChange(of: selectedPodcast) {
+            let newPodcast = selectedPodcast // Capture current value inside closure
+            appSelectedPodcast = newPodcast
         }
     }
     
@@ -450,7 +519,11 @@ struct ContentView: View {
     
     /// Prefetches episodes for all subscribed podcasts in the background
     private func prefetchSubscribedPodcasts() async {
-        print("Starting background prefetch of \(subscribedPodcasts.count) subscribed podcasts")
+        print("Starting optimized background prefetch of \(subscribedPodcasts.count) subscribed podcasts")
+        
+        // Limit concurrent prefetches for better performance
+        let maxConcurrentPrefetches = 3
+        var currentPrefetches = 0
         
         for podcast in subscribedPodcasts {
             // Skip podcasts that already have episodes loaded
@@ -458,29 +531,40 @@ struct ContentView: View {
                 continue
             }
             
-            // Fetch episodes for this podcast
-            let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+            // Wait if we have too many concurrent prefetches
+            while currentPrefetches >= maxConcurrentPrefetches {
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+            }
             
-            // Update the podcast with the fetched episodes
-            await MainActor.run {
-                podcast.episodes = episodes
-                if let feedArt = feedArt {
-                    podcast.feedArtworkURL = feedArt
+            currentPrefetches += 1
+            
+            Task {
+                defer { currentPrefetches -= 1 }
+                
+                // Fetch episodes for this podcast
+                let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+                
+                // Update the podcast with the fetched episodes
+                await MainActor.run {
+                    podcast.episodes = episodes
+                    if let feedArt = feedArt {
+                        podcast.feedArtworkURL = feedArt
+                    }
                 }
+                
+                // Preload only the first episode's audio to reduce startup time
+                if let firstEpisode = episodes.first {
+                    audioPlayer.preloadAudio(url: firstEpisode.url)
+                }
+                
+                print("Prefetched \(episodes.count) episodes for \(podcast.title)")
             }
             
-            // Preload the first episode's audio to reduce playback startup time
-            if let firstEpisode = episodes.first {
-                audioPlayer.preloadAudio(url: firstEpisode.url)
-            }
-            
-            print("Prefetched \(episodes.count) episodes for \(podcast.title)")
-            
-            // Add a small delay between fetches to avoid overwhelming the network
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            // Add a smaller delay between starting fetches
+            try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
         }
         
-        print("Completed background prefetch of subscribed podcasts")
+        print("Completed optimized background prefetch of subscribed podcasts")
     }
 }
 
@@ -538,26 +622,50 @@ struct EpisodeRow: View {
     @ObservedObject private var playedManager = PlayedEpisodesManager.shared
     
     var formattedTime: String {
-        // Ensure we have valid time values
-        guard currentTime.isFinite && duration.isFinite && 
-              currentTime >= 0 && duration >= 0 else {
-            return "00:00"
-        }
-        
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.unitsStyle = .positional
-        formatter.zeroFormattingBehavior = .pad
-        
         if isPlaying {
-            // For playing episodes, show current time / total time
-            let safeCurrentTime = min(currentTime, duration) // Ensure current time doesn't exceed duration
-            let currentTimeString = formatter.string(from: safeCurrentTime) ?? "00:00"
-            let durationString = formatter.string(from: duration) ?? "00:00"
-            return "\(currentTimeString) / \(durationString)"
+            // For playing episodes, get values directly from audioPlayer for real-time updates
+            let currentPlayerTime = audioPlayer.currentTime
+            let currentPlayerDuration = audioPlayer.duration
+            
+            // Ensure we have valid time values
+            guard currentPlayerTime.isFinite && currentPlayerDuration.isFinite && 
+                  currentPlayerTime >= 0 && currentPlayerDuration >= 0 && currentPlayerDuration > 0 else {
+                return "00:00"
+            }
+            
+            // For playing episodes, show remaining time as countdown
+            let safeCurrentTime = min(currentPlayerTime, currentPlayerDuration) // Ensure current time doesn't exceed duration
+            let remainingTime = max(currentPlayerDuration - safeCurrentTime, 0)
+            
+            // Use a simpler time formatting approach
+            let remainingSeconds = Int(remainingTime)
+            let hours = remainingSeconds / 3600
+            let minutes = (remainingSeconds % 3600) / 60
+            let seconds = remainingSeconds % 60
+            
+            if hours > 0 {
+                return String(format: "%d:%02d:%02d remaining", hours, minutes, seconds)
+            } else {
+                return String(format: "%d:%02d remaining", minutes, seconds)
+            }
         } else {
-            // For non-playing episodes, just show the duration
-            return formatter.string(from: duration) ?? "00:00"
+            // For non-playing episodes, use the episode duration
+            let episodeDuration = duration > 0 ? duration : (episode.duration ?? 0)
+            
+            guard episodeDuration.isFinite && episodeDuration >= 0 else {
+                return "00:00"
+            }
+            
+            let durationSeconds = Int(episodeDuration)
+            let hours = durationSeconds / 3600
+            let minutes = (durationSeconds % 3600) / 60
+            let seconds = durationSeconds % 60
+            
+            if hours > 0 {
+                return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            } else {
+                return String(format: "%d:%02d", minutes, seconds)
+            }
         }
     }
     
@@ -657,6 +765,7 @@ struct EpisodeRow: View {
                         .font(.caption)
                         // Use black in light mode, accentColor in dark mode when playing
                         .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .gray)
+                        .id(isPlaying ? "time-\(episode.id)-\(Int(audioPlayer.currentTime))" : "time-\(episode.id)") // Force redraw for playing episodes
                 }
                 .padding(.horizontal, 8)
             }
@@ -667,11 +776,25 @@ struct EpisodeRow: View {
             
             // Single action button area - either menu or progress indicator
             if case .downloading(let progress) = downloadState {
-                // Show download progress indicator when downloading
-                DeterminateLoadingIndicator(progress: progress)
-                    .frame(width: 40, height: 30)
-                    // Remove trailing padding here if indicator is last element
-                    // .padding(.trailing, 8)
+                // Show hoverable download progress indicator when downloading
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: false
+                )
+                .frame(width: 40, height: 30)
+                // Remove trailing padding here if indicator is last element
+                // .padding(.trailing, 8)
+            } else if case let .paused(progress, _) = downloadState {
+                // Show hoverable download progress indicator when paused
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: true
+                )
+                .frame(width: 40, height: 30)
+                // Remove trailing padding here if indicator is last element
+                // .padding(.trailing, 8)
             } else if shouldShowMenu {
                 // Show ellipsis menu when not downloading
                 Menu {
@@ -698,13 +821,22 @@ struct EpisodeRow: View {
                             }) {
                                 Label("Delete download", systemImage: "trash")
                             }
+                        case .paused:
+                            Button(action: {
+                                downloadManager.resumeDownload(for: episode)
+                            }) {
+                                Label("Resume download", systemImage: "play.circle")
+                            }
                         case .failed:
                             Button(action: download) {
                                 Label("Retry download", systemImage: "arrow.clockwise")
                             }
                         case .downloading:
-                            // No action for downloading state
-                            EmptyView()
+                            Button(action: {
+                                downloadManager.pauseDownload(for: episode)
+                            }) {
+                                Label("Pause download", systemImage: "pause.circle")
+                            }
                         }
                     }
                 } label: {

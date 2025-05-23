@@ -341,8 +341,48 @@ struct PersistenceManager {
     
     /// Clears the cue cache, forcing a reload from disk on next access
     static func clearCueCache() {
-        print("PersistenceManager: Clearing cue cache")
         cueCache = nil
+    }
+    
+    /// Clears the favorites cache, forcing a reload from disk on next access
+    static func clearFavoritesCache() {
+        favoritesCache = nil
+    }
+    
+    /// Clears the subscriptions cache, forcing a reload from disk on next access
+    static func clearSubscriptionsCache() {
+        subscriptionsCache = nil
+    }
+    
+    /// Clears the last playback cache, forcing a reload from disk on next access
+    static func clearLastPlaybackCache() {
+        lastPlaybackCache = nil
+    }
+    
+    /// Clears the downloads cache, forcing a reload from disk on next access
+    static func clearDownloadsCache() {
+        downloadsCache = nil
+    }
+    
+    /// Optimizes memory usage by clearing all caches
+    static func optimizeMemoryUsage() {
+        print("PersistenceManager: Optimizing memory usage by clearing caches")
+        clearCueCache()
+        clearFavoritesCache()
+        clearSubscriptionsCache() 
+        clearLastPlaybackCache()
+        clearDownloadsCache()
+    }
+    
+    /// Sets up memory optimization notifications
+    static func setupMemoryOptimization() {
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("OptimizePersistentCache"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            optimizeMemoryUsage()
+        }
     }
     
     /// Clears all persisted data, synchronously removing files and resetting caches.

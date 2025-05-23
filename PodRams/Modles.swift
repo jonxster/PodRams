@@ -13,16 +13,81 @@ class Podcast: Identifiable, Equatable, ObservableObject, @unchecked Sendable {
     var title: String
     let feedUrl: String?
     @Published var episodes: [PodcastEpisode]
-    var feedArtworkURL: URL?
+    @Published var feedArtworkURL: URL?
 
     init(title: String, feedUrl: String?, episodes: [PodcastEpisode] = []) {
         self.title = title
         self.feedUrl = feedUrl
         self.episodes = episodes
+        self.feedArtworkURL = nil
     }
 
     static func == (lhs: Podcast, rhs: Podcast) -> Bool {
         lhs.id == rhs.id
+    }
+    
+    /// Optimizes memory usage by limiting episode count and cleaning up data
+    /// Reduces memory footprint for podcast collections
+    func optimizeMemoryUsage() {
+        // Memory optimization: Limit episodes to most recent 50 to reduce memory usage
+        let maxEpisodes = 50
+        if episodes.count > maxEpisodes {
+            // Keep only the most recent episodes (assuming they're ordered by date)
+            episodes = Array(episodes.prefix(maxEpisodes))
+            print("Memory optimization: Limited \(title) to \(maxEpisodes) episodes")
+        }
+        
+        // Optimize episode data
+        for i in episodes.indices {
+            episodes[i] = optimizeEpisode(episodes[i])
+        }
+    }
+    
+    /// Optimizes individual episode data to reduce memory usage
+    private func optimizeEpisode(_ episode: PodcastEpisode) -> PodcastEpisode {
+        // Truncate overly long show notes to reduce memory usage
+        var optimizedShowNotes = episode.showNotes
+        if let notes = episode.showNotes, notes.count > 2000 {
+            // Keep first 2000 characters with ellipsis
+            let truncated = String(notes.prefix(2000)) + "..."
+            optimizedShowNotes = truncated
+        }
+        
+        // Create new optimized episode if changes were made
+        if optimizedShowNotes != episode.showNotes {
+            return PodcastEpisode(
+                id: episode.id,
+                title: episode.title,
+                url: episode.url,
+                artworkURL: episode.artworkURL,
+                duration: episode.duration,
+                showNotes: optimizedShowNotes,
+                feedUrl: episode.feedUrl,
+                podcastName: episode.podcastName
+            )
+        }
+        
+        return episode
+    }
+    
+    /// Calculates estimated memory usage of this podcast
+    func estimatedMemoryUsage() -> Int {
+        var totalSize = 0
+        
+        // Basic object overhead
+        totalSize += 64 // Base object size
+        
+        // Title and feed URL
+        totalSize += title.utf8.count
+        totalSize += feedUrl?.utf8.count ?? 0
+        
+        // Episodes collection
+        totalSize += episodes.count * 8 // Array overhead
+        for episode in episodes {
+            totalSize += episode.estimatedMemoryUsage()
+        }
+        
+        return totalSize
     }
 }
 
@@ -94,6 +159,29 @@ struct PodcastEpisode: Identifiable, Equatable, Codable {
         lhs.duration == rhs.duration &&
         lhs.showNotes == rhs.showNotes &&
         lhs.feedUrl == rhs.feedUrl
+    }
+    
+    /// Calculates estimated memory usage of this episode
+    func estimatedMemoryUsage() -> Int {
+        var totalSize = 0
+        
+        // Basic object overhead
+        totalSize += 64 // Base object size
+        
+        // Title and URL
+        totalSize += title.utf8.count
+        totalSize += url.absoluteString.utf8.count
+        
+        // Artwork URL
+        totalSize += artworkURL?.absoluteString.utf8.count ?? 0
+        
+        // Duration
+        totalSize += duration.map { _ in 8 } ?? 0
+        
+        // Show notes
+        totalSize += showNotes?.utf8.count ?? 0
+        
+        return totalSize
     }
 }
 

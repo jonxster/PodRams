@@ -13,6 +13,10 @@ struct PodRamsApp: App {
     // State for managing episodes and current episode index
     @State private var episodes: [PodcastEpisode] = []
     @State private var currentEpisodeIndex: Int?
+    @State private var selectedPodcast: Podcast?
+    
+    // Add notification center observer for app lifecycle
+    @State private var lifecycleObserver: Any?
     
     init() {
         // Set up any app-wide configurations
@@ -28,12 +32,23 @@ struct PodRamsApp: App {
         WindowGroup {
             ContentView(
                 appEpisodes: $episodes,
-                appCurrentEpisodeIndex: $currentEpisodeIndex
+                appCurrentEpisodeIndex: $currentEpisodeIndex,
+                appSelectedPodcast: $selectedPodcast
             )
             .environmentObject(audioPlayer) // Provide the audio player as an environment object
             .onAppear {
                 // Log for debugging launch issues
                 print("App launched at \(Date())")
+                setupLifecycleObserver()
+            }
+            .onDisappear {
+                cleanupLifecycleObserver()
+            }
+            .onChange(of: currentEpisodeIndex) {
+                saveCurrentState()
+            }
+            .onChange(of: episodes) {
+                saveCurrentState()
             }
         }
         .windowResizability(.contentMinSize)
@@ -51,5 +66,54 @@ struct PodRamsApp: App {
             // Add the Debug menu
             DebugCommands()
         }
+    }
+    
+    /// Sets up observer for app lifecycle events to save state when needed
+    private func setupLifecycleObserver() {
+        lifecycleObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            print("🔄 App will terminate - saving current state")
+            saveCurrentState()
+        }
+        
+        // Also save state when app becomes inactive (like when switching apps)
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            print("🔄 App resigned active - saving current state")
+            saveCurrentState()
+        }
+    }
+    
+    /// Removes lifecycle observers
+    private func cleanupLifecycleObserver() {
+        if let observer = lifecycleObserver {
+            NotificationCenter.default.removeObserver(observer)
+            lifecycleObserver = nil
+        }
+        NotificationCenter.default.removeObserver(self, name: NSApplication.didResignActiveNotification, object: nil)
+    }
+    
+    /// Saves the current playback state for persistence
+    private func saveCurrentState() {
+        guard let index = currentEpisodeIndex, 
+              index < episodes.count else {
+            print("⚠️ PodRamsApp: No valid current episode to save")
+            return
+        }
+        
+        let currentEpisode = episodes[index]
+        
+        // Try to determine the feed URL from the episode or selected podcast
+        let feedUrl = currentEpisode.feedUrl ?? selectedPodcast?.feedUrl
+        
+        print("💾 PodRamsApp: Saving current state - Episode: \(currentEpisode.title), Feed: \(feedUrl ?? "unknown")")
+        
+        PersistenceManager.saveLastPlayback(episode: currentEpisode, feedUrl: feedUrl)
     }
 }

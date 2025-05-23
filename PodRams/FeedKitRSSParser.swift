@@ -11,22 +11,19 @@ class FeedKitRSSParser {
     
     /// Parse RSS feed data and extract podcast episodes, artwork URL, and channel title
     func parse(data: Data) -> (episodes: [PodcastEpisode], feedArtwork: URL?, channelTitle: String?) {
-        // Assume initializer succeeds if FeedKit is imported
+        // FeedParser initializer doesn't return optional, so use it directly
         let parser = FeedParser(data: data)
         
-        // Attempt to parse
+        // Attempt to parse as RSS with improved error handling
         let result = parser.parse()
         
         switch result {
         case .success(let feed):
             if let rssFeed = feed.rssFeed {
-                // Call the private instance method
                 return parseRSSFeed(rssFeed)
             } else if let atomFeed = feed.atomFeed {
-                // Call the private instance method
                 return parseAtomFeed(atomFeed)
             } else if let jsonFeed = feed.jsonFeed {
-                // Call the private instance method
                 return parseJSONFeed(jsonFeed)
             } else {
                 print("Feed format not recognized")
@@ -34,7 +31,6 @@ class FeedKitRSSParser {
             }
             
         case .failure(let error):
-            // Use _ to silence the unused variable warning
             print("FeedKit parsing error: \(error)")
             return ([], nil, nil)
         }
@@ -55,12 +51,16 @@ class FeedKitRSSParser {
             feedArtworkURL = URL(string: imageUrl)
         }
         
-        // Parse episodes from the first 10 items
+        // Parse episodes from the first 15 items for better performance
         if let items = feed.items {
-            for item in items.prefix(10) { // Limit to first 10
-                // Call the private instance method
+            let limitedItems = items.prefix(15) // Increase from 10 to 15 but still limit
+            for item in limitedItems {
                 if let episode = createEpisodeFromRSSItem(item) {
                     episodes.append(episode)
+                }
+                // Early break if we have enough episodes
+                if episodes.count >= 10 {
+                    break
                 }
             }
         }
@@ -81,12 +81,16 @@ class FeedKitRSSParser {
             feedArtworkURL = URL(string: logoString)
         }
         
-        // Parse episodes from the first 10 entries
+        // Parse episodes from the first 15 entries for better performance
         if let entries = feed.entries {
-            for entry in entries.prefix(10) { // Limit to first 10
-                // Call the private instance method
+            let limitedEntries = entries.prefix(15)
+            for entry in limitedEntries {
                 if let episode = createEpisodeFromAtomEntry(entry) {
                     episodes.append(episode)
+                }
+                // Early break if we have enough episodes
+                if episodes.count >= 10 {
+                    break
                 }
             }
         }
@@ -107,12 +111,16 @@ class FeedKitRSSParser {
             feedArtworkURL = URL(string: faviconString)
         }
         
-        // Parse episodes from the first 10 items
+        // Parse episodes from the first 15 items for better performance
         if let items = feed.items {
-            for item in items.prefix(10) { // Limit to first 10
-                // Call the private instance method
+            let limitedItems = items.prefix(15)
+            for item in limitedItems {
                 if let episode = createEpisodeFromJSONItem(item) {
                     episodes.append(episode)
+                }
+                // Early break if we have enough episodes
+                if episodes.count >= 10 {
+                    break
                 }
             }
         }

@@ -20,6 +20,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     enum DownloadState: Equatable {
         case none
         case downloading(progress: Double)
+        case paused(progress: Double, resumeData: Data)
         case downloaded(URL)
         case failed(Error)
         
@@ -30,6 +31,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 return true
             case let (.downloading(p1), .downloading(p2)):
                 return p1 == p2
+            case let (.paused(p1, _), .paused(p2, _)):
+                return p1 == p2 // Compare progress, not resume data
             case let (.downloaded(url1), .downloaded(url2)):
                 return url1 == url2
             case (.failed, .failed):
@@ -43,7 +46,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Published dictionary that maps each episode's URL (as a string) to its current download state.
     @Published var downloadStates: [String: DownloadState] = [:]
     /// Dictionary holding active download tasks, keyed by episode URL string.
-    private var downloadTasks: [String: URLSessionDownloadTask] = [:]
+    internal var downloadTasks: [String: URLSessionDownloadTask] = [:]
     /// Dictionary holding progress observations for each download task.
     private var progressObservations: [String: NSKeyValueObservation] = [:]
     /// File manager used for file operations.
@@ -552,6 +555,168 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         }
         
         return DownloadState.none
+    }
+    
+    /// Pauses an ongoing download for the specified episode.
+    /// - Parameter episode: The podcast episode to pause downloading.
+    func pauseDownload(for episode: PodcastEpisode) {
+        let key = episode.url.absoluteString
+        
+        // Check if there's an active download task for this episode
+        guard let task = downloadTasks[key] else {
+            logger.warning("No active download task found for episode: \(episode.title)")
+            return
+        }
+        
+        // Check if the episode is currently downloading
+        guard case let .downloading(progress) = downloadStates[key] else {
+            logger.warning("Episode is not in downloading state: \(episode.title)")
+            return
+        }
+        
+        logger.info("Pausing download for episode: \(episode.title)")
+        
+        // Cancel the task and get resume data
+        task.cancel { resumeDataOrNil in
+            guard let resumeData = resumeDataOrNil else {
+                self.logger.error("Failed to get resume data for episode: \(episode.title)")
+                DispatchQueue.main.async {
+                    self.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to pause download"]))
+                }
+                return
+            }
+            
+            // Update state to paused with resume data
+            DispatchQueue.main.async {
+                self.downloadStates[key] = .paused(progress: progress, resumeData: resumeData)
+                self.saveDownloadStates()
+            }
+            
+            self.logger.info("Successfully paused download for episode: \(episode.title)")
+        }
+        
+        // Clean up the task and progress observer
+        downloadTasks.removeValue(forKey: key)
+        progressObservations[key]?.invalidate()
+        progressObservations.removeValue(forKey: key)
+    }
+    
+    /// Resumes a paused download for the specified episode.
+    /// - Parameter episode: The podcast episode to resume downloading.
+    func resumeDownload(for episode: PodcastEpisode) {
+        let key = episode.url.absoluteString
+        
+        // Check if the episode is currently paused
+        guard case let .paused(progress, resumeData) = downloadStates[key] else {
+            logger.warning("Episode is not in paused state: \(episode.title)")
+            return
+        }
+        
+        logger.info("Resuming download for episode: \(episode.title)")
+        
+        // Update state to downloading
+        downloadStates[key] = .downloading(progress: progress)
+        
+        // Create a new download task with resume data
+        let task = downloadSession.downloadTask(withResumeData: resumeData) { [weak self] tempURL, response, error in
+            guard let downloadManager = self else { return }
+            
+            // Handle error scenario.
+            if let error = error {
+                downloadManager.logger.error("Resume download error for episode '\(episode.title)': \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    downloadManager.downloadStates[key] = .failed(error)
+                    downloadManager.saveDownloadStates()
+                }
+                return
+            }
+            
+            // Ensure a temporary URL is provided.
+            guard let tempURL = tempURL else {
+                downloadManager.logger.error("No temporary URL provided for resumed download: \(episode.title)")
+                DispatchQueue.main.async {
+                    downloadManager.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
+                    downloadManager.saveDownloadStates()
+                }
+                return
+            }
+            
+            // Use the same completion logic as regular downloads
+            downloadManager.fileOperationQueue.async {
+                let fileManager = FileManager.default
+                let containerURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+                let downloadsURL = containerURL.appendingPathComponent("Downloads")
+                
+                // Generate destination filename using SHA256 hash with a ".mp3" extension.
+                let filename = downloadManager.sha256(episode.url.absoluteString) + ".mp3"
+                let destinationURL = downloadsURL.appendingPathComponent(filename)
+                
+                do {
+                    // Remove any existing file at the destination.
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+                    
+                    // Move the downloaded file from the temporary location to the final destination.
+                    try fileManager.moveItem(at: tempURL, to: destinationURL)
+                    downloadManager.logger.info("Successfully completed resumed download: \(destinationURL.path)")
+                    
+                    // Update the file existence cache
+                    downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
+                    
+                    DispatchQueue.main.async {
+                        downloadManager.downloadStates[key] = .downloaded(destinationURL)
+                        downloadManager.saveDownloadStates()
+                        downloadManager.postDownloadCompletedNotification(for: episode)
+                    }
+                    
+                } catch {
+                    downloadManager.logger.error("Error moving resumed download file for episode '\(episode.title)': \(error.localizedDescription)")
+                    
+                    // Fallback: Try copying the file instead of moving.
+                    do {
+                        try fileManager.copyItem(at: tempURL, to: destinationURL)
+                        downloadManager.logger.info("Successfully copied resumed download using fallback method")
+                        
+                        // Update the file existence cache
+                        downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
+                        
+                        DispatchQueue.main.async {
+                            downloadManager.downloadStates[key] = .downloaded(destinationURL)
+                            downloadManager.saveDownloadStates()
+                            downloadManager.postDownloadCompletedNotification(for: episode)
+                        }
+                    } catch {
+                        downloadManager.logger.error("Fallback copy also failed for resumed download: \(error.localizedDescription)")
+                        DispatchQueue.main.async {
+                            downloadManager.downloadStates[key] = .failed(error)
+                            downloadManager.saveDownloadStates()
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Observe download progress and update the download state accordingly.
+        progressObservations[key] = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            guard let downloadManager = self else { return }
+            
+            // Throttle UI updates for better performance
+            // Only update UI when progress changes by at least 1%
+            let newProgress = progress.fractionCompleted
+            if case let .downloading(oldProgress) = downloadManager.downloadStates[key],
+               abs(newProgress - oldProgress) < 0.01 && oldProgress > 0 && newProgress < 1.0 {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                downloadManager.downloadStates[key] = .downloading(progress: newProgress)
+            }
+        }
+        
+        downloadTasks[key] = task
+        task.resume()
+        logger.info("Resume download task started for \(episode.title)")
     }
     
     deinit {

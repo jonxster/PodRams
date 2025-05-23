@@ -68,37 +68,79 @@ struct EpisodeListView: View {
     @Binding var cueList: [PodcastEpisode]  // Binding to the play queue, enabling real-time updates.
     @Binding var isCuePlaying: Bool
     
-    // Add a timer to force UI updates
-    @State private var refreshTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    // Add a timer to force UI updates - increase frequency for smooth countdown
+    @State private var refreshTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+    
+    // Add memoization for expensive operations - simplified to avoid state modification during view updates
+    @State private var sortedEpisodesCache: [PodcastEpisode] = []
+    @State private var lastEpisodesCount: Int = 0
+    @State private var lastSelectedIndex: Int? = nil
+    @State private var lastRefreshTime: Date = Date()
     
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
     private func handleEpisodeSelect(_ index: Int, episode: PodcastEpisode) {
-        // Reset cue playing state when selecting an episode from a podcast
-        isCuePlaying = false
-        
-        // First stop any current playback
-        audioPlayer.stopAudio()
-        
-        // Then set the new index and start playback
-        selectedIndex = index
-        
-        // MARK the episode as played
-        PlayedEpisodesManager.shared.markAsPlayed(episode)
-        
-        // Get the local URL if available, otherwise use the remote URL
-        let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
-        
-        // Add a small delay to ensure the previous playback is fully stopped
-        // Call playAudio directly (it now handles async loading)
-        // Save last playback in a background task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { 
-            audioPlayer.playAudio(url: playURL)
-            // Move persistence saving to background task
-            Task(priority: .background) { 
-                PersistenceManager.saveLastPlayback(episode: episode, feedUrl: episode.feedUrl ?? "")
+        // Optimize by finding index more efficiently
+        if let actualIndex = episodes.firstIndex(where: { $0.id == episode.id }) {
+            selectedIndex = actualIndex
+            
+            // Determine the URL to play
+            let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
+            
+            audioPlayer.stopAudio()
+            
+            // Add a small delay to avoid audio conflicts
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                audioPlayer.playAudio(url: playURL)
+                PlayedEpisodesManager.shared.markAsPlayed(episode)
+                if let feedUrl = selectedPodcast?.feedUrl {
+                    PersistenceManager.saveLastPlayback(episode: episode, feedUrl: feedUrl)
+                }
             }
         }
+    }
+    
+    /// Returns sorted episodes without modifying state during view updates
+    private var sortedEpisodes: [PodcastEpisode] {
+        // Check if we can use cached result
+        if lastEpisodesCount == episodes.count && 
+           lastSelectedIndex == selectedIndex &&
+           !sortedEpisodesCache.isEmpty {
+            return sortedEpisodesCache
+        }
+        
+        // Sort episodes: playing episode first, then unplayed, then played.
+        let sorted = episodes.enumerated().sorted { (lhs, rhs) -> Bool in
+            let lhsIndex = lhs.offset
+            let rhsIndex = rhs.offset
+            
+            let lhsIsPlaying = selectedIndex == lhsIndex
+            let rhsIsPlaying = selectedIndex == rhsIndex
+            
+            // Prioritize the currently playing episode
+            if lhsIsPlaying { return true }
+            if rhsIsPlaying { return false }
+            
+            // If neither is playing, sort by played status
+            let lhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(lhs.element)
+            let rhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(rhs.element)
+            
+            if lhsPlayed == rhsPlayed {
+                return lhsIndex < rhsIndex
+            } else {
+                return !lhsPlayed && rhsPlayed
+            }
+        }.map { $0.element }
+        
+        return sorted
+    }
+    
+    /// Updates the cache when appropriate (called from onAppear/onChange)
+    private func updateSortedCache() {
+        let sorted = sortedEpisodes
+        sortedEpisodesCache = sorted
+        lastEpisodesCount = episodes.count
+        lastSelectedIndex = selectedIndex
     }
     
     /// Toggles the inclusion of an episode in the play queue (cue).
@@ -138,44 +180,30 @@ struct EpisodeListView: View {
     }
     
     var body: some View {
-        // Sort episodes: playing episode first, then unplayed, then played.
-        let sortedEpisodes = episodes.enumerated().sorted { (lhs, rhs) -> Bool in
-            let lhsIndex = lhs.offset
-            let rhsIndex = rhs.offset
-            
-            let lhsIsPlaying = selectedIndex == lhsIndex
-            let rhsIsPlaying = selectedIndex == rhsIndex
-            
-            // Prioritize the currently playing episode
-            if lhsIsPlaying { return true } // lhs (playing) comes before rhs (not playing)
-            if rhsIsPlaying { return false } // rhs (playing) comes before lhs (not playing)
-            
-            // If neither is playing, sort by played status
-            let lhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(lhs.element)
-            let rhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(rhs.element)
-            
-            if lhsPlayed == rhsPlayed {
-                return lhsIndex < rhsIndex // Maintain original order if played status is the same
-            } else {
-                return !lhsPlayed && rhsPlayed // Unplayed first
-            }
-        }.map { $0.element } // Extract only the episodes after sorting
+        // Use the computed property instead of function call
+        let sortedEpisodesList = sortedEpisodes
         
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                // Iterate over the sorted episodes, relying on PodcastEpisode's Identifiable conformance
-                ForEach(sortedEpisodes) { episode in
-                    // Find the original index for selection handling if needed
-                    // Note: This might be inefficient for very large lists, but is simple.
-                    // If performance becomes an issue, consider passing the sorted index or using a different approach.
-                    let originalIndex = episodes.firstIndex { $0.id == episode.id }
+                // Pre-compute episode indices to avoid repeated firstIndex calls
+                let episodeIndices = Dictionary(uniqueKeysWithValues: 
+                    episodes.enumerated().map { ($0.element.id, $0.offset) })
+                
+                // Iterate over the sorted episodes
+                ForEach(sortedEpisodesList) { episode in
+                    // Use pre-computed index lookup
+                    let originalIndex = episodeIndices[episode.id]
                     
                     let isPlaying = selectedIndex == originalIndex
+                    
+                    // Pre-compute expensive checks outside the view
+                    let isInCue = cue.contains { $0.url.absoluteString == episode.url.absoluteString }
+                    
                     let config = EpisodeRowConfiguration(
                         episode: episode,
-                        index: originalIndex ?? -1, // Use original index or -1 if not found
+                        index: originalIndex ?? -1,
                         isPlaying: isPlaying,
-                        isInCue: cue.contains { $0.url.absoluteString == episode.url.absoluteString },
+                        isInCue: isInCue,
                         // For the playing episode, use the current time from the audio player
                         currentTime: isPlaying ? audioPlayer.currentTime : 0,
                         // For the playing episode, use the duration from the audio player
@@ -189,6 +217,7 @@ struct EpisodeListView: View {
                     
                     // Render the episode row using the configured settings.
                     ConfiguredEpisodeRow(config: config)
+                        .id("\(episode.id)-\(isPlaying)-\(isInCue)-\(Int(lastRefreshTime.timeIntervalSince1970))") // Include refresh time for countdown updates
                 }
             }
             .padding(.top, 10)
@@ -196,8 +225,20 @@ struct EpisodeListView: View {
         }
         // Force refresh the view periodically to update the time display
         .onReceive(refreshTimer) { _ in
-            print("EpisodeListView: Refresh timer fired at \(Date())")
-            // This empty handler forces the view to refresh
+            // Update the refresh time to trigger view updates
+            lastRefreshTime = Date()
+            
+            // Force update the sorted cache if needed
+            updateSortedCache()
+        }
+        .onAppear {
+            updateSortedCache()
+        }
+        .onChange(of: episodes.count) {
+            updateSortedCache()
+        }
+        .onChange(of: selectedIndex) {
+            updateSortedCache()
         }
     }
 }

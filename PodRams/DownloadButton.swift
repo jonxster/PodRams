@@ -34,9 +34,13 @@ struct DownloadButton: View {
                 print("DownloadButton: Removing download for \(episode.title)")
                 downloadManager.removeDownload(for: episode)
             case .downloading:
-                // No action defined for canceling an ongoing download; future cancel functionality could be added here.
+                // No action for the button itself when downloading - pause/resume is handled by hover indicator
                 print("DownloadButton: Episode \(episode.title) is currently downloading")
                 break
+            case .paused:
+                // Resume download when clicking the main button for paused downloads
+                print("DownloadButton: Resuming download for \(episode.title)")
+                downloadManager.resumeDownload(for: episode)
             case .failed:
                 // Retry downloading the episode if a previous download attempt failed.
                 print("DownloadButton: Retrying download for \(episode.title)")
@@ -52,10 +56,21 @@ struct DownloadButton: View {
                         .font(.system(size: 16))
                         .foregroundColor(.accentColor)
                 case .downloading(let progress):
-                    // Show a determinate loading indicator with the current progress.
-                    // Log outside the view builder
-                    let _ = print("DownloadButton: Showing progress indicator for \(episode.title): \(progress)")
-                    DeterminateLoadingIndicator(progress: progress)
+                    // Show a hoverable progress indicator with pause/resume functionality.
+                    let _ = print("DownloadButton: Showing hoverable progress indicator for \(episode.title): \(progress)")
+                    HoverableDownloadIndicator(
+                        episode: episode,
+                        progress: progress,
+                        isPaused: false
+                    )
+                case .paused(let progress, _):
+                    // Show a hoverable progress indicator in paused state with resume functionality.
+                    let _ = print("DownloadButton: Showing paused progress indicator for \(episode.title): \(progress)")
+                    HoverableDownloadIndicator(
+                        episode: episode,
+                        progress: progress,
+                        isPaused: true
+                    )
                 case .downloaded:
                     // Show a trash icon to indicate the option to remove the download.
                     Image(systemName: "trash")
@@ -71,5 +86,19 @@ struct DownloadButton: View {
         }
         // Use a plain button style for consistency with other buttons
         .buttonStyle(PlainButtonStyle())
+        // Disable button interaction when download is in progress to let hover indicator handle it
+        .disabled(downloadState.isDownloadInProgress)
+    }
+}
+
+// Extension to help determine if download is in progress
+extension DownloadManager.DownloadState {
+    var isDownloadInProgress: Bool {
+        switch self {
+        case .downloading, .paused:
+            return true
+        default:
+            return false
+        }
     }
 }

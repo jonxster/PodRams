@@ -1,0 +1,4 @@
+module FeedKit {
+    header "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/FeedKit.build/FeedKit-Swift.h"
+    requires objc
+}

@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/master.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/runner.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/runner.swiftdeps"
+  }
+}

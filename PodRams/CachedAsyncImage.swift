@@ -24,8 +24,25 @@ public struct CachedAsyncImage: View {
     private static var loadingTasks = [String: URLSessionDataTask]()
     private static let loadingTaskLock = NSLock()
     
+    // Use a more sophisticated cache with size limits
+    private static let urlRequestCache: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.totalCostLimit = 100 // Limit to 100 URLs
+        cache.countLimit = 100
+        return cache
+    }()
+    
+    // Optimize cache configuration
+    static let optimizedImageCache: NSCache<NSURL, NSImage> = {
+        let cache = NSCache<NSURL, NSImage>()
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
+        cache.countLimit = 200 // Maximum 200 images
+        return cache
+    }()
+    
     // Track the last URL we tried to load to prevent redundant loading
-    private static var lastLoadedURLs = [String: Bool]()
+    private static var lastLoadedURLs = [String: Date]()
+    private static let failureCooldownPeriod: TimeInterval = 300 // 5 minutes
     
     /// The loaded image (if available) represented as an NSImage.
     @State private var loadedImage: NSImage?
@@ -132,7 +149,7 @@ public struct CachedAsyncImage: View {
             // --- Start: Moved checks inside background queue --- 
             
             // Check in-memory cache first
-            if let memImage = Self.imageCache.object(forKey: url as NSURL) {
+            if let memImage = Self.optimizedImageCache.object(forKey: url as NSURL) {
                 DispatchQueue.main.async {
                     loadedImage = memImage
                     isLoading = false
@@ -145,23 +162,24 @@ public struct CachedAsyncImage: View {
             if Self.loadingTasks[urlKey] != nil {
                 // Task is already in progress, just let the existing one finish
                 Self.loadingTaskLock.unlock()
-                // Important: Don't return here. Let the existing task update the UI.
-                // We keep isLoading true on the main thread until an image is loaded or an error occurs.
                 return 
             }
             
-            // Check if we recently failed to load this URL
-            if let hasAttempted = Self.lastLoadedURLs[urlKey], hasAttempted {
-                Self.loadingTaskLock.unlock()
-                 DispatchQueue.main.async { // Ensure UI state is updated from background
-                    isLoading = false 
-                    loadError = true // Mark as error if we already failed
+            // Check if we recently failed to load this URL with cooldown
+            if let lastAttempt = Self.lastLoadedURLs[urlKey] {
+                let timeSinceLastAttempt = Date().timeIntervalSince(lastAttempt)
+                if timeSinceLastAttempt < Self.failureCooldownPeriod {
+                    Self.loadingTaskLock.unlock()
+                     DispatchQueue.main.async {
+                        isLoading = false 
+                        loadError = true
+                    }
+                    return
                 }
-                return // Already tried and failed (or is loading), don't try again immediately
             }
             
             // Mark that we've attempted to load this URL
-            Self.lastLoadedURLs[urlKey] = true
+            Self.lastLoadedURLs[urlKey] = Date()
             
             // Capture fileURL before unlocking
             let fileURL = self.cachedFileURL(for: url)
@@ -180,7 +198,7 @@ public struct CachedAsyncImage: View {
                let image = processImageData(data) {
                 
                 Self.loadingTaskLock.lock()
-                Self.imageCache.setObject(image, forKey: url as NSURL)
+                Self.optimizedImageCache.setObject(image, forKey: url as NSURL)
                 // Remove placeholder task if we loaded from disk
                 if Self.loadingTasks[urlKey] === placeholderTask { 
                     Self.loadingTasks.removeValue(forKey: urlKey)
@@ -272,7 +290,7 @@ public struct CachedAsyncImage: View {
                 storeImage(data: data, for: url) // Store to disk cache
                 
                 Self.loadingTaskLock.lock()
-                Self.imageCache.setObject(image, forKey: url as NSURL) // Store to memory cache
+                Self.optimizedImageCache.setObject(image, forKey: url as NSURL) // Store to memory cache
                 Self.loadingTaskLock.unlock()
                 
                 DispatchQueue.main.async {

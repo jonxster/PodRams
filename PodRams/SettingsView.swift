@@ -72,8 +72,3 @@ struct SettingsView: View {
         .frame(width: 300, height: 200)
     }
 }
-
-// Add notification name for audio pan changes
-extension Notification.Name {
-    static let audioPanChanged = Notification.Name("audioPanChanged")
-}

@@ -372,9 +372,21 @@ struct CueRowView: View {
             
             // Show download progress indicator or ellipsis menu
             if case .downloading(let progress) = downloadState {
-                // Show download progress indicator when downloading
-                DeterminateLoadingIndicator(progress: progress)
-                    .frame(width: 20, height: 20)
+                // Show hoverable download progress indicator when downloading
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: false
+                )
+                .frame(width: 20, height: 20)
+            } else if case let .paused(progress, _) = downloadState {
+                // Show hoverable download progress indicator when paused
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: true
+                )
+                .frame(width: 20, height: 20)
             } else {
                 // Show ellipsis menu
                 Menu {
@@ -404,6 +416,13 @@ struct CueRowView: View {
                         }) {
                             Label("Delete download", systemImage: "trash")
                         }
+                    case .paused:
+                        Button(action: {
+                            print("CueRowView: Resuming download for \(episode.title)")
+                            downloadManager.resumeDownload(for: episode)
+                        }) {
+                            Label("Resume download", systemImage: "play.circle")
+                        }
                     case .failed:
                         Button(action: {
                             print("CueRowView: Retrying download for \(episode.title)")
@@ -412,8 +431,12 @@ struct CueRowView: View {
                             Label("Retry download", systemImage: "arrow.clockwise")
                         }
                     case .downloading:
-                        // No action for downloading state
-                        EmptyView()
+                        Button(action: {
+                            print("CueRowView: Pausing download for \(episode.title)")
+                            downloadManager.pauseDownload(for: episode)
+                        }) {
+                            Label("Pause download", systemImage: "pause.circle")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")

@@ -117,11 +117,15 @@ struct SearchSheetView: View {
     }
 
     private func isFavorite(_ podcast: Podcast) -> Bool {
-        favoritePodcasts.contains { $0.id == podcast.id }
+        // Use feedUrl for comparison instead of id
+        guard let feedUrl = podcast.feedUrl else { return false }
+        return favoritePodcasts.contains { $0.feedUrl == feedUrl }
     }
     
     private func toggleFavorite(_ podcast: Podcast) {
-        if let idx = favoritePodcasts.firstIndex(where: { $0.id == podcast.id }) {
+        guard let feedUrl = podcast.feedUrl else { return }
+        
+        if let idx = favoritePodcasts.firstIndex(where: { $0.feedUrl == feedUrl }) {
             // Create a new array to avoid direct binding modification
             var updatedFavorites = favoritePodcasts
             updatedFavorites.remove(at: idx)
@@ -136,25 +140,33 @@ struct SearchSheetView: View {
     }
     
     private func isSubscribed(_ podcast: Podcast) -> Bool {
-        subscribedPodcasts.contains { $0.id == podcast.id }
+        // Use feedUrl for comparison instead of id
+        guard let feedUrl = podcast.feedUrl else { return false }
+        return subscribedPodcasts.contains { $0.feedUrl == feedUrl }
     }
     
     private func toggleSubscription(_ podcast: Podcast) {
-        if let idx = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) {
-            // Create a new array to avoid direct binding modification
+        guard let feedUrl = podcast.feedUrl else { 
+            print("Warning: Cannot subscribe to podcast without feed URL")
+            return 
+        }
+        
+        if let idx = subscribedPodcasts.firstIndex(where: { $0.feedUrl == feedUrl }) {
+            // Remove from subscriptions
             var updatedSubscriptions = subscribedPodcasts
             updatedSubscriptions.remove(at: idx)
             subscribedPodcasts = updatedSubscriptions
+            print("Removed subscription for: \(podcast.title)")
         } else {
-            // Check if a podcast with the same feed URL already exists
-            if let feedUrl = podcast.feedUrl, 
-               !subscribedPodcasts.contains(where: { $0.feedUrl == feedUrl }) {
-                // Create a new array to avoid direct binding modification
-                var updatedSubscriptions = subscribedPodcasts
-                updatedSubscriptions.append(podcast)
-                subscribedPodcasts = updatedSubscriptions
-            }
+            // Add to subscriptions
+            var updatedSubscriptions = subscribedPodcasts
+            updatedSubscriptions.append(podcast)
+            subscribedPodcasts = updatedSubscriptions
+            print("Added subscription for: \(podcast.title)")
         }
+        
+        // Save updated subscriptions
         PersistenceManager.saveSubscriptions(subscribedPodcasts)
+        print("Subscriptions saved. Total: \(subscribedPodcasts.count)")
     }
 }

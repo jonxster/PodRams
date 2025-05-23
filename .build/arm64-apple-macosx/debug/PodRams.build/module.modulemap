@@ -1,0 +1,4 @@
+module PodRams {
+    header "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PodRams-Swift.h"
+    requires objc
+}

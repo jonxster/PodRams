@@ -36,13 +36,15 @@ struct SimpleEpisodeRow: View {
                         height: 40
                     )
                     .cornerRadius(4)
+                    .frame(width: 40, height: 40) // Explicit frame to prevent negative calculations
                     
                     // Episode title and podcast name
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title)
-                            .lineLimit(1)
+                            .lineLimit(2) // Allow wrapping but limit lines
                             .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .primary)
                             .font(isPlaying ? .body.bold() : .body)
+                            .frame(minWidth: 100, alignment: .leading) // Ensure minimum width
                         
                         if let podcastName = episode.podcastName {
                             Text(podcastName)
@@ -58,22 +60,37 @@ struct SimpleEpisodeRow: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading) // Flexible width with minimum
                     
-                    Spacer()
+                    Spacer(minLength: 8) // Ensure minimum spacing before buttons
                 }
             }
             .buttonStyle(PlainButtonStyle())
             .contentShape(Rectangle())
+            .frame(minWidth: 180) // Ensure minimum width for the entire button
             
             // Debug print to check the download state (outside the view builder)
             let _ = print("SimpleEpisodeRow: Episode \(episode.title) has state: \(String(describing: downloadState))")
             
             // Show download progress indicator or ellipsis menu (outside the button)
             if case .downloading(let progress) = downloadState {
-                // Show download progress indicator when downloading
-                let _ = print("SimpleEpisodeRow: Showing progress indicator for \(episode.title): \(progress)")
-                DeterminateLoadingIndicator(progress: progress)
-                    .frame(width: 20, height: 20)
+                // Show hoverable download progress indicator when downloading
+                let _ = print("SimpleEpisodeRow: Showing hoverable progress indicator for \(episode.title): \(progress)")
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: false
+                )
+                .frame(width: 20, height: 20)
+            } else if case let .paused(progress, _) = downloadState {
+                // Show hoverable download progress indicator when paused
+                let _ = print("SimpleEpisodeRow: Showing paused progress indicator for \(episode.title): \(progress)")
+                HoverableDownloadIndicator(
+                    episode: episode,
+                    progress: progress,
+                    isPaused: true
+                )
+                .frame(width: 20, height: 20)
             } else {
                 // Show ellipsis menu
                 Menu {
@@ -107,12 +124,19 @@ struct SimpleEpisodeRow: View {
                         }) {
                             Label("Download", systemImage: "arrow.down.circle")
                         }
-                    case .downloaded(_):
+                    case .downloaded:
                         Button(action: {
                             print("SimpleEpisodeRow: Removing download for \(episode.title)")
                             downloadManager.removeDownload(for: episode)
                         }) {
                             Label("Delete download", systemImage: "trash")
+                        }
+                    case .paused:
+                        Button(action: {
+                            print("SimpleEpisodeRow: Resuming download for \(episode.title)")
+                            downloadManager.resumeDownload(for: episode)
+                        }) {
+                            Label("Resume download", systemImage: "play.circle")
                         }
                     case .failed(_):
                         Button(action: {
@@ -122,8 +146,12 @@ struct SimpleEpisodeRow: View {
                             Label("Retry download", systemImage: "arrow.clockwise")
                         }
                     case .downloading(_):
-                        // No action for downloading state
-                        EmptyView()
+                        Button(action: {
+                            print("SimpleEpisodeRow: Pausing download for \(episode.title)")
+                            downloadManager.pauseDownload(for: episode)
+                        }) {
+                            Label("Pause download", systemImage: "pause.circle")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -133,8 +161,10 @@ struct SimpleEpisodeRow: View {
                 }
                 .menuStyle(BorderlessButtonMenuStyle())
                 .menuIndicator(.hidden) // Hide the menu indicator arrow
+                .frame(width: 20, height: 20) // Fixed size to prevent layout calculations
             }
         }
+        .frame(minWidth: 220) // Ensure overall minimum width
         .padding(.vertical, 4)
         .onAppear {
             // Load the cue when the view appears
