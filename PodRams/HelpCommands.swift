@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 /// Provides help documentation accessible via the app's menu.
 struct HelpCommands: Commands {
@@ -49,17 +52,9 @@ struct HelpCommands: Commands {
     
     /// Shows help content for the specified section
     private func showHelp(section: HelpSection) {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        
-        window.title = section.title
-        window.contentView = NSHostingView(rootView: HelpContentView(section: section))
-        window.center()
-        window.makeKeyAndOrderFront(nil)
+        #if os(macOS)
+        HelpWindowManager.shared.open(section: section)
+        #endif
     }
 }
 
@@ -194,4 +189,49 @@ struct HelpContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-} 
+}
+
+#if os(macOS)
+/// Manages the lifecycle of help windows to avoid premature deallocation crashes.
+@MainActor
+final class HelpWindowManager: NSObject, NSWindowDelegate {
+    static let shared = HelpWindowManager()
+
+    private var windows: [HelpSection: NSWindow] = [:]
+
+    func open(section: HelpSection) {
+        if let existing = windows[section] {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let controller = NSHostingController(rootView: HelpContentView(section: section))
+        controller.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+
+        let window = NSWindow(
+            contentRect: controller.view.frame,
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.isReleasedWhenClosed = false
+        window.title = section.title
+        window.contentViewController = controller
+        window.delegate = self
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        windows[section] = window
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        if let entry = windows.first(where: { $0.value == window }) {
+            windows.removeValue(forKey: entry.key)
+        }
+    }
+}
+#endif

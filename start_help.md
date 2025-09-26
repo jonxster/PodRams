@@ -70,6 +70,7 @@
 - 2025-03-09 — Show notes move into a dedicated toolbar popover that loads content in the background, PlayerView keeps artwork static, and ContentView orchestrates the new ShowNotesView experience. Toolbar button uses the Liquid Glass style and preloads show notes for the current episode.
 - 2025-03-09 — AppTheme now resolves the live system appearance (macOS/iOS) and ContentView reuses it for toolbar coloring to keep light/dark parity. EpisodeListView regained its sorted cache helpers, and PodRamsApp uses the modern two-parameter `onChange` signature to avoid macOS 14 deprecation warnings.
 - 2025-03-10 — Playback progress is now persisted per episode so the player resumes where you left off; AudioPlayer clears progress on completion and updates PlayedEpisodesManager when shows finish.
+- 2025-09-26 — Help menu windows now persist via HelpWindowManager to prevent crashes, and show notes wrap long paragraphs with tappable links that open in the browser.
 
 ## Project Rules
 - Always adhere to Liquid Glass design when writing code.
