@@ -71,11 +71,9 @@ struct EpisodeListView: View {
     // Add a timer to force UI updates - increase frequency for smooth countdown
     @State private var refreshTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
     
-    // Add memoization for expensive operations - simplified to avoid state modification during view updates
-    @State private var sortedEpisodesCache: [PodcastEpisode] = []
-    @State private var lastEpisodesCount: Int = 0
-    @State private var lastSelectedIndex: Int? = nil
     @State private var lastRefreshTime: Date = Date()
+    @State private var sortedEpisodesCache: [PodcastEpisode] = []
+    @State private var cachedEpisodeIDs: [String] = []
     
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
@@ -84,63 +82,17 @@ struct EpisodeListView: View {
         if let actualIndex = episodes.firstIndex(where: { $0.id == episode.id }) {
             selectedIndex = actualIndex
             
-            // Determine the URL to play
-            let playURL = DownloadManager.shared.localURL(for: episode) ?? episode.url
-            
             audioPlayer.stopAudio()
             
             // Add a small delay to avoid audio conflicts
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                audioPlayer.playAudio(url: playURL)
+                audioPlayer.playEpisode(episode)
                 PlayedEpisodesManager.shared.markAsPlayed(episode)
                 if let feedUrl = selectedPodcast?.feedUrl {
                     PersistenceManager.saveLastPlayback(episode: episode, feedUrl: feedUrl)
                 }
             }
         }
-    }
-    
-    /// Returns sorted episodes without modifying state during view updates
-    private var sortedEpisodes: [PodcastEpisode] {
-        // Check if we can use cached result
-        if lastEpisodesCount == episodes.count && 
-           lastSelectedIndex == selectedIndex &&
-           !sortedEpisodesCache.isEmpty {
-            return sortedEpisodesCache
-        }
-        
-        // Sort episodes: playing episode first, then unplayed, then played.
-        let sorted = episodes.enumerated().sorted { (lhs, rhs) -> Bool in
-            let lhsIndex = lhs.offset
-            let rhsIndex = rhs.offset
-            
-            let lhsIsPlaying = selectedIndex == lhsIndex
-            let rhsIsPlaying = selectedIndex == rhsIndex
-            
-            // Prioritize the currently playing episode
-            if lhsIsPlaying { return true }
-            if rhsIsPlaying { return false }
-            
-            // If neither is playing, sort by played status
-            let lhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(lhs.element)
-            let rhsPlayed = PlayedEpisodesManager.shared.hasBeenPlayed(rhs.element)
-            
-            if lhsPlayed == rhsPlayed {
-                return lhsIndex < rhsIndex
-            } else {
-                return !lhsPlayed && rhsPlayed
-            }
-        }.map { $0.element }
-        
-        return sorted
-    }
-    
-    /// Updates the cache when appropriate (called from onAppear/onChange)
-    private func updateSortedCache() {
-        let sorted = sortedEpisodes
-        sortedEpisodesCache = sorted
-        lastEpisodesCount = episodes.count
-        lastSelectedIndex = selectedIndex
     }
     
     /// Toggles the inclusion of an episode in the play queue (cue).
@@ -239,6 +191,40 @@ struct EpisodeListView: View {
         }
         .onChange(of: selectedIndex) {
             updateSortedCache()
+        }
+        .focusable(false)
+        .applyFocusEffectDisabled()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+}
+
+private extension EpisodeListView {
+    var sortedEpisodes: [PodcastEpisode] {
+        if sortedEpisodesCache.isEmpty && !episodes.isEmpty {
+            return episodes
+        }
+        return sortedEpisodesCache
+    }
+
+    func updateSortedCache() {
+        let newIds = episodes.map { $0.id }
+        if newIds != cachedEpisodeIDs || sortedEpisodesCache.count != episodes.count {
+            sortedEpisodesCache = episodes
+            cachedEpisodeIDs = newIds
         }
     }
 }

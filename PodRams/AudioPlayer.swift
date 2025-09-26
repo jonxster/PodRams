@@ -6,10 +6,14 @@
 
 import Foundation
 import Combine
-import AVFoundation
+@preconcurrency import AVFoundation
 import Accelerate // Added for optimized audio processing
 import AudioToolbox
 import CoreMedia
+
+/// No-op tap used when we only want to register a tap to keep buffer lifetimes alive.
+/// Defined at file scope so it executes off the main actor and avoids runtime precondition traps.
+private func audioPassthroughTap(buffer: AVAudioPCMBuffer, time: AVAudioTime) {}
 
 /// Manages audio playback using AVPlayer and AVAudioEngine.
 /// Publishes playback state and allows control over play, pause, stop, seek, volume, and pan.
@@ -53,6 +57,8 @@ class AudioPlayer: ObservableObject {
     private let audioEngine = AVAudioEngine()
     /// Audio node for routing playback through the audio engine.
     private let playerNode = AVAudioPlayerNode()
+    /// Time-pitch unit for rate adjustments without affecting pitch.
+    private let timePitchUnit = AVAudioUnitTimePitch()
     
     /// AVPlayer used for audio playback.
     private var player: AVPlayer?
@@ -67,6 +73,12 @@ class AudioPlayer: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     /// URL of the currently playing audio.
     private var currentURL: URL?
+    /// Episode metadata associated with the current URL.
+    private(set) var currentEpisode: PodcastEpisode?
+    /// Tracks the last persisted playback position to throttle disk writes.
+    private var lastPersistedPosition: Double = 0
+    /// Observer for playback completion notifications.
+    private var playbackEndObserver: NSObjectProtocol?
     /// Flag indicating whether the audio engine was successfully configured.
     private var engineConfigured = false
     
@@ -115,10 +127,13 @@ class AudioPlayer: ObservableObject {
     
     /// Cached audio state for better memory access patterns
     private var audioState = OptimizedAudioState()
+
+    /// Current playback rate (1.0 = normal speed).
+    private var playbackRate: Double = 1.0
     
     /// CPU Optimization: Batch property updates to reduce UI refresh frequency
     private var pendingPropertyUpdates: Set<String> = []
-    private var propertyUpdateTimer: Timer?
+    private var propertyUpdateTask: Task<Void, Never>?
     
     /// Initializes the AudioPlayer by setting up throttling, configuring the audio engine, and restoring pan.
     init() {
@@ -139,7 +154,14 @@ class AudioPlayer: ObservableObject {
             pan = savedPan
             audioState.lastPanValue = Float(savedPan)
         }
-        
+
+        if UserDefaults.standard.bool(forKey: "doubleSpeedPlayback") {
+            playbackRate = 2.0
+            audioState.rate = 2.0
+        }
+
+        configureTimePitch()
+
         // Setup batch property updates
         setupBatchPropertyUpdates()
         
@@ -204,8 +226,13 @@ class AudioPlayer: ObservableObject {
         }
         
         // Reset timer for batch processing
-        propertyUpdateTimer?.invalidate()
-        propertyUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in
+        propertyUpdateTask?.cancel()
+        propertyUpdateTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 200_000_000)
+            } catch {
+                return
+            }
             self?.flushPendingPropertyUpdates()
         }
     }
@@ -239,7 +266,8 @@ class AudioPlayer: ObservableObject {
     private func setupBatchPropertyUpdates() {
         // Initialize the batch update system
         pendingPropertyUpdates.removeAll()
-        propertyUpdateTimer?.invalidate()
+        propertyUpdateTask?.cancel()
+        propertyUpdateTask = nil
     }
     
     // MARK: - Optimized Pan AudioProcessingTap
@@ -275,8 +303,8 @@ class AudioPlayer: ObservableObject {
             let panVal: Float = storageRaw.assumingMemoryBound(to: Float.self).pointee
             
             // Multiple early returns to minimize CPU usage
-            // 1. Early return if pan is centered (most common case)
-            guard abs(panVal - 0.5) > 0.02 else { return } // Increased threshold to reduce processing
+            // 1. Early return if pan is effectively centered (most common case)
+            guard abs(panVal - 0.5) > 0.005 else { return }
             
             // 2. Early return for very small frame counts
             guard numberFrames > 64 else { return }
@@ -289,30 +317,35 @@ class AudioPlayer: ObservableObject {
             var leftGain = cos(panAngle)
             var rightGain = sin(panAngle)
             
-            // 4. Early return if gains are too similar (no audible difference)
-            guard abs(leftGain - rightGain) > 0.05 else { return }
-
             let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
             guard abl.count > 0 else { return }
 
-            // Process only the first buffer for efficiency (most common case)
-            if let firstBuffer = abl.first,
-               let data = firstBuffer.mData?.assumingMemoryBound(to: Float.self) {
-                let chans = Int(firstBuffer.mNumberChannels)
+            // Process every buffer to correctly handle both interleaved and planar layouts
+            for (index, buffer) in abl.enumerated() {
+                guard let rawPointer = buffer.mData else { continue }
+                let channelCount = Int(buffer.mNumberChannels)
                 let frames = Int(numberFrames)
-                
-                // Optimize for the most common cases first
-                if chans == 2 { // Stereo - most common case
-                    // Use optimized vectorized operations with stride
+                let floatPointer = rawPointer.assumingMemoryBound(to: Float.self)
+
+                if channelCount >= 2 {
+                    // Interleaved stereo (common case)
                     let frameCount = vDSP_Length(frames)
-                    vDSP_vsmul(data, 2, &leftGain, data, 2, frameCount)
-                    vDSP_vsmul(data.advanced(by: 1), 2, &rightGain, data.advanced(by: 1), 2, frameCount)
-                } else if chans == 1 { // Mono - less common
-                    // For mono, use simplified processing
-                    var averageGain = sqrt(leftGain * leftGain + rightGain * rightGain)
-                    vDSP_vsmul(data, 1, &averageGain, data, 1, vDSP_Length(frames))
+                    vDSP_vsmul(floatPointer, 2, &leftGain, floatPointer, 2, frameCount)
+                    vDSP_vsmul(floatPointer.advanced(by: 1), 2, &rightGain, floatPointer.advanced(by: 1), 2, frameCount)
+                } else if channelCount == 1 {
+                    let frameCount = vDSP_Length(frames)
+
+                    if abl.count >= 2 {
+                        // Planar stereo: buffer 0 = left, buffer 1 = right
+                        var planarGain = (index == 0) ? leftGain : rightGain
+                        vDSP_vsmul(floatPointer, 1, &planarGain, floatPointer, 1, frameCount)
+                    } else {
+                        // Mono: apply average power to maintain perceived loudness
+                        var averageGain = sqrt(leftGain * leftGain + rightGain * rightGain)
+                        vDSP_vsmul(floatPointer, 1, &averageGain, floatPointer, 1, frameCount)
+                    }
                 }
-                // Skip processing for unusual channel configurations to save CPU
+                // Skip unusual channel configurations to avoid unnecessary CPU work
             }
         }
         var callbacks = MTAudioProcessingTapCallbacks(version: kMTAudioProcessingTapCallbacksVersion_0,
@@ -344,20 +377,24 @@ class AudioPlayer: ObservableObject {
         // Safely attach and connect nodes
         do {
             audioEngine.attach(playerNode)
-            
+            audioEngine.attach(timePitchUnit)
+
             // Use cached format or create optimized format
             let format = cachedAudioFormat ?? audioEngine.mainMixerNode.outputFormat(forBus: 0)
             if cachedAudioFormat == nil {
                 cachedAudioFormat = format
             }
-            
+
+            configureTimePitch()
+
             // Configure player node with larger buffer size for efficiency
-            playerNode.installTap(onBus: 0, bufferSize: optimizedBufferSize, format: format) { buffer, time in
-                // Minimal processing in the tap to reduce CPU overhead
-                // Remove any unnecessary processing here
-            }
-            
-            audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: format)
+            playerNode.installTap(onBus: 0,
+                                   bufferSize: optimizedBufferSize,
+                                   format: format,
+                                   block: audioPassthroughTap)
+
+            audioEngine.connect(playerNode, to: timePitchUnit, format: format)
+            audioEngine.connect(timePitchUnit, to: audioEngine.mainMixerNode, format: format)
             
             // Apply initial settings in batch
             updateVolumeImmediate()
@@ -365,7 +402,7 @@ class AudioPlayer: ObservableObject {
             
             // Configure engine for efficiency
             audioEngine.mainMixerNode.outputVolume = Float(volume)
-            
+
             // Start the engine
             try audioEngine.start()
             engineConfigured = true
@@ -395,7 +432,7 @@ class AudioPlayer: ObservableObject {
         
         // Update cached state
         audioState.lastPanValue = panFloat
-        audioState.rate = playerNode.rate
+        audioState.rate = Float(playbackRate)
     }
     
     /// Updates the pan for the player node (debounced version).
@@ -433,36 +470,52 @@ class AudioPlayer: ObservableObject {
     /// Plays audio from the specified URL.
     /// Cleans up previous playback, sets up a new AVPlayerItem with observers, and starts playback.
     /// - Parameter url: URL of the audio asset (local file or HTTP/HTTPS).
+    func playEpisode(_ episode: PodcastEpisode) {
+        let playURL = DownloadManager.shared.playbackURL(for: episode)
+        let resumePosition = PersistenceManager.playbackProgress(for: episode)?.position
+        currentEpisode = episode
+        lastPersistedPosition = resumePosition ?? 0
+        playAudio(url: playURL, resumeFrom: resumePosition, episode: episode)
+    }
+
     func playAudio(url: URL) {
+        playAudio(url: url, resumeFrom: nil, episode: nil)
+    }
+
+    func playAudio(url: URL, resumeFrom resumePosition: Double?, episode: PodcastEpisode?) {
         guard url.isFileURL || url.scheme == "http" || url.scheme == "https" else {
             print("Invalid URL: \(url)")
             return
         }
-        
+
         // If we're already playing this URL, just resume playback if paused
         if currentURL == url && player != nil {
             if !isPlaying {
                 player?.play()
+                applyPlaybackRate()
                 playerNode.play()
-                DispatchQueue.main.async {
-                    self.isPlaying = true
-                    self.audioState.isPlaying = true
-                }
+                isPlaying = true
+                audioState.isPlaying = true
             }
             return
         }
+
+        if let metadataEpisode = episode {
+            currentEpisode = metadataEpisode
+        } else {
+            currentEpisode = nil
+        }
+        lastPersistedPosition = resumePosition ?? 0
         
         // Stop existing playback and clean up resources
         stopAudio()
         cleanupObservers()
         
         // Reset playback state immediately on main thread for responsiveness
-        DispatchQueue.main.async { 
-            self.currentTime = 0
-            self.duration = 0
-            self.isLoading = true // Indicate loading starts
-            self.isPlaying = false
-        }
+        currentTime = 0
+        duration = 0
+        isLoading = true // Indicate loading starts
+        isPlaying = false
         
         currentURL = url // Update current URL
         
@@ -491,17 +544,44 @@ class AudioPlayer: ObservableObject {
                 await MainActor.run { 
                     // Create a new player with the prepared item
                     self.player = AVPlayer(playerItem: playerItem)
+                    self.player?.automaticallyWaitsToMinimizeStalling = false
                     self.player?.volume = Float(self.volume) // Apply current volume
+                    playerItem.audioTimePitchAlgorithm = .timeDomain
                     self.addOptimizedTimeObserver() // Add optimized time observer
+
+                    if let observer = self.playbackEndObserver {
+                        NotificationCenter.default.removeObserver(observer)
+                        self.playbackEndObserver = nil
+                    }
+                    if let item = self.player?.currentItem {
+                        self.playbackEndObserver = NotificationCenter.default.addObserver(
+                            forName: .AVPlayerItemDidPlayToEndTime,
+                            object: item,
+                            queue: .main
+                        ) { [weak self] _ in
+                            Task { @MainActor [weak self] in
+                                self?.handlePlaybackFinished()
+                            }
+                        }
+                    }
                     
-                    // Start playback
+                    // Start playback respecting current rate
                     self.player?.play()
-                    if self.engineConfigured { self.playerNode.play() }
+                    self.applyPlaybackRate()
+                    if self.engineConfigured {
+                        self.playerNode.play()
+                    }
                     
                     // Update final state
                     self.isPlaying = true
                     self.isLoading = false
                     self.duration = safeDuration
+                    if safeDuration > 0 {
+                        self.currentEpisode?.duration = safeDuration
+                    }
+                    if let resume = resumePosition, resume > 0.5 {
+                        self.seek(to: resume)
+                    }
                     
                     // Update cached state
                     self.audioState.isPlaying = true
@@ -526,28 +606,28 @@ class AudioPlayer: ObservableObject {
     func pauseAudio() {
         player?.pause()
         playerNode.pause()
+        persistCurrentProgress(force: true)
         
-        // Update state on main thread
-        DispatchQueue.main.async {
-            self.isPlaying = false
-            self.audioState.isPlaying = false
-        }
+        isPlaying = false
+        audioState.isPlaying = false
     }
     
     /// Stops the audio playback and resets the position to the beginning.
     func stopAudio() {
+        persistCurrentProgress(force: true)
         player?.pause()
         if let player = player {
             player.seek(to: CMTime.zero)
         }
         playerNode.stop()
         
-        DispatchQueue.main.async {
-            self.isPlaying = false
-            self.currentTime = 0
-            self.audioState.isPlaying = false
-            self.audioState.currentTime = 0
-        }
+        isPlaying = false
+        currentTime = 0
+        audioState.isPlaying = false
+        audioState.currentTime = 0
+        currentEpisode = nil
+        lastPersistedPosition = 0
+        currentURL = nil
     }
     
     /// Seeks the playback to the specified time.
@@ -567,39 +647,41 @@ class AudioPlayer: ObservableObject {
         player?.seek(to: cmTime)
         currentTime = safeTime
         audioState.currentTime = safeTime
-        
+        lastPersistedPosition = safeTime
+
         if let url = currentURL, engineConfigured {
             // Use the audio processing queue for file operations
-            audioProcessingQueue.async {
+            audioProcessingQueue.async { [safeTime, url] in
                 guard let audioFile = try? AVAudioFile(forReading: url) else { return }
                 let format = audioFile.processingFormat
-                
-                // Ensure we calculate a valid frame position
+
                 let sampleRate = format.sampleRate
                 guard sampleRate > 0 else { return }
-                
+
                 let framePosition = AVAudioFramePosition(safeTime * sampleRate)
-                
-                // Ensure we don't try to play beyond the file length
                 let audioLength = audioFile.length
                 guard framePosition <= audioLength else { return }
-                
+
                 let framesToPlay = AVAudioFrameCount(audioLength - framePosition)
-                
-                // Switch back to main thread for audio engine operations
-                DispatchQueue.main.async {
+
+                Task { @MainActor [framePosition, framesToPlay, url] in
+                    guard let schedulingFile = try? AVAudioFile(forReading: url) else { return }
                     self.playerNode.stop()
-                    self.playerNode.scheduleSegment(audioFile,
-                                               startingFrame: framePosition,
-                                               frameCount: framesToPlay,
-                                               at: nil,
-                                               completionHandler: nil)
-                    if self.isPlaying { self.playerNode.play() }
+                    await self.playerNode.scheduleSegment(
+                        schedulingFile,
+                        startingFrame: framePosition,
+                        frameCount: framesToPlay,
+                        at: nil
+                    )
+                    if self.isPlaying {
+                        self.applyPlaybackRate()
+                        self.playerNode.play()
+                    }
                 }
             }
         }
     }
-    
+
     /// Preloads an audio asset to reduce latency on playback start.
     /// - Parameter url: URL of the audio asset; applicable only for local files.
     func preloadAudio(url: URL) {
@@ -639,6 +721,63 @@ class AudioPlayer: ObservableObject {
             }
         }
     }
+
+    /// Persists the current playback progress for the active episode.
+    private func persistCurrentProgress(force: Bool = false, isEnding: Bool = false) {
+        guard let episode = currentEpisode else {
+            if isEnding, let url = currentURL {
+                PersistenceManager.clearPlaybackProgress(forURL: url)
+            }
+            return
+        }
+
+        let position = max(0, currentTime)
+        guard position.isFinite else { return }
+
+        let effectiveDuration: Double? = {
+            if duration.isFinite && duration > 0 { return duration }
+            if let stored = episode.duration, stored.isFinite { return stored }
+            return nil
+        }()
+
+        if let total = effectiveDuration {
+            let threshold = max(total - 15, total * 0.95)
+            if isEnding || position >= threshold {
+                PersistenceManager.clearPlaybackProgress(for: episode)
+                lastPersistedPosition = 0
+                return
+            }
+        } else if isEnding {
+            PersistenceManager.clearPlaybackProgress(for: episode)
+            lastPersistedPosition = 0
+            return
+        }
+
+        if !force && abs(position - lastPersistedPosition) < 5 { return }
+
+        PersistenceManager.updatePlaybackProgress(for: episode, position: position, duration: effectiveDuration)
+        lastPersistedPosition = position
+    }
+
+    private func handlePlaybackFinished() {
+        persistCurrentProgress(force: true, isEnding: true)
+        isPlaying = false
+        audioState.isPlaying = false
+        if duration.isFinite && duration > 0 {
+            currentTime = duration
+            audioState.currentTime = duration
+        }
+        if let observer = playbackEndObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playbackEndObserver = nil
+        }
+        if let episode = currentEpisode {
+            PlayedEpisodesManager.shared.markAsPlayed(episode)
+        }
+        currentEpisode = nil
+        lastPersistedPosition = 0
+        currentURL = nil
+    }
     
     /// Adds a highly optimized periodic time observer to the AVPlayer to update the current playback time.
     /// Optimized to significantly reduce main thread overhead and unnecessary callbacks.
@@ -658,16 +797,20 @@ class AudioPlayer: ObservableObject {
             guard seconds.isFinite && seconds >= 0 else { return }
             
             // CPU Optimization: Use debounced updates to reduce UI refresh frequency
-            self.timeUpdateTask?.cancel()
-            self.timeUpdateTask = Task { @MainActor [weak self] in 
+            Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                
-                // Use a larger threshold to reduce unnecessary updates
-                let timeDifference = abs(self.currentTime - seconds)
-                guard timeDifference > 0.5 else { return } // Increased from 0.25 to 0.5
-                
-                self.currentTime = seconds
-                self.audioState.currentTime = seconds
+                self.timeUpdateTask?.cancel()
+                self.timeUpdateTask = Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+
+                    // Use a larger threshold to reduce unnecessary updates
+                    let timeDifference = abs(self.currentTime - seconds)
+                    guard timeDifference > 0.5 else { return } // Increased from 0.25 to 0.5
+
+                    self.currentTime = seconds
+                    self.audioState.currentTime = seconds
+                    self.persistCurrentProgress()
+                }
             }
         }
     }
@@ -687,7 +830,12 @@ class AudioPlayer: ObservableObject {
             // Remove reference to the item so it can deallocate
             player?.replaceCurrentItem(with: nil)
         }
-        
+
+        if let observer = playbackEndObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playbackEndObserver = nil
+        }
+
         // Cancel any pending update tasks
         timeUpdateTask?.cancel()
         volumeUpdateTask?.cancel()
@@ -728,30 +876,11 @@ class AudioPlayer: ObservableObject {
         }
     }
     
-    /// Cleans up resources on deinitialization.
-    /// Removes observers, stops playback, and resets the audio engine.
-    deinit {
-        // Cancel all pending tasks
-        timeUpdateTask?.cancel()
-        volumeUpdateTask?.cancel()
-        panUpdateTask?.cancel()
-        
-        // Invalidate timers
-        propertyUpdateTimer?.invalidate()
-        
-        // Perform synchronous cleanup that is safe from deinit
-        NotificationCenter.default.removeObserver(self)
-        // player?.pause() // Avoid potentially unsafe calls from deinit
-        // playerNode.stop()
-        // audioEngine.stop()
-        // cleanupObservers() cannot be safely called from here
-        // Rely on ARC and Combine to clean up remaining resources
-    }
-    
     /// Sets up an observer on the AVPlayerItem to monitor its status.
     /// Updates the audio duration when the item is ready to play.
     /// - Parameter playerItem: The AVPlayerItem to observe.
     /// - Parameter duration: The pre-loaded duration (optional)
+    @MainActor
     private func setupPlayerItemObservers(_ playerItem: AVPlayerItem, duration: Double?) async {
         // Note: panning via AVPlayerItem.audioMix is not supported; audioEngine pan applies only to local playback
         // Prepare params list in background
@@ -773,11 +902,9 @@ class AudioPlayer: ObservableObject {
         }
         
         // Create and assign mix on the main actor
-        await MainActor.run { 
-            let mix = AVMutableAudioMix()
-            mix.inputParameters = paramsListInBackground
-            playerItem.audioMix = mix
-        }
+        let mix = AVMutableAudioMix()
+        mix.inputParameters = paramsListInBackground
+        playerItem.audioMix = mix
         
         // Observe status for potential errors or buffering states
         durationObserver = playerItem.observe(\.status, options: [.new, .old]) { [weak self] item, change in
@@ -820,10 +947,8 @@ class AudioPlayer: ObservableObject {
     
     /// Adds this method to AudioPlayer to explicitly set the playing state
     func setPlayingState(_ isPlaying: Bool) {
-        DispatchQueue.main.async {
-            self.isPlaying = isPlaying
-            self.audioState.isPlaying = isPlaying
-        }
+        self.isPlaying = isPlaying
+        audioState.isPlaying = isPlaying
     }
     
     // MARK: - Thread Optimization Methods
@@ -876,6 +1001,42 @@ class AudioPlayer: ObservableObject {
         }
         
         CATransaction.commit()
+    }
+
+    // MARK: - Playback Rate
+
+    func setPlaybackRate(_ rate: Double) {
+        let clamped = max(0.5, min(rate, 2.0))
+        playbackRate = clamped
+        audioState.rate = Float(clamped)
+        applyPlaybackRate()
+    }
+
+    private func applyPlaybackRate() {
+        let floatRate = Float(playbackRate)
+        configureTimePitch()
+
+        guard let player else { return }
+        player.currentItem?.audioTimePitchAlgorithm = .timeDomain
+
+        switch player.timeControlStatus {
+        case .playing:
+            player.rate = floatRate
+        case .waitingToPlayAtSpecifiedRate, .paused:
+            if playbackRate == 1.0 {
+                player.rate = 1.0
+            } else {
+                player.playImmediately(atRate: floatRate)
+            }
+        @unknown default:
+            player.rate = floatRate
+        }
+    }
+
+    private func configureTimePitch() {
+        timePitchUnit.rate = Float(playbackRate)
+        timePitchUnit.pitch = 0
+        timePitchUnit.overlap = 8
     }
 }
 

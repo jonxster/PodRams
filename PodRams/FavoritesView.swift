@@ -18,70 +18,141 @@ struct FavoritesView: View {
     @ObservedObject var audioPlayer: AudioPlayer
     @ObservedObject var podcastFetcher: PodcastFetcher
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var loadingPodcastId: UUID?
+    @Namespace private var badgeNamespace
 
     var body: some View {
-        VStack {
+        GlassEffectContainer(spacing: 20) {
             Text("Favorites")
-                .font(.title)
-                .bold()
-                .padding()
+                .font(.title2.weight(.semibold))
+                .foregroundColor(primaryText)
 
             if favoritePodcasts.isEmpty {
                 Text("No favorite podcasts added.")
-                    .foregroundColor(.gray)
-                    .padding()
+                    .foregroundColor(secondaryText)
+                    .padding(.vertical, 40)
             } else {
-                List {
-                    ForEach(favoritePodcasts, id: \.id) { podcast in
-                        HStack(spacing: 8) {
-                            Button {
-                                loadPodcast(podcast)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    CachedAsyncImage(
-                                        url: podcast.feedArtworkURL,
-                                        width: 40,
-                                        height: 40
-                                    )
-                                    .cornerRadius(4)
-
-                                    Text(podcast.title)
-                                        .padding(.vertical, 8)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
-                            .disabled(loadingPodcastId == podcast.id)
-                            .overlay(
-                                loadingPodcastId == podcast.id ?
-                                    LoadingIndicator()
-                                        .frame(width: 20, height: 20)
-                                    : nil
-                            )
-
-                            Button {
-                                removeFromFavorites(podcast)
-                            } label: {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
+                ScrollView {
+                    LazyVStack(spacing: 14) {
+                        ForEach(favoritePodcasts, id: \.id) { podcast in
+                            favoriteRow(for: podcast)
                         }
-                        .padding(.vertical, 4)
                     }
+                    .padding(.horizontal, 6)
                 }
-                .listStyle(PlainListStyle())
-                .frame(minHeight: 200)
             }
         }
-        .frame(minWidth: 400, minHeight: 300)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .cornerRadius(8)
-        .shadow(radius: 10)
-        .onAppear {
-            preloadFavorites()
+        .padding(24)
+        .frame(minWidth: 420, minHeight: 340)
+        .background(AppTheme.color(.background, in: currentMode))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .onAppear { preloadFavorites() }
+    }
+
+    private var currentMode: AppTheme.Mode {
+        colorScheme == .dark ? .dark : .light
+    }
+
+    private var primaryText: Color {
+        AppTheme.color(.primaryText, in: currentMode)
+    }
+
+    private var secondaryText: Color {
+        AppTheme.color(.secondaryText, in: currentMode)
+    }
+
+    private func favoriteRow(for podcast: Podcast) -> some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                CachedAsyncImage(
+                    url: podcast.feedArtworkURL,
+                    width: 48,
+                    height: 48
+                )
+                .cornerRadius(10)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(podcast.title)
+                        .font(.headline)
+                        .foregroundColor(primaryText)
+
+                    if let feedUrl = podcast.feedUrl {
+                        Text(feedUrl)
+                            .font(.caption)
+                            .foregroundColor(secondaryText)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button {
+                    loadPodcast(podcast)
+                } label: {
+                    Label("Play", systemImage: "play.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(primaryText)
+                        .frame(width: 32, height: 32)
+                        .background(controlBackground)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(loadingPodcastId == podcast.id)
+
+                Button {
+                    removeFromFavorites(podcast)
+                } label: {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(favoriteTint)
+                        .frame(width: 32, height: 32)
+                        .background(controlBackground)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            GlassBadgeView(
+                symbolName: "waveform.circle",
+                title: "Episodes \(podcast.episodes.count)",
+                subtitle: podcast.feedArtworkURL == nil ? "Artwork pending" : "Artwork cached",
+                tint: favoriteTint,
+                namespace: badgeNamespace,
+                glassID: podcast.id.uuidString
+            )
+        }
+        .padding(16)
+        .background(rowBackground)
+        .overlay(loadingOverlay(for: podcast))
+    }
+
+    private var controlBackground: Color {
+        AppTheme.color(.surface, in: currentMode).opacity(0.85)
+    }
+
+    private var favoriteTint: Color {
+        colorScheme == .dark ? AppTheme.accent : Color(hex: 0xFFAA33)
+    }
+
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(AppTheme.color(.surface, in: currentMode))
+            .shadow(color: AppTheme.color(.secondaryText, in: currentMode).opacity(colorScheme == .dark ? 0.18 : 0.08), radius: 6, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func loadingOverlay(for podcast: Podcast) -> some View {
+        if loadingPodcastId == podcast.id {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.black.opacity(0.1))
+                .overlay(
+                    LoadingIndicator()
+                        .frame(width: 22, height: 22)
+                )
+        } else {
+            EmptyView()
         }
     }
 
@@ -89,7 +160,7 @@ struct FavoritesView: View {
         loadingPodcastId = podcast.id
         
         if let firstCachedEpisode = podcast.episodes.first {
-            audioPlayer.playAudio(url: firstCachedEpisode.url)
+            audioPlayer.playEpisode(firstCachedEpisode)
             selectedPodcast = podcast
             selectedEpisodeIndex = 0
             loadingPodcastId = nil
@@ -107,7 +178,7 @@ struct FavoritesView: View {
                 
                 if let first = episodes.first {
                     selectedEpisodeIndex = 0
-                    audioPlayer.playAudio(url: first.url)
+                    audioPlayer.playEpisode(first)
                 }
                 
                 loadingPodcastId = nil

@@ -37,7 +37,7 @@ struct HoverableDownloadIndicator: View {
                     Image(systemName: isPaused ? "play.circle.fill" : "pause.circle.fill")
                         .font(.system(size: 16))
                         .foregroundColor(.accentColor)
-                        .background(Color.white)
+                        .background(AppTheme.surface)
                         .clipShape(Circle())
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -63,13 +63,13 @@ struct EnhancedDeterminateLoadingIndicator: View {
         ZStack {
             // Background circle
             Circle()
-                .stroke(Color.gray.opacity(0.3), lineWidth: 2)
+                .stroke(AppTheme.secondaryText.opacity(0.3), lineWidth: 2)
                 .frame(width: 16, height: 16)
             
             // Progress circle
             Circle()
                 .trim(from: 0, to: CGFloat(progress))
-                .stroke(isPaused ? Color.orange : Color.blue, lineWidth: 2)
+                .stroke(isPaused ? AppTheme.accent.opacity(0.7) : AppTheme.accent, lineWidth: 2)
                 .frame(width: 16, height: 16)
                 .rotationEffect(Angle(degrees: -90))
                 .rotationEffect(Angle(degrees: isPaused ? 0 : (isAnimating ? 360 : 0)))

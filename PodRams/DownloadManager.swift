@@ -450,6 +450,16 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         return nil
     }
+
+    /// Returns the best URL to use for playback, preferring a downloaded file when available.
+    /// - Parameter episode: The podcast episode to locate.
+    /// - Returns: A file URL if the download exists, otherwise the original streaming URL.
+    func playbackURL(for episode: PodcastEpisode) -> URL {
+        if let local = localURL(for: episode) {
+            return local
+        }
+        return episode.url
+    }
     
     /// Checks if an episode is downloaded without changing its state.
     /// - Parameter episode: The podcast episode to check.

@@ -1,6 +1,7 @@
 import SwiftUI
 
 @main
+@MainActor
 struct PodRamsApp: App {
     // Create a shared AudioPlayer instance at the app level with lazy initialization
     @StateObject private var audioPlayer = {
@@ -44,11 +45,15 @@ struct PodRamsApp: App {
             .onDisappear {
                 cleanupLifecycleObserver()
             }
-            .onChange(of: currentEpisodeIndex) {
-                saveCurrentState()
+            .onChange(of: currentEpisodeIndex) { _, _ in
+                Task { @MainActor in
+                    saveCurrentState()
+                }
             }
-            .onChange(of: episodes) {
-                saveCurrentState()
+            .onChange(of: episodes) { _, _ in
+                Task { @MainActor in
+                    saveCurrentState()
+                }
             }
         }
         .windowResizability(.contentMinSize)
@@ -76,7 +81,9 @@ struct PodRamsApp: App {
             queue: .main
         ) { _ in
             print("🔄 App will terminate - saving current state")
-            saveCurrentState()
+            Task { @MainActor in
+                saveCurrentState()
+            }
         }
         
         // Also save state when app becomes inactive (like when switching apps)
@@ -86,7 +93,9 @@ struct PodRamsApp: App {
             queue: .main
         ) { _ in
             print("🔄 App resigned active - saving current state")
-            saveCurrentState()
+            Task { @MainActor in
+                saveCurrentState()
+            }
         }
     }
     

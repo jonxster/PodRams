@@ -13,16 +13,12 @@ struct PlayerView: View {
     @ObservedObject var audioPlayer: AudioPlayer
     var episodes: [PodcastEpisode]
     @Binding var currentEpisodeIndex: Int?
+    @Namespace private var playerGlassNamespace
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isVolumeExpanded = false
     
     /// Fallback image if the episode lacks artwork.
     var feedArtworkURL: URL?
-    
-    /// Controls whether to show the front (artwork) or back (show notes).
-    @State private var isFlipped = false
-    
-    // Add state to track loaded show notes and loading state
-    @State private var loadedShowNotes: String = "Loading show notes..."
-    @State private var isLoadingNotes = false
     
     var currentEpisode: PodcastEpisode? {
         guard let idx = currentEpisodeIndex, idx >= 0, idx < episodes.count else { return nil }
@@ -30,44 +26,44 @@ struct PlayerView: View {
     }
     
     var body: some View {
-        VStack {
-            Text(currentEpisode?.title ?? "Select an Episode")
-                .font(.title3)
-                .padding(.vertical, 4)
-            
-            ZStack {
-                // Front side: always built for quick display
-                frontSide
-                    .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-                    .opacity(isFlipped ? 0 : 1)
-                // Back side: build only when flipped to avoid initial layout cost
-                Group {
-                    if isFlipped {
-                        backSide
-                    }
-                }
-                .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
-                .opacity(isFlipped ? 1 : 0)
+        VStack(spacing: 16) {
+            frontSide
+                .padding(.top, 24)
+                .glassEffectUnion(id: "player-artwork", namespace: playerGlassNamespace)
+
+            if let episode = currentEpisode {
+                Text(episode.title)
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(AppTheme.primaryText)
+                    .lineLimit(2)
+                    .padding(.horizontal, 24)
+            } else {
+                Text("Select an Episode")
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(AppTheme.secondaryText)
+                    .padding(.horizontal, 24)
             }
-            .animation(.default, value: isFlipped)
-            .frame(width: 180, height: 180)
-            .onTapGesture {
-                withAnimation { 
-                    isFlipped.toggle() 
-                    // Load notes when flipped to back
-                    if isFlipped && !isLoadingNotes {
-                        loadShowNotes()
-                    }
-                }
-            }
-            
-            // Removed audio output icon from here.
+
             controlButtons
-            volumeControls
+                .glassEffectUnion(id: "player-controls", namespace: playerGlassNamespace)
+
+            ProgressBarView(
+                currentTime: audioPlayer.currentTime,
+                duration: audioPlayer.duration,
+                onSeek: { newTime in audioPlayer.seek(to: newTime) },
+                showLabel: false
+            )
+            .frame(width: 220)
+
+            Text(timeRemainingText)
+                .font(.caption2)
+                .foregroundColor(AppTheme.secondaryText)
         }
-        .frame(minHeight: 260)
+        .frame(minHeight: 320)
     }
-    
+
     private var frontSide: some View {
         Group {
             if audioPlayer.isLoading {
@@ -77,142 +73,179 @@ struct PlayerView: View {
                 // Use cached async image loading to avoid main-thread delays
                 CachedAsyncImage(
                     url: artworkURL,
-                    width: 180,
-                    height: 180
+                    width: 216,
+                    height: 216
                 )
             } else {
-                Image(systemName: "music.note").resizable().scaledToFit().foregroundColor(.gray)
+                Image(systemName: "music.note")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundColor(AppTheme.secondaryText)
             }
         }
-        .cornerRadius(8)
-        .frame(width: 180, height: 180)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .frame(width: 216, height: 216)
+        .backgroundExtensionEffect()
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .glassEffectID("player-card", in: playerGlassNamespace)
     }
-    
-    private var backSide: some View {
-        ScrollView {
-            Text(loadedShowNotes)
-                .padding()
-                .multilineTextAlignment(.leading)
-        }
-        .background(Color.gray.opacity(0.15))
-        .cornerRadius(8)
-        .frame(width: 180, height: 180)
-    }
-    
-    private func loadShowNotes() {
-        guard let episode = currentEpisode, !isLoadingNotes else { return }
-        
-        isLoadingNotes = true
-        
-        // Use background thread for processing
-        DispatchQueue.global(qos: .userInitiated).async {
-            let notes: String
-            
-            if let showNotes = episode.showNotes, !showNotes.isEmpty {
-                // Process on background thread to avoid UI blocking
-                notes = showNotes.htmlStripped
-            } else {
-                notes = "No show notes available"
-            }
-            
-            // Return to main thread for UI update
-            DispatchQueue.main.async {
-                loadedShowNotes = notes
-                isLoadingNotes = false
-            }
-        }
-    }
-    
+
     private var controlButtons: some View {
-        HStack(spacing: 30) {
-            Button(action: { playPrevious() }) {
-                Image(systemName: "backward.fill").font(.system(size: 30))
+        let bubbleWidth: CGFloat = 360
+
+        return HStack(spacing: 28) {
+            volumeToggle
+
+            ZStack {
+                transportButtons
+                    .opacity(isVolumeExpanded ? 0 : 1)
+                    .allowsHitTesting(!isVolumeExpanded)
+
+                if isVolumeExpanded {
+                    VolumeSliderView(volume: $audioPlayer.volume)
+                        .transition(.opacity)
+                }
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 20)
+        .frame(width: bubbleWidth)
+        .background(
+            Capsule(style: .continuous)
+                .fill(bubbleFill)
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(bubbleStroke, lineWidth: 1.0)
+                )
+                .shadow(color: bubbleShadow, radius: 10, x: 0, y: 6)
+        )
+        .contentShape(Capsule(style: .continuous))
+        .glassEffectUnion(id: "transport-cluster", namespace: playerGlassNamespace)
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            if !hovering && isVolumeExpanded {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isVolumeExpanded = false
+                }
+            }
+        }
+    }
+
+    private var volumeToggle: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isVolumeExpanded.toggle()
+            }
+        } label: {
+            Image(systemName: volumeIconName)
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundColor(AppTheme.primaryText)
+                .padding(4)
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+    }
+
+    private var volumeIconName: String {
+        if audioPlayer.volume <= 0.01 { return "speaker.slash.fill" }
+        if audioPlayer.volume < 0.5 { return "speaker.wave.1.fill" }
+        if audioPlayer.volume < 0.9 { return "speaker.wave.2.fill" }
+        return "speaker.wave.3.fill"
+    }
+
+    private var transportButtons: some View {
+        HStack(spacing: 24) {
+            Button(action: { playPrevious() }) {
+                Image(systemName: "backward.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(AppTheme.primaryText)
+            }
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == 0)
-            
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            .focusable(false)
+
             Button(action: {
                 if audioPlayer.isPlaying {
                     audioPlayer.pauseAudio()
                 } else {
                     if let index = currentEpisodeIndex, index < episodes.count {
-                        audioPlayer.playAudio(url: episodes[index].url)
+                        let episode = episodes[index]
+                        audioPlayer.playEpisode(episode)
                     }
                 }
             }) {
                 Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 30))
-                    .id("play-button-\(audioPlayer.isPlaying)-\(UUID())") // Force redraw with unique ID
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(playIconColor)
+                    .id("play-button-\(audioPlayer.isPlaying)-\(UUID())")
             }
-            .buttonStyle(.plain)
             .disabled(currentEpisode == nil)
-            
-            Button(action: { audioPlayer.stopAudio() }) {
-                Image(systemName: "stop.fill").font(.system(size: 30))
-            }
-            .buttonStyle(.plain)
-            .disabled(currentEpisode == nil)
-            
+            .keyboardShortcut(.space, modifiers: [])
+            .focusable(false)
+
             Button(action: { playNext() }) {
-                Image(systemName: "forward.fill").font(.system(size: 30))
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(AppTheme.primaryText)
             }
-            .buttonStyle(.plain)
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == episodes.count - 1)
-        }
-        .padding(.vertical, 8)
-    }
-    
-    private var volumeControls: some View {
-        HStack {
-            Button(action: { audioPlayer.volume = 0 }) {
-                Image(systemName: "speaker.fill")
-                    .foregroundColor(.primary)
-                    .font(.system(size: 12))
-            }
-            .buttonStyle(.borderless)
-            .focusable(false)
-            
-            Slider(value: $audioPlayer.volume, in: 0...1)
-                .frame(maxWidth: 160)
-            
-            Button(action: { audioPlayer.volume = 1 }) {
-                Image(systemName: "speaker.wave.3.fill")
-                    .foregroundColor(.primary)
-                    .font(.system(size: 12))
-            }
-            .buttonStyle(.borderless)
+            .keyboardShortcut(.rightArrow, modifiers: [])
             .focusable(false)
         }
-        .padding(.horizontal, 8)
-        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .offset(x: -32)
     }
-    
+
+    private var bubbleFill: Color {
+        AppTheme.color(.surface, in: themeMode)
+    }
+
+    private var bubbleStroke: Color {
+        AppTheme.color(.secondaryText, in: themeMode).opacity(colorScheme == .dark ? 0.25 : 0.12)
+    }
+
+    private var bubbleShadow: Color {
+        colorScheme == .dark
+            ? AppTheme.color(.background, in: .dark).opacity(0.45)
+            : AppTheme.color(.secondaryText, in: .light).opacity(0.18)
+    }
+
+    private var themeMode: AppTheme.Mode {
+        colorScheme == .dark ? .dark : .light
+    }
+
+    private var playIconColor: Color {
+        colorScheme == .dark ? AppTheme.accent : AppTheme.primaryText
+    }
+
     private func playPrevious() {
         guard let idx = currentEpisodeIndex, idx > 0 else { return }
         currentEpisodeIndex = idx - 1
         if let episode = currentEpisode {
-            audioPlayer.playAudio(url: episode.url)
+            audioPlayer.playEpisode(episode)
         }
     }
-    
+ 
     private func playNext() {
         guard let idx = currentEpisodeIndex, idx < episodes.count - 1 else { return }
         currentEpisodeIndex = idx + 1
         if let episode = currentEpisode {
-            audioPlayer.playAudio(url: episode.url)
+            audioPlayer.playEpisode(episode)
         }
+    }
+
+    private var timeRemainingText: String {
+        let remaining = max(audioPlayer.duration - audioPlayer.currentTime, 0)
+        return "\(remaining.formatAsPlaybackTime()) remaining"
     }
 }
 
-// Add a helper struct for lazy loading content
-struct LazyView<Content: View>: View {
-    let build: () -> Content
-    
-    init(_ build: @escaping () -> Content) {
-        self.build = build
-    }
-    
-    var body: Content {
-        build()
+private struct VolumeSliderView: View {
+    @Binding var volume: Double
+
+    var body: some View {
+        Slider(value: $volume, in: 0...1)
+            .tint(AppTheme.accent)
     }
 }

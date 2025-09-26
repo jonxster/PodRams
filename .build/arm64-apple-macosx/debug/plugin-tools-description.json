@@ -21,7 +21,7 @@
 
   ],
   "swiftCommands" : {
-    "C.FeedKit-arm64-apple-macosx15.0-debug.module" : {
+    "C.FeedKit-arm64-apple-macosx16.0-debug.module" : {
       "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/FeedKit.build/sources",
       "importPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/Modules",
@@ -528,11 +528,10 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/FeedKit.build/FeedKit-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "5",
         "-sdk",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
         "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
         "-F",
@@ -545,7 +544,7 @@
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
@@ -1043,7 +1042,7 @@
       "tempsPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/FeedKit.build",
       "wholeModuleOptimization" : false
     },
-    "C.PodRams-arm64-apple-macosx15.0-debug.module" : {
+    "C.PodRams-arm64-apple-macosx16.0-debug.module" : {
       "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/sources",
       "importPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/Modules",
@@ -1051,6 +1050,14 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/AppTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizationSummary.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizations.md"
         },
         {
           "kind" : "file",
@@ -1418,6 +1425,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/MemoryOptimizationSummary.md"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift"
         },
         {
@@ -1486,6 +1497,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift"
         },
         {
@@ -1522,11 +1537,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PerformanceOptimizations.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceFix.md"
         },
         {
           "kind" : "file",
@@ -1579,6 +1602,14 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscribeView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscriptionFix.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ThreadOptimizationSummary.md"
         },
         {
           "kind" : "file",
@@ -2330,6 +2361,8 @@
       "moduleOutputPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/Modules/PodRams.swiftmodule",
       "objects" : [
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swift.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.md.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.md.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/DebugMenu.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/String + toBool.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/String + toDuration.swift.o",
@@ -2421,6 +2454,7 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FeedKitPackage.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FeedKitRSSParser.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LICENSE.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.md.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Assets.xcassets.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AudioOutputManager.swift.o",
@@ -2438,6 +2472,7 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeListView.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeRowBackground.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeRow_Previews.swift.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FavoritesView.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FeedKitRSSParser.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FlowLayout.swift.o",
@@ -2447,8 +2482,10 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Info.plist.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/KeyboardShortcutView.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LoadingIndicator.swift.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Modles.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations.md.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.md.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceManager.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PlayCommands.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PlayedEpisodesManager.swift.o",
@@ -2462,6 +2499,8 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SettingsView.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SimpleEpisodeRow.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscribeView.swift.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.md.o",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.md.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Untitled.swift.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Localizable.strings.o",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Localizable.strings.o",
@@ -2664,11 +2703,10 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PodRams-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "5",
         "-sdk",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
         "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
         "-F",
@@ -2681,7 +2719,7 @@
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
@@ -2702,6 +2740,14 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.md.o"
         },
         {
           "kind" : "file",
@@ -3069,6 +3115,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.md.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swift.o"
         },
         {
@@ -3137,6 +3187,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FavoritesView.swift.o"
         },
         {
@@ -3173,11 +3227,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Modles.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.md.o"
         },
         {
           "kind" : "file",
@@ -3230,6 +3292,14 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscribeView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.md.o"
         },
         {
           "kind" : "file",
@@ -3971,6 +4041,8 @@
       "prepareForIndexing" : false,
       "sources" : [
         "/Users/tombjornebark/Desktop/PodRams/PodRams/AppTests.swift",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizationSummary.md",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizations.md",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/DebugMenu.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKit/Extensions/String + toBool.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKit/Extensions/String + toDuration.swift",
@@ -4062,6 +4134,7 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKitPackage.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKitRSSParser.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/LICENSE",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/MemoryOptimizationSummary.md",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Assets.xcassets",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioOutputManager.swift",
@@ -4079,6 +4152,7 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeListView.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRowBackground.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRow_Previews.swift",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FeedKitRSSParser.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FlowLayout.swift",
@@ -4088,8 +4162,10 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Info.plist",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/KeyboardShortcutView.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/LoadingIndicator.swift",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PerformanceOptimizations.md",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceFix.md",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceManager.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayCommands.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayedEpisodesManager.swift",
@@ -4103,6 +4179,8 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SettingsView.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SimpleEpisodeRow.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscribeView.swift",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscriptionFix.md",
+        "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ThreadOptimizationSummary.md",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Untitled.swift",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ar.lproj/Localizable.strings",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/bg.lproj/Localizable.strings",
@@ -4290,7 +4368,7 @@
       "tempsPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build",
       "wholeModuleOptimization" : false
     },
-    "C.PodRamsPackageTests-arm64-apple-macosx15.0-debug.module" : {
+    "C.PodRamsPackageTests-arm64-apple-macosx16.0-debug.module" : {
       "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/sources",
       "importPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/Modules",
@@ -4338,9 +4416,8 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/PodRamsPackageTests-Swift.h",
-        "-color-diagnostics",
         "-sdk",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
         "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
         "-F",
@@ -4353,7 +4430,7 @@
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
@@ -4387,7 +4464,7 @@
       "tempsPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build",
       "wholeModuleOptimization" : false
     },
-    "C.PodRamsTests-arm64-apple-macosx15.0-debug.module" : {
+    "C.PodRamsTests-arm64-apple-macosx16.0-debug.module" : {
       "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/sources",
       "importPath" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/Modules",
@@ -4472,11 +4549,10 @@
         "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
-        "-color-diagnostics",
         "-swift-version",
         "5",
         "-sdk",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
         "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
         "-F",
@@ -4489,7 +4565,7 @@
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
@@ -4687,11 +4763,10 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/FeedKit.build/FeedKit-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "5",
       "-sdk",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
       "-F",
@@ -4704,7 +4779,7 @@
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
@@ -4730,6 +4805,8 @@
       "-incremental",
       "-c",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/AppTests.swift",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizationSummary.md",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizations.md",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/DebugMenu.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKit/Extensions/String + toBool.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKit/Extensions/String + toDuration.swift",
@@ -4821,6 +4898,7 @@
       "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKitPackage.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/FeedKitRSSParser.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/LICENSE",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/MemoryOptimizationSummary.md",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Assets.xcassets",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioOutputManager.swift",
@@ -4838,6 +4916,7 @@
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeListView.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRowBackground.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRow_Previews.swift",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FeedKitRSSParser.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FlowLayout.swift",
@@ -4847,8 +4926,10 @@
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Info.plist",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/KeyboardShortcutView.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/LoadingIndicator.swift",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PerformanceOptimizations.md",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceFix.md",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceManager.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayCommands.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayedEpisodesManager.swift",
@@ -4862,6 +4943,8 @@
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SettingsView.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SimpleEpisodeRow.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscribeView.swift",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscriptionFix.md",
+      "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ThreadOptimizationSummary.md",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Untitled.swift",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ar.lproj/Localizable.strings",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/bg.lproj/Localizable.strings",
@@ -5064,11 +5147,10 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PodRams-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "5",
       "-sdk",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
       "-F",
@@ -5081,7 +5163,7 @@
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
@@ -5129,9 +5211,8 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsPackageTests.build/PodRamsPackageTests-Swift.h",
-      "-color-diagnostics",
       "-sdk",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
       "-F",
@@ -5144,7 +5225,7 @@
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
@@ -5197,11 +5278,10 @@
       "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
-      "-color-diagnostics",
       "-swift-version",
       "5",
       "-sdk",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
       "-F",
@@ -5214,7 +5294,7 @@
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
@@ -5669,6 +5749,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizationSummary.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizations.md"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/DebugMenu.swift"
         },
         {
@@ -6033,6 +6121,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/MemoryOptimizationSummary.md"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift"
         },
         {
@@ -6101,6 +6193,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift"
         },
         {
@@ -6137,11 +6233,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PerformanceOptimizations.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceFix.md"
         },
         {
           "kind" : "file",
@@ -6194,6 +6298,14 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscribeView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscriptionFix.md"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ThreadOptimizationSummary.md"
         },
         {
           "kind" : "file",
@@ -7561,6 +7673,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.md.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CachedAsyncImage.swift.o"
         },
         {
@@ -7622,6 +7742,10 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeRow_Previews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.swift.o"
         },
         {
           "kind" : "file",
@@ -8097,6 +8221,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Modles.swift.o"
         },
         {
@@ -8126,6 +8258,10 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations.md.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.md.o"
         },
         {
           "kind" : "file",
@@ -8265,6 +8401,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.md.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Syndication.swift.o"
         },
         {
@@ -8346,6 +8486,10 @@
         {
           "kind" : "file",
           "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/TestFeedKit.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.md.o"
         },
         {
           "kind" : "file",

@@ -16,12 +16,12 @@ struct EpisodeRowBackground: View {
             ZStack(alignment: .leading) {
                 // Background Track (thin gray capsule)
                 Capsule()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(AppTheme.secondaryText.opacity(0.25))
                     .frame(height: progressBarHeight)
                 
                 // Progress Segment (thin accentColor capsule)
                 Capsule()
-                    .fill(Color.accentColor) // Use accent color for adaptability
+                    .fill(AppTheme.accent)
                     .frame(width: calculateProgressWidth(geo: geo), height: progressBarHeight)
             }
             // Center the progress bar vertically within the geometry reader space if needed

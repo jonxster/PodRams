@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 
 // A simple test runner that doesn't rely on XCTest
+@MainActor
 class AppTests {
     // A custom assert function that doesn't crash the app
     static func safeAssert(_ condition: Bool, _ message: String) {

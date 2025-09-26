@@ -8,22 +8,34 @@ final class PersistenceManagerTests: XCTestCase {
     }
 
     func testSaveAndLoadFavorites() async {
-        let p1 = Podcast(title: "P1", feedUrl: "https://feed1")
-        let p2 = Podcast(title: "P2", feedUrl: "https://feed2")
-        PersistenceManager.saveFavorites([p1, p2])
+        let (p1, p2) = await makePodcasts([
+            ("P1", "https://feed1"),
+            ("P2", "https://feed2")
+        ])
+        await MainActor.run {
+            PersistenceManager.saveFavorites([p1, p2])
+        }
         let loaded = await PersistenceManager.loadFavorites()
-        XCTAssertEqual(loaded.map { $0.title }, ["P1", "P2"] )
-        XCTAssertEqual(loaded.map { $0.feedUrl }, ["https://feed1", "https://feed2"])
+        let loadedTitles = await MainActor.run { loaded.map { $0.title } }
+        let loadedFeeds = await MainActor.run { loaded.map { $0.feedUrl ?? "" } }
+        XCTAssertEqual(loadedTitles, ["P1", "P2"] )
+        XCTAssertEqual(loadedFeeds, ["https://feed1", "https://feed2"])
     }
 
     func testSaveAndLoadSubscriptions() async {
-        let p1 = Podcast(title: "P1", feedUrl: "https://feed1")
-        let p2 = Podcast(title: "P2", feedUrl: "https://feed2")
-        PersistenceManager.saveSubscriptions([p1, p2])
+        let (p1, p2) = await makePodcasts([
+            ("P1", "https://feed1"),
+            ("P2", "https://feed2")
+        ])
+        await MainActor.run {
+            PersistenceManager.saveSubscriptions([p1, p2])
+        }
         let loadedAsync = await PersistenceManager.loadSubscriptions()
-        XCTAssertEqual(loadedAsync.map { $0.feedUrl }, ["https://feed1", "https://feed2"])
-        let loadedSync = PersistenceManager.loadSubscriptionsSync()
-        XCTAssertEqual(loadedSync.map { $0.feedUrl }, ["https://feed1", "https://feed2"])
+        let asyncFeeds = await MainActor.run { loadedAsync.map { $0.feedUrl ?? "" } }
+        XCTAssertEqual(asyncFeeds, ["https://feed1", "https://feed2"])
+        let loadedSync = await MainActor.run { PersistenceManager.loadSubscriptionsSync() }
+        let syncFeeds = await MainActor.run { loadedSync.map { $0.feedUrl ?? "" } }
+        XCTAssertEqual(syncFeeds, ["https://feed1", "https://feed2"])
     }
 
     func testSaveAndLoadCue() async {
@@ -59,19 +71,63 @@ final class PersistenceManagerTests: XCTestCase {
         XCTAssertEqual(loaded, e)
     }
 
-    func testLoadPodcastByFeedUrl() {
-        let p = Podcast(title: "P1", feedUrl: "https://feed1")
-        PersistenceManager.saveSubscriptions([p])
-        let loaded = PersistenceManager.loadPodcast(feedUrl: "https://feed1")
+    func testLoadPodcastByFeedUrl() async {
+        let p = await makePodcast(title: "P1", feedUrl: "https://feed1")
+        await MainActor.run {
+            PersistenceManager.saveSubscriptions([p])
+        }
+        PersistenceManager.waitForPersistenceQueue()
+        let loaded = await MainActor.run {
+            PersistenceManager.loadPodcast(feedUrl: "https://feed1")
+        }
         XCTAssertNotNil(loaded)
-        XCTAssertEqual(loaded?.title, "P1")
+        let title = await MainActor.run { loaded?.title }
+        XCTAssertEqual(title, "P1")
     }
 
     func testHasData() async {
         PersistenceManager.clearAll()
         XCTAssertFalse(PersistenceManager.hasData)
-        let p = Podcast(title: "P1", feedUrl: "https://feed1")
-        PersistenceManager.saveFavorites([p])
+        let p = await makePodcast(title: "P1", feedUrl: "https://feed1")
+        await MainActor.run {
+            PersistenceManager.saveFavorites([p])
+        }
+        PersistenceManager.waitForPersistenceQueue()
         XCTAssertTrue(PersistenceManager.hasData)
     }
+
+    func testPlaybackProgressPersistence() {
+        let episode = PodcastEpisode(
+            title: "Progress",
+            url: URL(string: "https://example.com/progress.mp3")!,
+            artworkURL: nil,
+            duration: 300,
+            showNotes: nil,
+            feedUrl: "https://feed"
+        )
+
+        PersistenceManager.updatePlaybackProgress(for: episode, position: 123, duration: 300)
+        PersistenceManager.waitForPersistenceQueue()
+
+        let stored = PersistenceManager.playbackProgress(for: episode)
+        XCTAssertEqual(stored?.position, 123)
+        XCTAssertEqual(stored?.duration, 300)
+
+        PersistenceManager.clearPlaybackProgress(for: episode)
+        PersistenceManager.waitForPersistenceQueue()
+
+        let cleared = PersistenceManager.playbackProgress(for: episode)
+        XCTAssertNil(cleared)
+    }
+}
+
+private func makePodcasts(_ items: [(String, String)]) async -> (Podcast, Podcast) {
+    await MainActor.run {
+        (Podcast(title: items[0].0, feedUrl: items[0].1),
+         Podcast(title: items[1].0, feedUrl: items[1].1))
+    }
+}
+
+private func makePodcast(title: String, feedUrl: String) async -> Podcast {
+    await MainActor.run { Podcast(title: title, feedUrl: feedUrl) }
 }

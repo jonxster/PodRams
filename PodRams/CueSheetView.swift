@@ -40,6 +40,7 @@ struct CueSheetView: View {
                 ForEach(Array(cue.enumerated()), id: \.offset) { index, episode in
                     // Render each row using CueRowView.
                     CueRowView(episode: episode, cue: $cue)
+                        .glassEffect(.regular.tint(.purple.opacity(0.4)), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         // Enable drag: set the draggedEpisode and return an NSItemProvider.
                         .onDrag {
                             self.draggedEpisode = episode
@@ -65,9 +66,9 @@ struct CueSheetView: View {
                                 
                                 PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
                                 NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-                                audioPlayer.playAudio(url: updatedEpisode.url)
+                                audioPlayer.playEpisode(updatedEpisode)
                             } else {
-                                audioPlayer.playAudio(url: episode.url)
+                                audioPlayer.playEpisode(episode)
                             }
                             dismiss()
                         }

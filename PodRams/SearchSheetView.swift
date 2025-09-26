@@ -22,72 +22,122 @@ struct SearchSheetView: View {
     var onPodcastSelect: ((Podcast, Bool) -> Void)?
 
     var dismiss: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack {
+        GlassEffectContainer(spacing: 16) {
             Text("Search Podcasts")
                 .font(.headline)
-                .padding()
+                .foregroundColor(primaryText)
 
-            TextField("Search Podcasts", text: $podcastFetcher.searchQuery)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding([.horizontal, .bottom])
-                .onSubmit {
-                    Task {
-                        await podcastFetcher.searchPodcasts()
-                    }
-                }
+            searchField
 
             if podcastFetcher.podcasts.isEmpty {
                 Text("No results yet.")
-                    .foregroundColor(.gray)
-                    .padding()
+                    .foregroundColor(secondaryText)
+                    .padding(.top, 32)
             } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(podcastFetcher.podcasts) { podcast in
-                            HStack(spacing: 8) {
-                                CachedAsyncImage(
-                                    url: podcast.feedArtworkURL,
-                                    width: 40,
-                                    height: 40
-                                )
-                                .cornerRadius(4)
-
-                                Text(podcast.title)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                                Image(systemName: isFavorite(podcast) ? "star.fill" : "star")
-                                    .foregroundColor(.yellow)
-                                    .onTapGesture {
-                                        toggleFavorite(podcast)
-                                    }
-
-                                if !isSubscribed(podcast) {
-                                    Image(systemName: "rectangle.and.paperclip")
-                                        .foregroundColor(.accentColor)
-                                        .onTapGesture {
-                                            toggleSubscription(podcast)
-                                        }
-                                } else {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectPodcast(podcast)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
+                resultsList
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .frame(minWidth: 400, minHeight: 500)
+        .padding(24)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .background(AppTheme.color(.background, in: currentMode))
+        .frame(minWidth: 420, minHeight: 520)
+    }
+
+    private var currentMode: AppTheme.Mode {
+        colorScheme == .dark ? .dark : .light
+    }
+
+    private var primaryText: Color {
+        AppTheme.color(.primaryText, in: currentMode)
+    }
+
+    private var secondaryText: Color {
+        AppTheme.color(.secondaryText, in: currentMode)
+    }
+
+    private var searchField: some View {
+        TextField("Search Podcasts", text: $podcastFetcher.searchQuery)
+            .textFieldStyle(.plain)
+            .textCase(nil)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(AppTheme.color(.surface, in: currentMode))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(AppTheme.color(.secondaryText, in: currentMode).opacity(0.12))
+                    )
+            )
+            .foregroundColor(primaryText)
+            .font(.body)
+            .onSubmit { Task { await podcastFetcher.searchPodcasts() } }
+    }
+
+    private var resultsList: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(podcastFetcher.podcasts) { podcast in
+                    HStack(spacing: 12) {
+                        CachedAsyncImage(
+                            url: podcast.feedArtworkURL,
+                            width: 44,
+                            height: 44
+                        )
+                        .cornerRadius(8)
+
+                        Text(podcast.title)
+                            .foregroundColor(primaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        favoriteIcon(for: podcast)
+
+                        subscriptionIcon(for: podcast)
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .background(rowBackground)
+                    .onTapGesture { selectPodcast(podcast) }
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(AppTheme.color(.surface, in: currentMode))
+            .shadow(color: AppTheme.color(.secondaryText, in: currentMode).opacity(0.08), radius: 4, x: 0, y: 2)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func favoriteIcon(for podcast: Podcast) -> some View {
+        let enabled = isFavorite(podcast)
+        let symbol = enabled ? "star.fill" : "star"
+        Image(systemName: symbol)
+            .foregroundColor(enabled ? AppTheme.accent : secondaryText)
+            .onTapGesture { toggleFavorite(podcast) }
+    }
+
+    @ViewBuilder
+    private func subscriptionIcon(for podcast: Podcast) -> some View {
+        if isSubscribed(podcast) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(AppTheme.accent)
+        } else {
+            Image(systemName: "rectangle.and.paperclip")
+                .foregroundColor(primaryText)
+                .onTapGesture { toggleSubscription(podcast) }
+        }
     }
 
     private func selectPodcast(_ podcast: Podcast) {
@@ -109,7 +159,7 @@ struct SearchSheetView: View {
             if let firstEpisode = podcast.episodes.first {
                 DispatchQueue.main.async {
                     selectedEpisodeIndex = 0
-                    audioPlayer.playAudio(url: firstEpisode.url)
+                    audioPlayer.playEpisode(firstEpisode)
                 }
             }
             dismiss()

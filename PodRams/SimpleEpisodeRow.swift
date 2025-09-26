@@ -11,6 +11,7 @@ struct SimpleEpisodeRow: View {
     
     @ObservedObject private var downloadManager = DownloadManager.shared
     @ObservedObject private var cueState = CueState.shared // Use the shared instance
+    @State private var isHoveringRow = false
     
     /// Gets the current download state for this episode
     private var downloadState: DownloadManager.DownloadState {
@@ -42,14 +43,14 @@ struct SimpleEpisodeRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title)
                             .lineLimit(2) // Allow wrapping but limit lines
-                            .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .primary)
+                            .foregroundColor(isPlaying ? AppTheme.primaryText : AppTheme.primaryText.opacity(0.9))
                             .font(isPlaying ? .body.bold() : .body)
                             .frame(minWidth: 100, alignment: .leading) // Ensure minimum width
                         
                         if let podcastName = episode.podcastName {
                             Text(podcastName)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(isPlaying ? AppTheme.primaryText.opacity(0.85) : AppTheme.secondaryText)
                                 .lineLimit(1)
                         }
                         
@@ -57,7 +58,7 @@ struct SimpleEpisodeRow: View {
                         if let duration = episode.duration {
                             Text(formatDuration(duration))
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(isPlaying ? AppTheme.primaryText.opacity(0.75) : AppTheme.secondaryText.opacity(0.85))
                         }
                     }
                     .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading) // Flexible width with minimum
@@ -155,7 +156,7 @@ struct SimpleEpisodeRow: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .foregroundColor(.gray)
+                        .foregroundColor(isPlaying ? AppTheme.primaryText : AppTheme.secondaryText)
                         .font(.system(size: 16))
                         .frame(width: 20, height: 20)
                 }
@@ -165,7 +166,13 @@ struct SimpleEpisodeRow: View {
             }
         }
         .frame(minWidth: 220) // Ensure overall minimum width
-        .padding(.vertical, 4)
+        .padding(.vertical, isPlaying ? 6 : 4)
+        .background(rowBackground)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.15)) {
+                isHoveringRow = hovering
+            }
+        }
         .onAppear {
             // Load the cue when the view appears
             cueState.loadCue()
@@ -212,8 +219,16 @@ struct SimpleEpisodeRow: View {
     }
 }
 
+private extension SimpleEpisodeRow {
+    var rowBackground: Color {
+        if isPlaying { return AppTheme.hoverSurface }
+        return isHoveringRow ? AppTheme.hoverSurface : AppTheme.surface
+    }
+}
+
 // Create a dedicated class to manage cue state
-class CueState: ObservableObject {
+@MainActor
+final class CueState: ObservableObject {
     static let shared = CueState() // Create a shared instance
     
     @Published var cue: [PodcastEpisode] = []

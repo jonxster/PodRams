@@ -11,6 +11,8 @@ struct ProgressBarView: View {
     let currentTime: Double
     let duration: Double
     var onSeek: ((Double) -> Void)?
+    var showLabel: Bool = true
+    var label: String? = nil
     @State private var isDragging = false
     @State private var dragPosition: CGFloat = 0
     
@@ -21,12 +23,12 @@ struct ProgressBarView: View {
                 ZStack(alignment: .leading) {
                     // Background track
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(AppTheme.secondaryText.opacity(0.3))
                         .frame(height: 4)
                     
                     // Progress bar
                     Rectangle()
-                        .fill(Color.blue)
+                        .fill(AppTheme.accent)
                         .frame(width: calculateWidth(in: geometry), height: 4)
                 }
                 // Removed the .overlay modifier
@@ -46,11 +48,12 @@ struct ProgressBarView: View {
             .frame(height: 4) // Keep the bar height constrained
 
             // Add the text below the bar and center it
-            Text(timerDisplayText)
-                .font(.caption)
-                // Use .secondary color for less emphasis compared to the bar
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center) // Center the text
+            if showLabel {
+                Text(label ?? timerDisplayText)
+                    .font(.caption)
+                    .foregroundColor(AppTheme.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .frame(height: 30) // Keep the overall height for the container
     }

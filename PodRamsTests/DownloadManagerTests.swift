@@ -5,8 +5,26 @@ final class DownloadManagerTests: XCTestCase {
     var downloadManager: DownloadManager!
     var testEpisode: PodcastEpisode!
     
+    private func resetDownloadEnvironment() {
+        let fileManager = FileManager.default
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let downloadsManifest = documentsDirectory.appendingPathComponent("downloads.json")
+        if fileManager.fileExists(atPath: downloadsManifest.path) {
+            try? fileManager.removeItem(at: downloadsManifest)
+        }
+        let downloadsDirectory = documentsDirectory.appendingPathComponent("Downloads", isDirectory: true)
+        if let contents = try? fileManager.contentsOfDirectory(at: downloadsDirectory, includingPropertiesForKeys: nil) {
+            for url in contents {
+                try? fileManager.removeItem(at: url)
+            }
+        }
+        PersistenceManager.clearDownloadsCache()
+        DownloadManager.shared.downloadStates.removeAll()
+    }
+    
     override func setUp() {
         super.setUp()
+        resetDownloadEnvironment()
         downloadManager = DownloadManager.shared
         testEpisode = PodcastEpisode(
             title: "Test Episode",
@@ -16,14 +34,11 @@ final class DownloadManagerTests: XCTestCase {
             showNotes: nil,
             feedUrl: nil
         )
-        
-        // Clear any existing state
         downloadManager.downloadStates.removeAll()
     }
     
     override func tearDown() {
-        // Clean up after tests
-        downloadManager.downloadStates.removeAll()
+        resetDownloadEnvironment()
         downloadManager = nil
         testEpisode = nil
         super.tearDown()
@@ -100,15 +115,16 @@ final class DownloadManagerTests: XCTestCase {
         downloadManager.downloadTasks[episodeKey] = mockTask
         
         // Create an expectation for the async pause operation
-        let pauseExpectation = expectation(description: "Download should be paused")
-        
+        let pauseExpectation = XCTestExpectation(description: "Download should be paused")
+
         // Pause the download
         downloadManager.pauseDownload(for: testEpisode)
-        
+
         // Since pauseDownload is asynchronous, we need to wait a bit for the state to update
+        let manager = downloadManager!
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             // Verify state changed to paused or failed (since we're using a mock task)
-            if let state = self.downloadManager.downloadStates[episodeKey] {
+            if let state = manager.downloadStates[episodeKey] {
                 switch state {
                 case .paused(let progress, let resumeData):
                     XCTAssertEqual(progress, testProgress, accuracy: 0.01)
@@ -125,7 +141,9 @@ final class DownloadManagerTests: XCTestCase {
             }
         }
         
-        waitForExpectations(timeout: 1.0, handler: nil)
+        let waiter = XCTWaiter()
+        let result = waiter.wait(for: [pauseExpectation], timeout: 1.0)
+        XCTAssertNotEqual(result, .timedOut, "Pause expectation timed out")
     }
     
     func testResumeDownload() {

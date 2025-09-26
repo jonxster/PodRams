@@ -5,6 +5,11 @@ import SwiftUI
 // Mock AudioPlayer for testing
 @MainActor
 class MockAudioPlayer: AudioPlayer {
+    override func playEpisode(_ episode: PodcastEpisode) {
+        isPlaying = true
+        duration = episode.duration ?? 3600
+    }
+
     override func playAudio(url: URL) {
         isPlaying = true
         // Set duration when playing to simulate real behavior
@@ -31,10 +36,10 @@ final class PlayCommandsTests: XCTestCase {
     var currentEpisodeIndex: Int?
     var playCommands: PlayCommands!
     
-    @MainActor
     override func setUp() {
         super.setUp()
-        audioPlayer = MockAudioPlayer()
+        let createdPlayer = try! MainActor.assumeIsolated { MockAudioPlayer() }
+        audioPlayer = createdPlayer
         episodes = [
             PodcastEpisode(
                 title: "Test Episode 1",
@@ -61,11 +66,14 @@ final class PlayCommandsTests: XCTestCase {
         
         // Create a proper binding that we can modify in tests
         currentEpisodeIndex = 1 // Start with middle episode
-        playCommands = PlayCommands(
-            audioPlayer: audioPlayer,
-            currentEpisodeIndex: .constant(1),
-            episodes: episodes
-        )
+        let initialEpisodes = episodes ?? []
+        playCommands = try! MainActor.assumeIsolated {
+            PlayCommands(
+                audioPlayer: createdPlayer,
+                currentEpisodeIndex: .constant(1),
+                episodes: initialEpisodes
+            )
+        }
     }
     
     override func tearDown() {

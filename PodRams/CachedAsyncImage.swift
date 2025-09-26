@@ -8,6 +8,21 @@ import SwiftUI
 import AppKit
 import CryptoKit
 
+private final class CachedImageState: @unchecked Sendable {
+    let lock = NSLock()
+    var loadingTasks: [String: URLSessionDataTask] = [:]
+    let primaryCache = NSCache<NSURL, NSImage>()
+    let optimizedCache: NSCache<NSURL, NSImage>
+    var lastLoadedURLs: [String: Date] = [:]
+
+    init() {
+        let cache = NSCache<NSURL, NSImage>()
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
+        cache.countLimit = 200
+        optimizedCache = cache
+    }
+}
+
 /// A SwiftUI view that asynchronously loads an image from a URL and caches it locally.
 /// If the image is already cached, it is loaded from disk; otherwise, it is downloaded and stored.
 public struct CachedAsyncImage: View {
@@ -18,31 +33,9 @@ public struct CachedAsyncImage: View {
     /// Desired height of the displayed image.
     let height: CGFloat
 
-    /// In-memory cache for loaded images to avoid repeated disk I/O.
-    private static let imageCache = NSCache<NSURL, NSImage>()
-    // Cache for image loading tasks to prevent duplicate requests
-    private static var loadingTasks = [String: URLSessionDataTask]()
-    private static let loadingTaskLock = NSLock()
-    
-    // Use a more sophisticated cache with size limits
-    private static let urlRequestCache: NSCache<NSString, NSNumber> = {
-        let cache = NSCache<NSString, NSNumber>()
-        cache.totalCostLimit = 100 // Limit to 100 URLs
-        cache.countLimit = 100
-        return cache
-    }()
-    
-    // Optimize cache configuration
-    static let optimizedImageCache: NSCache<NSURL, NSImage> = {
-        let cache = NSCache<NSURL, NSImage>()
-        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
-        cache.countLimit = 200 // Maximum 200 images
-        return cache
-    }()
-    
-    // Track the last URL we tried to load to prevent redundant loading
-    private static var lastLoadedURLs = [String: Date]()
-    private static let failureCooldownPeriod: TimeInterval = 300 // 5 minutes
+    /// Shared cache/state container to keep global mutable state isolated behind a lock.
+    nonisolated private static let cacheState = CachedImageState()
+    nonisolated private static let failureCooldownPeriod: TimeInterval = 300 // 5 minutes
     
     /// The loaded image (if available) represented as an NSImage.
     @State private var loadedImage: NSImage?
@@ -111,12 +104,12 @@ public struct CachedAsyncImage: View {
         guard let url = url else { return }
         
         // Use a more robust locking mechanism
-        Self.loadingTaskLock.lock()
-        defer { Self.loadingTaskLock.unlock() }
+        Self.cacheState.lock.lock()
+        defer { Self.cacheState.lock.unlock() }
         
-        if let task = Self.loadingTasks[url.absoluteString] {
+        if let task = Self.cacheState.loadingTasks[url.absoluteString] {
             task.cancel()
-            Self.loadingTasks.removeValue(forKey: url.absoluteString)
+            Self.cacheState.loadingTasks.removeValue(forKey: url.absoluteString)
         }
         
         // Reset loading state
@@ -149,7 +142,7 @@ public struct CachedAsyncImage: View {
             // --- Start: Moved checks inside background queue --- 
             
             // Check in-memory cache first
-            if let memImage = Self.optimizedImageCache.object(forKey: url as NSURL) {
+            if let memImage = Self.cacheState.optimizedCache.object(forKey: url as NSURL) {
                 DispatchQueue.main.async {
                     loadedImage = memImage
                     isLoading = false
@@ -158,18 +151,18 @@ public struct CachedAsyncImage: View {
             }
 
             // Check if already loading - requires lock
-            Self.loadingTaskLock.lock()
-            if Self.loadingTasks[urlKey] != nil {
+            Self.cacheState.lock.lock()
+            if Self.cacheState.loadingTasks[urlKey] != nil {
                 // Task is already in progress, just let the existing one finish
-                Self.loadingTaskLock.unlock()
+                Self.cacheState.lock.unlock()
                 return 
             }
             
             // Check if we recently failed to load this URL with cooldown
-            if let lastAttempt = Self.lastLoadedURLs[urlKey] {
+            if let lastAttempt = Self.cacheState.lastLoadedURLs[urlKey] {
                 let timeSinceLastAttempt = Date().timeIntervalSince(lastAttempt)
                 if timeSinceLastAttempt < Self.failureCooldownPeriod {
-                    Self.loadingTaskLock.unlock()
+                    Self.cacheState.lock.unlock()
                      DispatchQueue.main.async {
                         isLoading = false 
                         loadError = true
@@ -179,7 +172,7 @@ public struct CachedAsyncImage: View {
             }
             
             // Mark that we've attempted to load this URL
-            Self.lastLoadedURLs[urlKey] = Date()
+            Self.cacheState.lastLoadedURLs[urlKey] = Date()
             
             // Capture fileURL before unlocking
             let fileURL = self.cachedFileURL(for: url)
@@ -189,21 +182,21 @@ public struct CachedAsyncImage: View {
             // Create a placeholder task using a valid initializer before unlocking
             let dummyRequest = URLRequest(url: URL(string: "placeholder://task")!) // Dummy request
             let placeholderTask = URLSession.shared.dataTask(with: dummyRequest) // Non-deprecated init
-            Self.loadingTasks[urlKey] = placeholderTask 
-            Self.loadingTaskLock.unlock() // Unlock *before* potentially slow disk I/O
+            Self.cacheState.loadingTasks[urlKey] = placeholderTask 
+            Self.cacheState.lock.unlock() // Unlock *before* potentially slow disk I/O
             
             // Attempt to load from disk cache.
             if FileManager.default.fileExists(atPath: fileURL.path),
                let data = try? Data(contentsOf: fileURL),
                let image = processImageData(data) {
                 
-                Self.loadingTaskLock.lock()
-                Self.optimizedImageCache.setObject(image, forKey: url as NSURL)
+                Self.cacheState.lock.lock()
+                Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL)
                 // Remove placeholder task if we loaded from disk
-                if Self.loadingTasks[urlKey] === placeholderTask { 
-                    Self.loadingTasks.removeValue(forKey: urlKey)
+                if Self.cacheState.loadingTasks[urlKey] === placeholderTask { 
+                    Self.cacheState.loadingTasks.removeValue(forKey: urlKey)
                 }
-                Self.loadingTaskLock.unlock()
+                Self.cacheState.lock.unlock()
                 
                 DispatchQueue.main.async {
                     loadedImage = image
@@ -237,9 +230,9 @@ public struct CachedAsyncImage: View {
                 // Task completion handler (already on background thread)
                 
                 // Always remove task from tracking inside lock
-                Self.loadingTaskLock.lock()
-                Self.loadingTasks.removeValue(forKey: urlKey)
-                Self.loadingTaskLock.unlock()
+                Self.cacheState.lock.lock()
+                Self.cacheState.loadingTasks.removeValue(forKey: urlKey)
+                Self.cacheState.lock.unlock()
                 
                 if let _ = error {
                     DispatchQueue.main.async { 
@@ -264,9 +257,9 @@ public struct CachedAsyncImage: View {
                         let fallbackImage = NSImage(cgImage: cgImage, size: .zero)
                         
                         // Store fallback image in memory cache
-                        Self.loadingTaskLock.lock()
-                        Self.imageCache.setObject(fallbackImage, forKey: url as NSURL)
-                        Self.loadingTaskLock.unlock()
+                        Self.cacheState.lock.lock()
+                        Self.cacheState.primaryCache.setObject(fallbackImage, forKey: url as NSURL)
+                        Self.cacheState.lock.unlock()
                         
                         // Store image data to disk
                         storeImage(data: data, for: url)
@@ -289,9 +282,9 @@ public struct CachedAsyncImage: View {
                 // Successfully processed image data
                 storeImage(data: data, for: url) // Store to disk cache
                 
-                Self.loadingTaskLock.lock()
-                Self.optimizedImageCache.setObject(image, forKey: url as NSURL) // Store to memory cache
-                Self.loadingTaskLock.unlock()
+                Self.cacheState.lock.lock()
+                Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL) // Store to memory cache
+                Self.cacheState.lock.unlock()
                 
                 DispatchQueue.main.async {
                     loadedImage = image
@@ -300,16 +293,16 @@ public struct CachedAsyncImage: View {
             }
             
             // Store the *actual* task, replacing the placeholder, and start it
-            Self.loadingTaskLock.lock()
-            Self.loadingTasks[urlKey] = task
-            Self.loadingTaskLock.unlock()
+            Self.cacheState.lock.lock()
+            Self.cacheState.loadingTasks[urlKey] = task
+            Self.cacheState.lock.unlock()
             
             task.resume()
         }
     }
     
     /// Processes image data to create an optimized NSImage
-    private func processImageData(_ data: Data) -> NSImage? {
+    nonisolated private func processImageData(_ data: Data) -> NSImage? {
         // Try creating thumbnail directly if image might be large (heuristics based on data size)
         let maxDimension: CGFloat = 1200
         var potentiallyLarge = data.count > 500 * 1024 // Assume > 500KB might be large
@@ -368,7 +361,7 @@ public struct CachedAsyncImage: View {
     /// Generates a unique cache file name by computing a SHA256 hash of the URL's absolute string.
     /// - Parameter url: The URL to hash.
     /// - Returns: A fixed-length file name derived from the URL hash, including the file extension if available.
-    private func cacheFileName(for url: URL) -> String {
+    nonisolated private func cacheFileName(for url: URL) -> String {
         // Convert the URL's absolute string to data.
         let inputData = Data(url.absoluteString.utf8)
         // Compute the SHA256 hash.
@@ -383,7 +376,7 @@ public struct CachedAsyncImage: View {
     /// Constructs the full file URL in the temporary directory where the cached image is stored.
     /// - Parameter url: The original image URL.
     /// - Returns: A file URL pointing to the cached image.
-    private func cachedFileURL(for url: URL) -> URL {
+    nonisolated private func cachedFileURL(for url: URL) -> URL {
         // Use the application support directory instead of temporary directory
         // for better persistence and proper sandbox permissions
         let fileManager = FileManager.default
@@ -421,7 +414,7 @@ public struct CachedAsyncImage: View {
     /// - Parameters:
     ///   - data: The image data to be stored.
     ///   - url: The original URL of the image, used to generate the cache file name.
-    private func storeImage(data: Data, for url: URL) {
+    nonisolated private func storeImage(data: Data, for url: URL) {
         let fileURL = cachedFileURL(for: url)
         do {
             // Make sure the directory exists (in case it was deleted between cache directory creation and image download)
@@ -436,20 +429,40 @@ public struct CachedAsyncImage: View {
             // Just log the error, don't print
         }
     }
+
+    // MARK: - Cache Helpers
+
+    static func updateOptimizedCache(totalCostLimit: Int? = nil, countLimit: Int? = nil) {
+        let state = cacheState
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        if let totalCostLimit { state.optimizedCache.totalCostLimit = totalCostLimit }
+        if let countLimit { state.optimizedCache.countLimit = countLimit }
+    }
+
+    static func optimizedCacheCountLimit() -> Int {
+        let state = cacheState
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        return state.optimizedCache.countLimit
+    }
     
     // Clear the loaded URL tracking cache to allow retry of previously failed URLs
     public static func clearURLCache() {
-        loadingTaskLock.lock()
-        defer { loadingTaskLock.unlock() }
-        lastLoadedURLs.removeAll()
+        let state = cacheState
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        state.lastLoadedURLs.removeAll()
     }
     
     // Clear entire image cache
     public static func clearCache() {
-        loadingTaskLock.lock()
-        defer { loadingTaskLock.unlock() }
-        imageCache.removeAllObjects()
-        lastLoadedURLs.removeAll()
+        let state = cacheState
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        state.primaryCache.removeAllObjects()
+        state.optimizedCache.removeAllObjects()
+        state.lastLoadedURLs.removeAll()
         
         // Try to clear disk cache too
         do {

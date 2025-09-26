@@ -10,16 +10,16 @@
 import Foundation
 import Combine
 import AVFoundation
-import FeedKit
+@preconcurrency import FeedKit
 
-class PodcastFetcher: ObservableObject, @unchecked Sendable {
+@MainActor
+final class PodcastFetcher: ObservableObject {
     @Published var searchQuery = ""
     @Published var podcasts: [Podcast] = []
     
     // Optimized cache sizes to reduce memory usage
     private var searchCache: [String: [Podcast]] = [:]
     private var episodeCache: [String: (episodes: [PodcastEpisode], feedArtwork: URL?)] = [:]
-    private let cacheQueue = DispatchQueue(label: "com.podcasts.fetcher.cache", attributes: .concurrent)
     
     // Memory optimization settings
     private let maxSearchCacheSize = 20 // Reduced from 50
@@ -33,7 +33,9 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.clearCaches()
+            Task { @MainActor [weak self] in
+                self?.clearCaches()
+            }
         }
     }
     
@@ -44,47 +46,41 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
     func searchPodcasts() async {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
-        
-        var cached: [Podcast]?
-        cacheQueue.sync { cached = self.searchCache[query] }
-        if let cached = cached {
-            DispatchQueue.main.async { self.podcasts = cached }
+
+        if let cached = searchCache[query] {
+            podcasts = cached
             return
         }
-        
+
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://itunes.apple.com/search?media=podcast&term=\(encodedQuery)&entity=podcast&limit=25") else { // Limit results
+              let url = URL(string: "https://itunes.apple.com/search?media=podcast&term=\(encodedQuery)&entity=podcast&limit=25") else {
             print("Invalid search query")
             return
         }
-        
+
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
-            let decoder = JSONDecoder()
-            let response = try decoder.decode(PodcastSearchResponse.self, from: data)
-            
+            let response = try JSONDecoder().decode(PodcastSearchResponse.self, from: data)
+
             let results = response.results.compactMap { result -> Podcast? in
                 guard let feedUrl = result.feedUrl, URL(string: feedUrl) != nil else { return nil }
-                let p = Podcast(title: result.collectionName, feedUrl: feedUrl)
+                let podcast = Podcast(title: result.collectionName, feedUrl: feedUrl)
                 if let art = result.artworkUrl600, let artURL = URL(string: art) {
-                    p.feedArtworkURL = artURL
+                    podcast.feedArtworkURL = artURL
                 }
-                return p
+                return podcast
             }
-            
-            cacheQueue.async(flags: .barrier) { [weak self] in
-                guard let self = self else { return }
-                self.searchCache[query] = results
-                // Clean cache when it gets too large
-                if self.searchCache.count > self.maxSearchCacheSize {
-                    let keysToRemove = Array(self.searchCache.keys.prefix(self.searchCache.count - self.maxSearchCacheSize))
-                    for key in keysToRemove {
-                        self.searchCache.removeValue(forKey: key)
-                    }
+
+            searchCache[query] = results
+            if searchCache.count > maxSearchCacheSize {
+                let overflow = searchCache.count - maxSearchCacheSize
+                let keysToRemove = Array(searchCache.keys.prefix(overflow))
+                for key in keysToRemove {
+                    searchCache.removeValue(forKey: key)
                 }
             }
-            
-            DispatchQueue.main.async { self.podcasts = results }
+
+            podcasts = results
         } catch {
             print("Error fetching podcasts: \(error)")
         }
@@ -95,44 +91,38 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
             print("Invalid feed URL")
             return
         }
-        
-        var cached: (episodes: [PodcastEpisode], feedArtwork: URL?)?
-        cacheQueue.sync { cached = self.episodeCache[feedUrlString] }
-        if let cached = cached {
-            DispatchQueue.main.async {
-                // Limit episodes when retrieving from cache
-                podcast.episodes = Array(cached.episodes.prefix(self.maxEpisodesPerFeed))
-                if let feedArt = cached.feedArtwork { podcast.feedArtworkURL = feedArt }
+
+        if let cached = episodeCache[feedUrlString] {
+            podcast.episodes = Array(cached.episodes.prefix(maxEpisodesPerFeed))
+            if let feedArt = cached.feedArtwork {
+                podcast.feedArtworkURL = feedArt
             }
             return
         }
-        
+
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
-            
-            // Use FeedKitRSSParser with memory-optimized parsing
+
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
-            let (allEpisodes, fArt, chTitle) = parser.parse(data: data)
-            
-            // Limit episodes to reduce memory usage
+            let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
+
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
-            
-            cacheQueue.async(flags: .barrier) { [weak self] in
-                guard let self = self else { return }
-                self.episodeCache[feedUrlString] = (limitedEpisodes, fArt)
-                // Clean cache when it gets too large
-                if self.episodeCache.count > self.maxEpisodeCacheSize {
-                    let keysToRemove = Array(self.episodeCache.keys.prefix(self.episodeCache.count - self.maxEpisodeCacheSize))
-                    for key in keysToRemove {
-                        self.episodeCache.removeValue(forKey: key)
-                    }
+
+            episodeCache[feedUrlString] = (limitedEpisodes, feedArt)
+            if episodeCache.count > maxEpisodeCacheSize {
+                let overflow = episodeCache.count - maxEpisodeCacheSize
+                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
+                for key in keysToRemove {
+                    episodeCache.removeValue(forKey: key)
                 }
             }
-            
-            DispatchQueue.main.async {
-                podcast.episodes = limitedEpisodes
-                if let feedArt = fArt { podcast.feedArtworkURL = feedArt }
-                if let chTitle = chTitle, !chTitle.isEmpty { podcast.title = chTitle }
+
+            podcast.episodes = limitedEpisodes
+            if let feedArt = feedArt {
+                podcast.feedArtworkURL = feedArt
+            }
+            if let channelTitle = channelTitle, !channelTitle.isEmpty {
+                podcast.title = channelTitle
             }
         } catch {
             print("Error fetching episodes: \(error)")
@@ -143,38 +133,33 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
         guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
             return ([], nil)
         }
-        
-        var cached: (episodes: [PodcastEpisode], feedArtwork: URL?)?
-        cacheQueue.sync { cached = self.episodeCache[feedUrlString] }
-        if let cached = cached {
+
+        if let cached = episodeCache[feedUrlString] {
             return (Array(cached.episodes.prefix(maxEpisodesPerFeed)), cached.feedArtwork)
         }
-        
+
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
-            
-            // Use FeedKitRSSParser with memory-optimized parsing
+
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
-            let (allEpisodes, fArt, chTitle) = parser.parse(data: data)
-            
-            // Limit episodes to reduce memory usage
+            let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
+
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
-            
-            if let chTitle = chTitle, !chTitle.isEmpty { podcast.title = chTitle }
-            
-            cacheQueue.async(flags: .barrier) { [weak self] in
-                guard let self = self else { return }
-                self.episodeCache[feedUrlString] = (limitedEpisodes, fArt)
-                // Clean cache when it gets too large
-                if self.episodeCache.count > self.maxEpisodeCacheSize {
-                    let keysToRemove = Array(self.episodeCache.keys.prefix(self.episodeCache.count - self.maxEpisodeCacheSize))
-                    for key in keysToRemove {
-                        self.episodeCache.removeValue(forKey: key)
-                    }
+
+            if let channelTitle = channelTitle, !channelTitle.isEmpty {
+                podcast.title = channelTitle
+            }
+
+            episodeCache[feedUrlString] = (limitedEpisodes, feedArt)
+            if episodeCache.count > maxEpisodeCacheSize {
+                let overflow = episodeCache.count - maxEpisodeCacheSize
+                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
+                for key in keysToRemove {
+                    episodeCache.removeValue(forKey: key)
                 }
             }
-            
-            return (limitedEpisodes, fArt)
+
+            return (limitedEpisodes, feedArt)
         } catch {
             print("Error: \(error)")
             return ([], nil)
@@ -185,21 +170,27 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
         guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
             return (nil, nil)
         }
-        
-        var cached: (episodes: [PodcastEpisode], feedArtwork: URL?)?
-        cacheQueue.sync { cached = self.episodeCache[feedUrlString] }
-        if let cached = cached {
+
+        if let cached = episodeCache[feedUrlString] {
             return (podcast.title, cached.feedArtwork)
         }
-        
+
         do {
             let (data, _) = try await URLSession.shared.data(from: feedUrl)
-            
-            // Use FeedKitRSSParser
+
             let parser = FeedKitRSSParser(feedUrl: feedUrlString)
-            let (_, fArt, chTitle) = parser.parse(data: data)
-            
-            return (chTitle, fArt)
+            let (_, feedArt, channelTitle) = parser.parse(data: data)
+
+            episodeCache[feedUrlString] = ([], feedArt)
+            if episodeCache.count > maxEpisodeCacheSize {
+                let overflow = episodeCache.count - maxEpisodeCacheSize
+                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
+                for key in keysToRemove {
+                    episodeCache.removeValue(forKey: key)
+                }
+            }
+
+            return (channelTitle, feedArt)
         } catch {
             print("Error: \(error)")
             return (nil, nil)
@@ -208,10 +199,8 @@ class PodcastFetcher: ObservableObject, @unchecked Sendable {
     
     /// Clears all caches to free memory
     func clearCaches() {
-        cacheQueue.async(flags: .barrier) { [weak self] in
-            self?.searchCache.removeAll()
-            self?.episodeCache.removeAll()
-        }
+        searchCache.removeAll()
+        episodeCache.removeAll()
         print("PodcastFetcher caches cleared for memory optimization")
     }
 }

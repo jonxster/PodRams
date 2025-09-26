@@ -260,7 +260,7 @@
 			mainGroup = CE5833402D673B8C00D81290;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				CE94D6622DB41F750028EF06 /* XCRemoteSwiftPackageReference "FeedKit" */,
+				CE94D6622DB41F750028EF06 /* XCLocalSwiftPackageReference "LocalDeps/FeedKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CE58334A2D673B8C00D81290 /* Products */;
@@ -399,6 +399,8 @@
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -457,6 +459,8 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -484,7 +488,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRams;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -512,7 +517,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRams;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -529,7 +535,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRamsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PodRams.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PodRams";
 			};
 			name = Debug;
@@ -547,7 +554,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRamsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PodRams.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PodRams";
 			};
 			name = Release;
@@ -563,7 +571,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRamsUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_TARGET_NAME = PodRams;
 			};
 			name = Debug;
@@ -579,7 +588,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = IPM.PodRamsUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_TARGET_NAME = PodRams;
 			};
 			name = Release;
@@ -625,21 +635,17 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		CE94D6622DB41F750028EF06 /* XCRemoteSwiftPackageReference "FeedKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nmdias/FeedKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 9.1.2;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		CE94D6622DB41F750028EF06 /* XCLocalSwiftPackageReference "LocalDeps/FeedKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalDeps/FeedKit;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		CE94D6632DB41F9A0028EF06 /* FeedKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CE94D6622DB41F750028EF06 /* XCRemoteSwiftPackageReference "FeedKit" */;
+			package = CE94D6622DB41F750028EF06 /* XCLocalSwiftPackageReference "LocalDeps/FeedKit" */;
 			productName = FeedKit;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -1,5 +1,8 @@
 import SwiftUI
 import Combine
+#if os(macOS)
+import AppKit
+#endif
 
 /// Main content view for the podcast app.
 /// Combines podcast fetching, audio playback, and various UI states.
@@ -8,6 +11,8 @@ struct ContentView: View {
     @StateObject var podcastFetcher = PodcastFetcher()
     /// Manages audio playback and related state.
     @EnvironmentObject var audioPlayer: AudioPlayer
+    /// Tracks the current system color scheme so toolbar styling matches appearance.
+    @Environment(\.colorScheme) private var colorScheme
     /// Memory optimization manager to reduce app memory footprint
     @StateObject private var memoryOptimizer = MemoryOptimizationManager.shared
     
@@ -24,6 +29,9 @@ struct ContentView: View {
     @State private var selectedPodcast: Podcast?
     /// Index of the selected episode within the active episode list.
     @State private var selectedEpisodeIndex: Int?
+
+    /// Namespace used for Liquid Glass morphing identifiers.
+    @Namespace private var glassNamespace
     
     // UI state flags controlling visibility and behavior.
     @State private var isCuePlaying = false
@@ -34,6 +42,11 @@ struct ContentView: View {
     @State private var isAudioOutputSelectionVisible = false
     @State private var isSubscribeVisible = false
     @State private var isSettingsVisible = false
+    @State private var isShowNotesVisible = false
+    @State private var isShowNotesLoading = false
+    @State private var showNotesContent: AttributedString = AttributedString("Select an episode to view show notes.")
+    @State private var showNotesEpisodeID: String?
+    @State private var showNotesTitle: String = "Show Notes"
     
     // Add a new state variable to track initialization
     @State private var isInitialized = false
@@ -49,51 +62,84 @@ struct ContentView: View {
         return []
     }
     
+    private var currentShowNotesEpisode: PodcastEpisode? {
+        guard let index = selectedEpisodeIndex else { return nil }
+        let episodes = activeEpisodes
+        guard episodes.indices.contains(index) else { return nil }
+        return episodes[index]
+    }
+    
+    private var showNotesAvailable: Bool {
+        !isShowNotesLoading && currentShowNotesEpisode != nil
+    }
+    
     // Add a binding for episodes to keep them in sync with the app state
     @Binding var appEpisodes: [PodcastEpisode]
     @Binding var appCurrentEpisodeIndex: Int?
     @Binding var appSelectedPodcast: Podcast?
     
-    init(appEpisodes: Binding<[PodcastEpisode]> = .constant([]), 
+    struct InitialState {
+        var favoritePodcasts: [Podcast] = []
+        var cue: [PodcastEpisode] = []
+        var subscribedPodcasts: [Podcast] = []
+        var lastPlayedEpisode: PodcastEpisode? = nil
+        var selectedPodcast: Podcast? = nil
+        var selectedEpisodeIndex: Int? = nil
+        var isCuePlaying: Bool = false
+        var isInitialized: Bool = false
+    }
+
+    init(appEpisodes: Binding<[PodcastEpisode]> = .constant([]),
          appCurrentEpisodeIndex: Binding<Int?> = .constant(nil),
-         appSelectedPodcast: Binding<Podcast?> = .constant(nil)) {
+         appSelectedPodcast: Binding<Podcast?> = .constant(nil),
+         initialState: InitialState? = nil) {
         _appEpisodes = appEpisodes
         _appCurrentEpisodeIndex = appCurrentEpisodeIndex
         _appSelectedPodcast = appSelectedPodcast
+
+        if let initialState {
+            _favoritePodcasts = State(initialValue: initialState.favoritePodcasts)
+            _cue = State(initialValue: initialState.cue)
+            _subscribedPodcasts = State(initialValue: initialState.subscribedPodcasts)
+            _lastPlayedEpisode = State(initialValue: initialState.lastPlayedEpisode)
+            _selectedPodcast = State(initialValue: initialState.selectedPodcast)
+            _selectedEpisodeIndex = State(initialValue: initialState.selectedEpisodeIndex)
+            _isCuePlaying = State(initialValue: initialState.isCuePlaying)
+            _isInitialized = State(initialValue: initialState.isInitialized)
+        }
     }
     
     /// Builds a view that displays the title of the currently playing podcast or episode.
+    @ViewBuilder
     var currentPlayingTitle: some View {
-        if let currentEpisode = activeEpisodes.indices.contains(selectedEpisodeIndex ?? -1) ? activeEpisodes[selectedEpisodeIndex!] : nil {
-            // Wrap the title in a horizontal stack with optional button behavior when cue is playing.
-            return AnyView(
-                HStack {
-                    Spacer()
-                    if isCuePlaying {
-                        // Tapping toggles the cue visibility.
-                        Button(action: {
-                            isCueVisible.toggle()
-                        }) {
-                            Text("\(currentEpisode.podcastName ?? "Unknown Podcast")")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .background(Color.clear)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .background(Color.clear)
-        } else {
-                        // Display the selected podcast title.
-                        Text(selectedPodcast?.title ?? "Unknown Podcast")
-                            .font(.headline)
-                            .background(Color.clear)
-                    }
-                    Spacer()
+        if let index = selectedEpisodeIndex,
+           activeEpisodes.indices.contains(index) {
+            let episode = activeEpisodes[index]
+            let cueTitle = episode.podcastName ?? "Unknown Podcast"
+            let podcastTitle = selectedPodcast?.title ?? cueTitle
+
+            if isCuePlaying {
+                Button {
+                    isCueVisible.toggle()
+                } label: {
+                    Text(cueTitle)
+                        .font(.headline)
+                        .foregroundColor(AppTheme.primaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .glassEffectID("now-playing-title", in: glassNamespace)
                 }
-                .padding(.vertical, 8)
-                .background(Color.clear)
-            )
+                .buttonStyle(.glass(.regular.interactive()))
+            } else {
+                Text(podcastTitle)
+                    .font(.headline)
+                    .foregroundColor(AppTheme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .glassEffectID("now-playing-title", in: glassNamespace)
+            }
         }
-        return AnyView(EmptyView())
     }
     
     var body: some View {
@@ -108,23 +154,7 @@ struct ContentView: View {
                         currentEpisodeIndex: $selectedEpisodeIndex,
                         feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
                     )
-                    .padding(.bottom, 8)  // Reduced padding
-                    
-                    // Title display section for current playing podcast/episode.
-                    currentPlayingTitle
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8) // Reduced padding
-
-                    // *** MOVE ProgressBarView HERE (below title) ***
-                    ProgressBarView(
-                        currentTime: audioPlayer.currentTime,
-                        duration: audioPlayer.duration,
-                        onSeek: { newTime in
-                            audioPlayer.seek(to: newTime)
-                        }
-                    )
-                    .padding(.horizontal) // Add some horizontal padding
-                    .disabled(activeEpisodes.isEmpty || selectedEpisodeIndex == nil) // Disable if nothing is playing
+                    .padding(.bottom, 24)
                     
                     // Episode list section with loading indicator overlay.
                     ZStack {
@@ -142,6 +172,7 @@ struct ContentView: View {
                         } else {
                             // Inform the user if no episodes are available.
                             Text("No episodes available")
+                                .foregroundColor(AppTheme.secondaryText)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         
@@ -149,6 +180,8 @@ struct ContentView: View {
                         if isPodcastLoading {
                             ProgressView("Loading podcast...")
                                 .progressViewStyle(CircularProgressViewStyle())
+                                .tint(AppTheme.accent)
+                                .foregroundColor(AppTheme.secondaryText)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -159,15 +192,20 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 // Toolbar with various action buttons.
                 .toolbar { toolbarContent }
+                .toolbarBackground(AppTheme.toolbarBackground, for: .windowToolbar)
+                .toolbarBackground(.visible, for: .windowToolbar)
+                .toolbarColorScheme(colorScheme, for: .windowToolbar)
+                .glassBackgroundEffect(.window)
             } else {
                 // Loading screen
                 VStack {
                     ProgressView("Loading PodRams...")
                         .progressViewStyle(CircularProgressViewStyle())
+                        .tint(AppTheme.accent)
                         .padding()
                     Text("Preparing your podcasts")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppTheme.secondaryText)
                 }
                 .frame(minWidth: 600, minHeight: 600)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -176,6 +214,7 @@ struct ContentView: View {
         // These modifiers apply to both states
         .frame(minWidth: 600, minHeight: 600)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppTheme.background.ignoresSafeArea())
         // Popovers and other modifiers
         .popover(isPresented: $isSearching) {
             SearchSheetView(
@@ -191,6 +230,7 @@ struct ContentView: View {
                 isSearching = false
             }
             .frame(minWidth: 400, minHeight: 500)
+            .glassBackgroundEffect(.window)
         }
         // Popover for displaying the cue (play queue).
         .popover(isPresented: $isCueVisible) {
@@ -202,6 +242,7 @@ struct ContentView: View {
                 selectedPodcast: $selectedPodcast
             )
             .frame(minWidth: 400, minHeight: 500)
+            .glassBackgroundEffect(.sidebar)
         }
         // Popover for displaying favorites.
         .popover(isPresented: $isFavoritesVisible) {
@@ -216,7 +257,8 @@ struct ContentView: View {
                 // Persist favorites when the view disappears.
                 PersistenceManager.saveFavorites(favoritePodcasts)
             }
-            .frame(minWidth: 400, minHeight: 500)
+            .frame(minWidth: 400, minHeight: 400)
+            .glassBackgroundEffect(.window)
         }
         // Background view to capture keyboard shortcuts.
         .background(KeyboardShortcutView { key in
@@ -286,7 +328,7 @@ struct ContentView: View {
                             print("🎯 ContentView: Restored episode index: \(index)")
                             
                             // Restore playback
-                            audioPlayer.playAudio(url: lastEp.url)
+                            audioPlayer.playEpisode(lastEp)
                             print("▶️ ContentView: Started playback of restored episode")
                         } else {
                             // Episode not found in current episodes, play first episode if available
@@ -317,7 +359,7 @@ struct ContentView: View {
                         
                         if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
                             selectedEpisodeIndex = index
-                            audioPlayer.playAudio(url: lastEp.url)
+                            audioPlayer.playEpisode(lastEp)
                         } else if !episodes.isEmpty {
                             selectedEpisodeIndex = 0
                         }
@@ -332,6 +374,7 @@ struct ContentView: View {
             // Mark initialization complete AFTER restoration is done
             print("✅ ContentView: App initialization complete")
             isInitialized = true
+            refreshShowNotes()
             
             // Prefetch episodes for subscribed podcasts in the background
             Task(priority: .background) {
@@ -369,17 +412,23 @@ struct ContentView: View {
             }
         }
         // Keep app state in sync with ContentView state
-        .onChange(of: activeEpisodes) {
-            let newEpisodes = activeEpisodes // Capture current value inside closure
+        .onChange(of: activeEpisodes) { _, newEpisodes in
             appEpisodes = newEpisodes
+            refreshShowNotes()
         }
-        .onChange(of: selectedEpisodeIndex) {
-            let newIndex = selectedEpisodeIndex // Capture current value inside closure
+        .onChange(of: selectedEpisodeIndex) { _, newIndex in
             appCurrentEpisodeIndex = newIndex
+            refreshShowNotes()
         }
-        .onChange(of: selectedPodcast) {
-            let newPodcast = selectedPodcast // Capture current value inside closure
+        .onChange(of: selectedPodcast) { _, newPodcast in
             appSelectedPodcast = newPodcast
+            refreshShowNotes()
+        }
+        .onChange(of: cue) { _, _ in
+            refreshShowNotes()
+        }
+        .onChange(of: isCuePlaying) { _, _ in
+            refreshShowNotes()
         }
     }
     
@@ -390,21 +439,22 @@ struct ContentView: View {
             Button {
                 isAudioOutputSelectionVisible.toggle()
             } label: {
-                Image(systemName: AudioOutputManager.shared.currentRouteIcon)
+                glassToolbarIcon(AudioOutputManager.shared.currentRouteIcon)
             }
             .accessibilityIdentifier("AudioOutputButton")
-            .buttonStyle(.plain)
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
+                    .glassBackgroundEffect(.sidebar)
             }
+            .buttonStyle(.plain)
+            .focusable(false)
             
             // Button to open the subscribe popover.
             Button {
                 isSubscribeVisible = true
             } label: {
-                Image(systemName: "rectangle.and.paperclip")
+                glassToolbarIcon("rectangle.and.paperclip", isEnabled: !subscribedPodcasts.isEmpty)
             }
-            .buttonStyle(.plain)
             .popover(isPresented: $isSubscribeVisible) {
                 SubscribeView(
                     subscribedPodcasts: $subscribedPodcasts,
@@ -414,75 +464,153 @@ struct ContentView: View {
                     audioPlayer: audioPlayer,
                     onPodcastSelect: handlePodcastSelect
                 )
+                .glassBackgroundEffect(.inspector)
             }
+            .buttonStyle(.plain)
+            .focusable(false)
             
             // Button to open the settings popover.
             Button {
                 isSettingsVisible = true
             } label: {
-                Image(systemName: "gear")
+                glassToolbarIcon("gearshape")
             }
-            .buttonStyle(.plain)
             .popover(isPresented: $isSettingsVisible) {
                 SettingsView()
+                    .glassBackgroundEffect(.window)
             }
+            .buttonStyle(.plain)
+            .focusable(false)
             
             // Button to show favorites; disabled if there are no favorites.
             Button {
                 isFavoritesVisible = true
             } label: {
-                Image(systemName: "star")
+                glassToolbarIcon("star.fill", isEnabled: !favoritePodcasts.isEmpty)
             }
-            .buttonStyle(.plain)
             .disabled(favoritePodcasts.isEmpty)
             .help("Favorites (\(favoritePodcasts.count))")
+            .buttonStyle(.plain)
+            .focusable(false)
             
             // Button to show the cue (play queue); disabled if cue is empty.
             Button {
                 if !cue.isEmpty { isCueVisible.toggle() }
             } label: {
-                Image(systemName: "list.bullet")
+                glassToolbarIcon("list.bullet", isEnabled: !cue.isEmpty)
             }
-            .buttonStyle(.plain)
             .disabled(cue.isEmpty)
             .help("Cue (\(cue.count))")
+            .buttonStyle(.plain)
+            .focusable(false)
+
+            // Button to show show notes for the current episode.
+            Button {
+                if showNotesAvailable {
+                    if isShowNotesVisible {
+                        isShowNotesVisible = false
+                    } else {
+                        refreshShowNotes()
+                        isShowNotesVisible = true
+                    }
+                }
+            } label: {
+                let symbol = resolveSymbolName(primary: "text.bubble", fallbacks: ["text.alignleft", "text.justify", "doc.text"])
+                glassToolbarIcon(symbol, isEnabled: showNotesAvailable)
+            }
+            .disabled(!showNotesAvailable)
+            .help("Show Notes")
+            .popover(isPresented: $isShowNotesVisible) {
+                ShowNotesView(
+                    episodeTitle: showNotesTitle,
+                    isLoading: isShowNotesLoading,
+                    notes: showNotesContent
+                )
+                .glassBackgroundEffect(.window)
+            }
+            .buttonStyle(.plain)
+            .focusable(false)
             
             // Button to toggle the search popover.
             Button {
                 isSearching.toggle()
             } label: {
-                Image(systemName: "magnifyingglass")
+                glassToolbarIcon("magnifyingglass")
             }
-            .buttonStyle(.plain)
             .help("Search for Podcasts")
+            .buttonStyle(.plain)
+            .focusable(false)
         }
     }
-    
+
     /// Toggles play/pause on the audio player.
     /// If the audio is playing, it pauses; otherwise, it plays the currently selected episode.
     private func togglePlayPause() {
         if audioPlayer.isPlaying {
             audioPlayer.pauseAudio()
         } else if let index = selectedEpisodeIndex, index < activeEpisodes.count {
-            audioPlayer.playAudio(url: activeEpisodes[index].url)
+            let episode = activeEpisodes[index]
+            audioPlayer.playEpisode(episode)
         }
     }
     
+    private func refreshShowNotes() {
+        prepareShowNotes(for: currentShowNotesEpisode)
+    }
+
+    private func prepareShowNotes(for episode: PodcastEpisode?) {
+        guard let episode else {
+            showNotesEpisodeID = nil
+            showNotesTitle = ""
+            showNotesContent = AttributedString("Select an episode to view show notes.")
+            isShowNotesLoading = false
+            if isShowNotesVisible {
+                isShowNotesVisible = false
+            }
+            return
+        }
+
+        showNotesTitle = episode.title
+        let loadID = episode.id
+        showNotesEpisodeID = loadID
+
+        guard let rawNotes = episode.showNotes, !rawNotes.isEmpty else {
+            isShowNotesLoading = false
+            showNotesContent = AttributedString("No show notes available.")
+            return
+        }
+
+        isShowNotesLoading = true
+        showNotesContent = AttributedString("Loading show notes...")
+
+        let targetID = loadID
+        DispatchQueue.global(qos: .userInitiated).async {
+            let rendered = rawNotes.htmlRenderedAttributedString()
+            DispatchQueue.main.async {
+                if showNotesEpisodeID == targetID {
+                    if rendered.characters.isEmpty {
+                        showNotesContent = AttributedString("No show notes available.")
+                    } else {
+                        showNotesContent = rendered
+                    }
+                    isShowNotesLoading = false
+                }
+            }
+        }
+    }
+
     /// Loads the podcast episodes, updates the UI state, and starts playback if requested.
     private func handlePodcastSelect(_ podcast: Podcast, autoPlay: Bool = false) {
         // Reset cue playing state when selecting a podcast
         isCuePlaying = false
-        
-        // If we're already viewing this podcast, just return
-        if let selected = selectedPodcast, selected.id == podcast.id {
-            return
-        }
-        
-        // Set loading state and update selected podcast
-        isPodcastLoading = true
+
+        let needsReload = selectedPodcast?.id != podcast.id || (selectedPodcast?.episodes.isEmpty ?? true)
+        if !needsReload { return }
+
         selectedPodcast = podcast
+        isPodcastLoading = true
         selectedEpisodeIndex = nil
-        
+
         // Fetch episodes for the selected podcast
             Task {
             let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
@@ -493,10 +621,10 @@ struct ContentView: View {
                 if let feedArt = feedArt {
                     podcast.feedArtworkURL = feedArt
                 }
-                
+
                 // Update selected podcast and episode index
                 selectedPodcast = podcast
-                
+
                 // If autoPlay is true, start playback of the first episode
                 if autoPlay && !episodes.isEmpty {
                     // First set the episode index
@@ -506,21 +634,93 @@ struct ContentView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         // Make sure we're still on the same podcast/episode
                         if selectedPodcast?.id == podcast.id && selectedEpisodeIndex == 0 {
-                            audioPlayer.playAudio(url: episodes[0].url)
+                            if let firstEpisode = episodes.first {
+                                audioPlayer.playEpisode(firstEpisode)
+                            }
                         }
                     }
                 }
                 
                 // Mark loading as finished
                 isPodcastLoading = false
+                refreshShowNotes()
             }
         }
     }
-    
+
+    private func glassToolbarIcon(_ systemName: String, isEnabled: Bool = true) -> some View {
+        ToolbarIcon(systemName: resolveSymbolName(primary: systemName), isEnabled: isEnabled)
+    }
+
+    private struct ToolbarIcon: View {
+        let systemName: String
+        let isEnabled: Bool
+        @State private var isHovering = false
+        @Environment(\.colorScheme) private var colorScheme
+
+        var body: some View {
+            RoundedRectangle(cornerRadius: 50, style: .circular)
+                .fill(isHovering ? hoverFill : baseFill)
+                .overlay(
+                    Image(systemName: systemName)
+                        .symbolRenderingMode(.hierarchical)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 50, style: .circular)
+                        .stroke(strokeColor, lineWidth: 0.0)
+                )
+                .frame(width: 35, height: 35)
+                .animation(.easeOut(duration: 0.15), value: isHovering)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+        }
+
+        private var baseFill: Color {
+            AppTheme.color(.surface, in: mode)
+        }
+
+        private var hoverFill: Color {
+            AppTheme.color(.hoverSurface, in: mode)
+        }
+
+        private var strokeColor: Color {
+            AppTheme.color(.secondaryText, in: mode)
+                .opacity(isHovering ? 0.35 : (isEnabled ? (colorScheme == .dark ? 0.18 : 0.12) : 0.08))
+        }
+
+        private var iconColor: Color {
+            let active = AppTheme.color(.primaryText, in: mode)
+            let inactive = AppTheme.color(.secondaryText, in: mode)
+            return isEnabled ? active : inactive
+        }
+
+        private var mode: AppTheme.Mode {
+            colorScheme == .dark ? .dark : .light
+        }
+    }
+
+    private func resolveSymbolName(primary: String, fallbacks: [String] = []) -> String {
+        #if os(macOS)
+        let safetyNet = "doc.text"
+        let candidates = [primary] + fallbacks + [safetyNet]
+        for symbol in candidates {
+            if NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil {
+                return symbol
+            }
+        }
+        return safetyNet
+        #else
+        return primary
+        #endif
+    }
+
     /// Prefetches episodes for all subscribed podcasts in the background
     private func prefetchSubscribedPodcasts() async {
         print("Starting optimized background prefetch of \(subscribedPodcasts.count) subscribed podcasts")
-        
+
         // Limit concurrent prefetches for better performance
         let maxConcurrentPrefetches = 3
         var currentPrefetches = 0
@@ -567,6 +767,13 @@ struct ContentView: View {
         print("Completed optimized background prefetch of subscribed podcasts")
     }
 }
+
+#if DEBUG
+#Preview("ContentView Preview") {
+    ContentViewPreviewContainer()
+        .frame(minWidth: 900, minHeight: 600)
+}
+#endif
 
 // Add this helper function to format time durations
 extension Double {
@@ -689,10 +896,9 @@ struct EpisodeRow: View {
         // Add leading padding only if the indicator will be visible
         // Apply padding here instead of on the Circle/Spacer directly
         Group {
-            if !playedManager.hasBeenPlayed(episode) {
-                Circle()
-                    // Use white in dark mode, blue in light mode
-                    .fill(colorScheme == .dark ? Color.white : Color.blue)
+           if !playedManager.hasBeenPlayed(episode) {
+               Circle()
+                    .fill(AppTheme.accent)
                     .frame(width: 8, height: 8)
                     // .padding(.trailing, 6) // REMOVE padding from here
             } else {
@@ -724,21 +930,21 @@ struct EpisodeRow: View {
                 if !isHovering {
                     // Force display of speaker icon for playing episodes
                     Image(systemName: audioPlayer.isPlaying ? "speaker.3.fill" : "speaker.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(AppTheme.primaryText)
                         .font(.system(size: 12))
                         .frame(width: 16)
                         .id("speaker-\(episode.id)-\(audioPlayer.isPlaying)") // Force redraw with unique ID
                 } else {
                     // Show play/pause icon on hover based on current state
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(AppTheme.primaryText)
                         .font(.system(size: 12))
                         .frame(width: 16)
                 }
             } else if isHovering {
                 // Show play icon when hovering over non-playing episodes
                 Image(systemName: "play.fill")
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(AppTheme.accent)
                     .font(.system(size: 12))
                     .frame(width: 16)
             } else {
@@ -751,20 +957,20 @@ struct EpisodeRow: View {
             Button(action: {
                 onSelect?()
             }) {
+                let titleColor = AppTheme.primaryText
+                let infoColor = AppTheme.primaryText.opacity(0.85)
                 // Simplified layout without the progress bar
                 HStack {
                     Text(episode.title)
                         .lineLimit(1)
-                        // Use black in light mode, accentColor in dark mode when playing
-                        .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .primary)
+                        .foregroundColor(titleColor)
                         .font(isPlaying ? .body.bold() : .body)
                     Spacer()
                     
                     // Single time display
                     Text(formattedTime)
                         .font(.caption)
-                        // Use black in light mode, accentColor in dark mode when playing
-                        .foregroundColor(isPlaying ? (colorScheme == .dark ? .accentColor : .black) : .gray)
+                        .foregroundColor(isPlaying ? infoColor : infoColor.opacity(0.85))
                         .id(isPlaying ? "time-\(episode.id)-\(Int(audioPlayer.currentTime))" : "time-\(episode.id)") // Force redraw for playing episodes
                 }
                 .padding(.horizontal, 8)
@@ -841,7 +1047,7 @@ struct EpisodeRow: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .foregroundColor(.blue)
+                        .foregroundColor(isPlaying ? AppTheme.primaryText : AppTheme.secondaryText)
                         .font(.system(size: 16))
                         .frame(width: 40, height: 30)
                 }
@@ -857,7 +1063,8 @@ struct EpisodeRow: View {
                 .padding(.trailing, 8) // Add overall trailing padding here
             
         }
-        .background(isHovering ? Color.white.opacity(0.1) : Color.clear)
+        .padding(.vertical, isPlaying ? 4 : 0)
+        .background(isHovering ? AppTheme.hoverSurface : Color.clear)
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovering = hovering

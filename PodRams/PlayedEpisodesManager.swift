@@ -1,7 +1,8 @@
 import Foundation
 import Combine
 
-class PlayedEpisodesManager: ObservableObject {
+@MainActor
+final class PlayedEpisodesManager: ObservableObject {
     static let shared = PlayedEpisodesManager()
     
     private let playedEpisodesKey = "playedEpisodes"

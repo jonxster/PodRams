@@ -43,7 +43,7 @@ struct EpisodeRow_Previews: PreviewProvider {
             )
         }
         .padding()
-        .background(Color.black)
+        .background(AppTheme.background.tint(.clear, ))
         .previewLayout(.fixed(width: 500, height: 200))
     }
 } 

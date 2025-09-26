@@ -18,7 +18,8 @@ struct PlayCommands: Commands {
                 if audioPlayer.isPlaying {
                     audioPlayer.pauseAudio()
                 } else if let index = currentEpisodeIndex, index < episodes.count {
-                    audioPlayer.playAudio(url: episodes[index].url)
+                    let episode = episodes[index]
+                    audioPlayer.playEpisode(episode)
                 }
             }
             .keyboardShortcut("p", modifiers: [.command])
@@ -38,7 +39,8 @@ struct PlayCommands: Commands {
                 if let index = currentEpisodeIndex, index > 0 {
                     let newIndex = index - 1
                     currentEpisodeIndex = newIndex
-                    audioPlayer.playAudio(url: episodes[newIndex].url)
+                    let episode = episodes[newIndex]
+                    audioPlayer.playEpisode(episode)
                 }
             }
             .keyboardShortcut(.leftArrow, modifiers: [.command])
@@ -49,7 +51,8 @@ struct PlayCommands: Commands {
                 if let index = currentEpisodeIndex, index < episodes.count - 1 {
                     let newIndex = index + 1
                     currentEpisodeIndex = newIndex
-                    audioPlayer.playAudio(url: episodes[newIndex].url)
+                    let episode = episodes[newIndex]
+                    audioPlayer.playEpisode(episode)
                 }
             }
             .keyboardShortcut(.rightArrow, modifiers: [.command])

@@ -1,5 +1,5 @@
 import Foundation
-import FeedKit
+@preconcurrency import FeedKit
 
 /// RSSParser implementation using FeedKit for improved podcast feed parsing
 class FeedKitRSSParser {

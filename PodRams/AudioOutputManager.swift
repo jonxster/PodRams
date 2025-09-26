@@ -11,6 +11,7 @@ import Combine
 import os.log
 
 // Manages audio output device updates using Core Audio APIs and publishes changes for UI binding.
+@MainActor
 final class AudioOutputManager: ObservableObject {
     // Singleton instance for global access.
     static let shared = AudioOutputManager()
@@ -27,9 +28,6 @@ final class AudioOutputManager: ObservableObject {
     private let debounceInterval: TimeInterval = 0.2
     // Stores Combine subscriptions for throttling updates.
     private var cancellables = Set<AnyCancellable>()
-    
-    // Dedicated queue for audio device operations
-    private let audioDeviceQueue = DispatchQueue(label: "com.podrams.audioDeviceQueue", qos: .userInitiated)
     
     // Logger for audio operations
     private let logger = Logger(subsystem: "com.podrams", category: "AudioOutputManager")
@@ -48,26 +46,19 @@ final class AudioOutputManager: ObservableObject {
     
     // Static callback conforming to AudioObjectPropertyListenerProc.
     // Debounces updates and schedules the output update on the main thread.
-    private static var cCallback: AudioObjectPropertyListenerProc = { objectID, addressesCount, addresses, clientData in
+    nonisolated(unsafe) private static var cCallback: AudioObjectPropertyListenerProc = { objectID, addressesCount, addresses, clientData in
         // Retrieve the AudioOutputManager instance from the opaque pointer.
         guard let manager = clientData.map({ Unmanaged<AudioOutputManager>.fromOpaque($0).takeUnretainedValue() }) else {
             return kAudioHardwareUnspecifiedError
         }
-        
-        // Use the dedicated queue for audio device operations
-        manager.audioDeviceQueue.async {
-            let now = Date()
-            // Only update if the debounce interval has passed.
+        let now = Date()
+        Task { @MainActor [weak manager] in
+            guard let manager else { return }
             guard now.timeIntervalSince(manager.lastUpdateTime) >= manager.debounceInterval else { return }
-            
-            // Invalidate the cache
+
             manager.deviceCache.lastUpdated = .distantPast
-            
-            // Update on the main thread
-            DispatchQueue.main.async {
-                manager.updateOutput()
-                manager.lastUpdateTime = now
-            }
+            manager.updateOutput()
+            manager.lastUpdateTime = now
         }
         return noErr
     }
@@ -88,16 +79,13 @@ final class AudioOutputManager: ObservableObject {
         }
         
         // Add property listener on a background queue to avoid blocking main thread during initialization
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        Task { @MainActor [weak self] in
             self?.addPropertyListener()
         }
     }
     
     // Cleans up resources by removing the property listener and cancelling subscriptions.
-    deinit {
-        removePropertyListener()
-        cancellables.removeAll()
-    }
+    deinit {}
     
     // Sets up throttling for published properties to limit how frequently changes propagate.
     private func setupThrottling() {
@@ -114,16 +102,9 @@ final class AudioOutputManager: ObservableObject {
     
     // Retrieves the latest audio device information and updates the published properties.
     func updateOutput() {
-        // Use the dedicated queue for audio device operations
-        audioDeviceQueue.async {
-            let (transport, name) = self.getDeviceInfo()
-            
-            // Update UI on the main thread
-            DispatchQueue.main.async {
-                self.currentRouteIcon = self.icon(for: transport)
-                self.deviceName = name.isEmpty ? "Unknown" : name
-            }
-        }
+        let (transport, name) = getDeviceInfo()
+        currentRouteIcon = icon(for: transport)
+        deviceName = name.isEmpty ? "Unknown" : name
     }
     
     // Returns an icon string based on the transport type of the audio device.
@@ -204,26 +185,19 @@ final class AudioOutputManager: ObservableObject {
     // Adds a listener for changes to the default audio output device.
     private func addPropertyListener() {
         guard !propertyListenerAdded else { return }
-        
-        // Use the dedicated queue for audio device operations
-        audioDeviceQueue.async {
-            var address = AudioObjectPropertyAddress(
-                mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            // Pass a reference to self as an opaque pointer for use in the callback.
-            let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-            let err = AudioObjectAddPropertyListener(AudioObjectID(kAudioObjectSystemObject), &address, Self.cCallback, selfPtr)
-            
-            DispatchQueue.main.async {
-                if err == noErr {
-                    self.propertyListenerAdded = true
-                    self.logger.info("Added audio property listener")
-                } else {
-                    self.logger.error("Failed to add audio property listener: \(err)")
-                }
-            }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        let err = AudioObjectAddPropertyListener(AudioObjectID(kAudioObjectSystemObject), &address, Self.cCallback, selfPtr)
+
+        if err == noErr {
+            propertyListenerAdded = true
+            logger.info("Added audio property listener")
+        } else {
+            logger.error("Failed to add audio property listener: \(err)")
         }
     }
     
@@ -231,24 +205,19 @@ final class AudioOutputManager: ObservableObject {
     private func removePropertyListener() {
         guard propertyListenerAdded else { return }
         
-        // Use the dedicated queue for audio device operations
-        audioDeviceQueue.async {
-            var address = AudioObjectPropertyAddress(
-                mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-            let err = AudioObjectRemovePropertyListener(AudioObjectID(kAudioObjectSystemObject), &address, Self.cCallback, selfPtr)
-            
-            DispatchQueue.main.async {
-                if err == noErr {
-                    self.propertyListenerAdded = false
-                    self.logger.info("Removed audio property listener")
-                } else {
-                    self.logger.error("Failed to remove audio property listener: \(err)")
-                }
-            }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        let err = AudioObjectRemovePropertyListener(AudioObjectID(kAudioObjectSystemObject), &address, Self.cCallback, selfPtr)
+
+        if err == noErr {
+            propertyListenerAdded = false
+            logger.info("Removed audio property listener")
+        } else {
+            logger.error("Failed to remove audio property listener: \(err)")
         }
     }
     
@@ -260,31 +229,24 @@ final class AudioOutputManager: ObservableObject {
             return
         }
         
-        // Use the dedicated queue for audio device operations
-        audioDeviceQueue.async {
-            var newDeviceID = deviceID
-            let size = UInt32(MemoryLayout<AudioDeviceID>.size)
-            var address = AudioObjectPropertyAddress(
-                mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            // Attempt to set the new device as the default output.
-            let error = AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, size, &newDeviceID)
-            
-            if error == noErr {
-                self.logger.info("Successfully set output device: \(deviceID)")
-                
-                // Invalidate the cache
-                self.deviceCache.lastUpdated = .distantPast
-                
-                // Allow time for the system to process the change before updating the UI.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    self.updateOutput()
-                }
-            } else {
-                self.logger.error("Error setting output device: \(error)")
+        var newDeviceID = deviceID
+        let size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let error = AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, size, &newDeviceID)
+
+        if error == noErr {
+            logger.info("Successfully set output device: \(deviceID)")
+            deviceCache.lastUpdated = .distantPast
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                updateOutput()
             }
+        } else {
+            logger.error("Error setting output device: \(error)")
         }
     }
 }

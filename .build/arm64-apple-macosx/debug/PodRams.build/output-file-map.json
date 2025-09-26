@@ -8,6 +8,18 @@
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swiftdeps"
   },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizationSummary.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizationSummary.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/CPUOptimizations.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/CPUOptimizations.swiftdeps"
+  },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/DebugMenu.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/DebugMenu.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/DebugMenu.swift.o",
@@ -554,6 +566,12 @@
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LICENSE~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LICENSE.swiftdeps"
   },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/MemoryOptimizationSummary.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizationSummary.swiftdeps"
+  },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/AppTests.swift.o",
@@ -656,6 +674,12 @@
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeRow_Previews~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EpisodeRow_Previews.swiftdeps"
   },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/EqualizerBackdrop.swiftdeps"
+  },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FavoritesView.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/FavoritesView.swift.o",
@@ -710,6 +734,12 @@
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LoadingIndicator~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/LoadingIndicator.swiftdeps"
   },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/MemoryOptimizations.swiftdeps"
+  },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Modles.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Modles.swift.o",
@@ -721,6 +751,12 @@
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations.md.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PerformanceOptimizations.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceFix.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceFix.swiftdeps"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceManager.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/PersistenceManager.d",
@@ -799,6 +835,18 @@
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscribeView.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscribeView~partial.swiftmodule",
     "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscribeView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscriptionFix.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/SubscriptionFix.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ThreadOptimizationSummary.md": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.md.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/ThreadOptimizationSummary.swiftdeps"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Untitled.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRams.build/Untitled.d",

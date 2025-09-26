@@ -1,6 +1,6 @@
 import Foundation
 #if canImport(FeedKit)
-import FeedKit
+@preconcurrency import FeedKit
 #endif
 
 /// Test function to validate FeedKit integration

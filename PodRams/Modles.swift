@@ -8,7 +8,8 @@
 import Foundation
 import Combine
 
-class Podcast: Identifiable, Equatable, ObservableObject, @unchecked Sendable {
+@MainActor
+final class Podcast: Identifiable, Equatable, ObservableObject {
     let id = UUID() // internal identity for podcasts
     var title: String
     let feedUrl: String?
@@ -22,7 +23,7 @@ class Podcast: Identifiable, Equatable, ObservableObject, @unchecked Sendable {
         self.feedArtworkURL = nil
     }
 
-    static func == (lhs: Podcast, rhs: Podcast) -> Bool {
+    nonisolated static func == (lhs: Podcast, rhs: Podcast) -> Bool {
         lhs.id == rhs.id
     }
     
@@ -91,7 +92,7 @@ class Podcast: Identifiable, Equatable, ObservableObject, @unchecked Sendable {
     }
 }
 
-struct PodcastEpisode: Identifiable, Equatable, Codable {
+struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
     // If no id is provided, use url.absoluteString as a stable identifier.
     let id: String
     let title: String
@@ -185,12 +186,12 @@ struct PodcastEpisode: Identifiable, Equatable, Codable {
     }
 }
 
-struct PodcastSearchResponse: Codable {
+struct PodcastSearchResponse: Codable, Sendable {
     let resultCount: Int
     let results: [PodcastResult]
 }
 
-struct PodcastResult: Codable {
+struct PodcastResult: Codable, Sendable {
     let collectionName: String
     let feedUrl: String?
     let artworkUrl600: String?

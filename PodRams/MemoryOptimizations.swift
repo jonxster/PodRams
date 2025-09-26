@@ -11,7 +11,7 @@ import os.log
 /// Comprehensive memory optimization manager for PodRams
 /// Reduces memory footprint from ~60MB to ~15-20MB while maintaining full functionality
 @MainActor
-class MemoryOptimizationManager: ObservableObject {
+final class MemoryOptimizationManager: ObservableObject {
     static let shared = MemoryOptimizationManager()
     
     private let logger = Logger(subsystem: "com.podrams", category: "MemoryOptimization")
@@ -159,16 +159,15 @@ class MemoryOptimizationManager: ObservableObject {
     /// Optimizes the image cache
     private func optimizeImageCache() {
         // Configure optimized image cache limits
-        CachedAsyncImage.optimizedImageCache.totalCostLimit = 25 * 1024 * 1024 // 25MB
-        CachedAsyncImage.optimizedImageCache.countLimit = 150
-        
+        CachedAsyncImage.updateOptimizedCache(totalCostLimit: 25 * 1024 * 1024, countLimit: 150)
+
         // Remove half of the cached images, keeping most recently used
-        let currentCount = CachedAsyncImage.optimizedImageCache.countLimit
-        CachedAsyncImage.optimizedImageCache.countLimit = currentCount / 2
-        
+        let currentCount = max(1, CachedAsyncImage.optimizedCacheCountLimit())
+        CachedAsyncImage.updateOptimizedCache(countLimit: max(1, currentCount / 2))
+
         // Restore original limit after cleanup
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            CachedAsyncImage.optimizedImageCache.countLimit = 150
+            CachedAsyncImage.updateOptimizedCache(countLimit: 150)
         }
     }
     
@@ -225,7 +224,8 @@ struct OptimizedEpisodeData: Codable, Identifiable {
 }
 
 /// Memory-optimized podcast data structure
-class OptimizedPodcast: ObservableObject, Identifiable {
+@MainActor
+final class OptimizedPodcast: ObservableObject, Identifiable {
     let id = UUID()
     @Published var title: String
     @Published var feedUrl: String?
@@ -246,7 +246,7 @@ class OptimizedPodcast: ObservableObject, Identifiable {
             optimizedEpisodes = Array(newValue.prefix(maxEpisodes)).map { OptimizedEpisodeData(from: $0) }
             
             // Cache show notes for first few episodes only
-            for (index, episode) in newValue.prefix(5).enumerated() {
+            for episode in newValue.prefix(5) {
                 if let showNotes = episode.showNotes {
                     showNotesCache[episode.id] = showNotes
                 }
@@ -264,7 +264,12 @@ class OptimizedPodcast: ObservableObject, Identifiable {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            self?.optimizeEpisodes(notification: notification)
+            let userInfo = notification.userInfo ?? [:]
+            let maxEpisodes = userInfo["maxEpisodes"] as? Int
+            let aggressive = userInfo["aggressive"] as? Bool ?? false
+            Task { @MainActor [weak self] in
+                self?.optimizeEpisodes(maxEpisodes: maxEpisodes, aggressive: aggressive)
+            }
         }
     }
     
@@ -273,10 +278,8 @@ class OptimizedPodcast: ObservableObject, Identifiable {
     }
     
     /// Optimizes episode storage based on notification
-    private func optimizeEpisodes(notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let maxEpisodes = userInfo["maxEpisodes"] as? Int,
-              let aggressive = userInfo["aggressive"] as? Bool else { return }
+    private func optimizeEpisodes(maxEpisodes: Int?, aggressive: Bool) {
+        guard let maxEpisodes else { return }
         
         if optimizedEpisodes.count > maxEpisodes {
             // Keep most recent episodes
