@@ -43,7 +43,7 @@ struct SearchSheetView: View {
             Spacer(minLength: 0)
         }
         .padding(24)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .background(AppTheme.color(.background, in: currentMode))
         .frame(minWidth: 420, minHeight: 520)
     }
@@ -67,10 +67,10 @@ struct SearchSheetView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(AppTheme.color(.surface, in: currentMode))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(AppTheme.color(.secondaryText, in: currentMode).opacity(0.12))
                     )
             )

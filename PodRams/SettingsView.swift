@@ -22,7 +22,7 @@ struct SettingsView: View {
             }
             .padding(20)
             .background(sectionBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             eqSection
 
@@ -31,7 +31,7 @@ struct SettingsView: View {
         .padding(24)
         .frame(width: 340)
         .background(AppTheme.color(.background, in: currentMode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onAppear {
             audioPlayer.setPlaybackRate(doubleSpeedEnabled ? 2.0 : 1.0)
         }
@@ -129,8 +129,8 @@ private extension SettingsView {
         .padding(.vertical, 20)
         .padding(.horizontal, 22)
         .background(sectionBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .glassEffect(.regular.tint(AppTheme.accent.opacity(0.25)), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .glassEffect(.regular.tint(AppTheme.accent.opacity(0.25)), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

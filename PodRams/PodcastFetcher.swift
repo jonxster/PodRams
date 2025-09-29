@@ -92,6 +92,11 @@ final class PodcastFetcher: ObservableObject {
             return
         }
 
+        guard shouldAttemptNetwork(for: feedUrl) else {
+            print("Skipping episode fetch for unresolved host: \(feedUrlString)")
+            return
+        }
+
         if let cached = episodeCache[feedUrlString] {
             podcast.episodes = Array(cached.episodes.prefix(maxEpisodesPerFeed))
             if let feedArt = cached.feedArtwork {
@@ -134,6 +139,11 @@ final class PodcastFetcher: ObservableObject {
             return ([], nil)
         }
 
+        guard shouldAttemptNetwork(for: feedUrl) else {
+            print("Skipping direct episode fetch for unresolved host: \(feedUrlString)")
+            return ([], nil)
+        }
+
         if let cached = episodeCache[feedUrlString] {
             return (Array(cached.episodes.prefix(maxEpisodesPerFeed)), cached.feedArtwork)
         }
@@ -171,6 +181,11 @@ final class PodcastFetcher: ObservableObject {
             return (nil, nil)
         }
 
+        guard shouldAttemptNetwork(for: feedUrl) else {
+            print("Skipping channel info fetch for unresolved host: \(feedUrlString)")
+            return (nil, nil)
+        }
+
         if let cached = episodeCache[feedUrlString] {
             return (podcast.title, cached.feedArtwork)
         }
@@ -202,6 +217,26 @@ final class PodcastFetcher: ObservableObject {
         searchCache.removeAll()
         episodeCache.removeAll()
         print("PodcastFetcher caches cleared for memory optimization")
+    }
+
+    private func shouldAttemptNetwork(for url: URL) -> Bool {
+        guard let host = url.host, !host.isEmpty else { return false }
+        if host == "localhost" { return true }
+
+        if host.contains(".") {
+            return true
+        }
+
+        if host.contains(":") { // IPv6
+            return true
+        }
+
+        let ipv4CharacterSet = CharacterSet(charactersIn: "0123456789.")
+        if host.unicodeScalars.allSatisfy({ ipv4CharacterSet.contains($0) }) {
+            return true
+        }
+
+        return false
     }
 }
 

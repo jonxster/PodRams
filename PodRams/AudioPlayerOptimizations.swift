@@ -347,5 +347,3 @@ class AudioPlayerOptimizations {
     }
 }
 
-// Removed the duplicate FileHandle extension for mapDataAvailableForReading
-// as it's causing an invalid redeclaration error

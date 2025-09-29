@@ -136,7 +136,7 @@ struct ContentView: View {
                     .foregroundColor(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .glassEffectID("now-playing-title", in: glassNamespace)
             }
         }
@@ -668,7 +668,7 @@ struct ContentView: View {
                         .foregroundStyle(iconColor)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 50, style: .circular)
+                    RoundedRectangle(cornerRadius: 10, style: .circular)
                         .stroke(strokeColor, lineWidth: 0.0)
                 )
                 .frame(width: 35, height: 35)

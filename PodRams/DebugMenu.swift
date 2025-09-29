@@ -4,134 +4,123 @@ import SwiftUI
 /// Includes commands to run tests and create test data for rapid testing.
 struct DebugCommands: Commands {
     var body: some Commands {
-        // The "Debug" command menu contains test and data creation options.
         CommandMenu("Debug") {
-            // Runs all tests when selected.
+            // Runs all tests.
             Button("Run All Tests") {
                 AppTests.runAllTests()
             }
-            // Shortcut: Command + Option + T.
             .keyboardShortcut("t", modifiers: [.command, .option])
-            
-            Divider()  // Separates test commands from other options.
-            
-            // Runs the audio player test.
-            Button("Test Audio Player") {
-                do {
-                    try AppTests.testAudioPlayer()
-                } catch {
-                    print("❌ Audio Player test failed: \(error)")
-                }
-            }
-            // Shortcut: Command + Option + 1.
-            .keyboardShortcut("1", modifiers: [.command, .option])
-            
-            // Runs the player view test.
-            Button("Test Player View") {
-                do {
-                    try AppTests.testPlayerView()
-                } catch {
-                    print("❌ Player View test failed: \(error)")
-                }
-            }
-            // Shortcut: Command + Option + 2.
-            .keyboardShortcut("2", modifiers: [.command, .option])
-            
-            // Runs the download manager test.
-            Button("Test Download Manager") {
-                do {
-                    try AppTests.testDownloadManager()
-                } catch {
-                    print("❌ Download Manager test failed: \(error)")
-                }
-            }
-            // Shortcut: Command + Option + 3.
-            .keyboardShortcut("3", modifiers: [.command, .option])
-            
-            // Runs the podcast fetcher test.
-            Button("Test Podcast Fetcher") {
-                do {
-                    try AppTests.testPodcastFetcher()
-                } catch {
-                    print("❌ Podcast Fetcher test failed: \(error)")
-                }
-            }
-            // Shortcut: Command + Option + 4.
-            .keyboardShortcut("4", modifiers: [.command, .option])
-            
-            Divider()  // Separates test commands from creation commands.
-            
-            // Creates a test podcast with sample episodes.
-            Button("Create Test Podcast") {
-                createTestPodcast()
-            }
-            // Shortcut: Command + Option + P.
-            .keyboardShortcut("p", modifiers: [.command, .option])
-            
-            // Creates a single test episode.
-            Button("Create Test Episode") {
-                createTestEpisode()
-            }
-            // Shortcut: Command + Option + E.
-            .keyboardShortcut("e", modifiers: [.command, .option])
+
+            Divider()
+
+            testButton("Test Audio Player", key: "1") { try AppTests.testAudioPlayer() }
+            testButton("Test Player View",  key: "2") { try AppTests.testPlayerView() }
+            testButton("Test Download Manager", key: "3") { try AppTests.testDownloadManager() }
+            testButton("Test Podcast Fetcher",  key: "4") { try AppTests.testPodcastFetcher() }
+
+            Divider()
+
+            Button("Create Test Podcast") { createTestPodcast() }
+                .keyboardShortcut("p", modifiers: [.command, .option])
+
+            Button("Create Test Episode") { createTestEpisode() }
+                .keyboardShortcut("e", modifiers: [.command, .option])
         }
     }
-    
-    /// Creates a test podcast populated with sample episodes.
-    /// Posts a notification to add the test podcast to subscriptions.
-    private func createTestPodcast() {
-        // Instantiate a test podcast with a title and feed URL.
+}
+
+private extension DebugCommands {
+    @ViewBuilder
+    func testButton(_ title: String, key: Character, _ action: @escaping () throws -> Void) -> some View {
+        Button(title) { runTest(title, action) }
+            .keyboardShortcut(KeyEquivalent(key), modifiers: [.command, .option])
+    }
+
+    func runTest(_ name: String, _ block: () throws -> Void) {
+        do { try block() }
+        catch { print("❌ \(name) failed: \(error)") }
+    }
+}
+
+private extension Notification.Name {
+    static let addTestPodcast = Notification.Name("AddTestPodcast")
+    static let addTestEpisode = Notification.Name("AddTestEpisode")
+}
+
+private extension DebugCommands {
+    /// Creates a test podcast populated with sample episodes and posts a notification.
+    @MainActor
+    func createTestPodcast() {
+        let feed = "https://example.com/feed"
+        let artBase = "https://example.com"
+
         let testPodcast = Podcast(
             title: "Test Podcast",
-            feedUrl: "https://example.com/feed",
+            feedUrl: feed,
             episodes: []
         )
-        // Set the podcast's artwork URL.
-        testPodcast.feedArtworkURL = URL(string: "https://example.com/image.jpg")
-        
-        // Add sample episodes to the test podcast.
+        testPodcast.feedArtworkURL = URL(string: "\(artBase)/image.jpg")
+
         for i in 1...5 {
+            guard
+                let audioURL = URL(string: "\(artBase)/episode\(i).mp3")
+            else {
+                print("❌ Invalid episode URL for index \(i)")
+                return
+            }
+
             let episode = PodcastEpisode(
                 title: "Test Episode \(i)",
-                url: URL(string: "https://example.com/episode\(i).mp3")!,
-                artworkURL: URL(string: "https://example.com/image\(i).jpg"),
+                url: audioURL,
+                artworkURL: URL(string: "\(artBase)/image\(i).jpg"),
                 duration: Double(i * 300),
                 showNotes: "This is test episode \(i)",
-                feedUrl: "https://example.com/feed",
+                feedUrl: feed,
                 podcastName: "Test Podcast"
             )
             testPodcast.episodes.append(episode)
         }
-        
-        // Notify the app to add the test podcast to the subscriptions.
+
         NotificationCenter.default.post(
-            name: Notification.Name("AddTestPodcast"),
+            name: .addTestPodcast,
             object: nil,
             userInfo: ["podcast": testPodcast]
         )
-        
+
         print("Created test podcast: \(testPodcast.title) with \(testPodcast.episodes.count) episodes")
     }
-    
-    /// Creates a test podcast episode and posts a notification to add it to the play queue.
-    private func createTestEpisode() {
+
+    /// Creates a test podcast episode and posts a notification to add it to the queue.
+    @MainActor
+    func createTestEpisode() {
+        let feed = "https://example.com/feed"
+        guard
+            let audioURL = URL(string: "https://example.com/test.mp3")
+        else {
+            print("❌ Invalid test episode URL")
+            return
+        }
+
         let testEpisode = PodcastEpisode(
             title: "Test Episode",
-            url: URL(string: "https://example.com/test.mp3")!,
+            url: audioURL,
             artworkURL: URL(string: "https://example.com/image.jpg"),
             duration: 600,
-            showNotes: "This is a test episode with detailed show notes.\n\nIt includes multiple paragraphs and formatting to test the show notes display.",
-            feedUrl: "https://example.com/feed",
+            showNotes: """
+            This is a test episode with detailed show notes.
+
+            It includes multiple paragraphs and formatting to test the show notes display.
+            """,
+            feedUrl: feed,
             podcastName: "Test Podcast"
         )
-        
-        // Post a notification to add the test episode to the cue.
+
         NotificationCenter.default.post(
-            name: Notification.Name("AddTestEpisode"),
+            name: .addTestEpisode,
             object: nil,
             userInfo: ["episode": testEpisode]
         )
-        
+
         print("Created test episode: \(testEpisode.title)")
     }
 }

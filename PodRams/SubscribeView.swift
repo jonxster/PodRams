@@ -43,7 +43,7 @@ struct SubscribeView: View {
         .padding(24)
         .frame(minWidth: 440, minHeight: 520)
         .background(AppTheme.color(.background, in: currentMode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var currentMode: AppTheme.Mode {
@@ -165,14 +165,14 @@ struct SubscribeView: View {
                     )
                     .padding(.vertical, 4)
                     .background(AppTheme.color(.surface, in: currentMode).opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
             }
         }
     }
 
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(AppTheme.color(.surface, in: currentMode))
             .shadow(color: AppTheme.color(.secondaryText, in: currentMode).opacity(colorScheme == .dark ? 0.2 : 0.1), radius: 6, x: 0, y: 4)
     }
@@ -188,7 +188,7 @@ struct SubscribeView: View {
     @ViewBuilder
     private func loadingOverlay(for podcast: Podcast) -> some View {
         if loadingPodcastId == podcast.id {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.black.opacity(0.08))
                 .overlay(
                     LoadingIndicator()

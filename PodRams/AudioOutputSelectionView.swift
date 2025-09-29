@@ -37,7 +37,7 @@ struct AudioOutputSelectionView: View {
         .padding(24)
         .frame(minWidth: 360, minHeight: 420)
         .background(AppTheme.color(.background, in: mode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onAppear {
             devices = getOutputDevices()
             selectedDeviceID = getDefaultOutputDeviceID()
@@ -79,14 +79,14 @@ struct AudioOutputSelectionView: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 18)
             .background(rowBackground(isSelected: isSelected))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(isSelected ? "AudioOutput_SelectedDeviceRow" : "AudioOutput_DeviceRow_\(device.id)")
     }
 
     private func rowBackground(isSelected: Bool) -> some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(isSelected ? AppTheme.color(.hoverSurface, in: mode) : AppTheme.color(.surface, in: mode))
             .shadow(color: AppTheme.color(.secondaryText, in: mode).opacity(isSelected ? 0.18 : 0.08), radius: 5, x: 0, y: 3)
     }

@@ -273,6 +273,10 @@ struct PersistenceManager {
                 print("Warning: Skipping podcast with invalid feed URL: \(podcast.title)")
                 return nil
             }
+            guard isLikelyReachableFeedURL(feedUrl) else {
+                print("Warning: Skipping podcast with unreachable host: \(feedUrl)")
+                return nil
+            }
             return PersistedPodcast(
                 title: podcast.title,
                 feedUrl: feedUrl,
@@ -287,7 +291,19 @@ struct PersistenceManager {
     static func loadSubscriptions() async -> [Podcast] {
         if let cached = state.subscriptionsCache { return cached }
         let persisted: [PersistedPodcast]? = await loadData(from: .subscriptions)
-        let result = (persisted ?? []).compactMap { p -> Podcast? in
+        let filtered = (persisted ?? []).filter { candidate in
+            guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
+                print("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl)")
+                return false
+            }
+            guard isLikelyReachableFeedURL(candidate.feedUrl) else {
+                print("Warning: Removing unreachable subscription host: \(candidate.feedUrl)")
+                return false
+            }
+            return true
+        }
+
+        let result = filtered.compactMap { p -> Podcast? in
             guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
                 print("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl)")
                 return nil
@@ -298,7 +314,13 @@ struct PersistenceManager {
             }
             return podcast
         }
+
         state.subscriptionsCache = result
+
+        if let original = persisted, original.count != filtered.count {
+            Task { @MainActor in saveSubscriptions(result) }
+        }
+
         return result
     }
     
@@ -320,7 +342,19 @@ struct PersistenceManager {
             let decoder = JSONDecoder()
             let persisted = try decoder.decode([PersistedPodcast].self, from: data)
             
-            let result = persisted.compactMap { p -> Podcast? in
+            let filtered = persisted.filter { candidate in
+                guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
+                    print("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl)")
+                    return false
+                }
+                guard isLikelyReachableFeedURL(candidate.feedUrl) else {
+                    print("Warning: Removing unreachable subscription host: \(candidate.feedUrl)")
+                    return false
+                }
+                return true
+            }
+
+            let result = filtered.compactMap { p -> Podcast? in
                 guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
                     print("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl)")
                     return nil
@@ -332,13 +366,32 @@ struct PersistenceManager {
                 return podcast
             }
             
-            // Update the cache
             state.subscriptionsCache = result
+
+            if persisted.count != filtered.count {
+                Task { @MainActor in saveSubscriptions(result) }
+            }
+
             return result
         } catch {
             print("Error loading subscriptions synchronously: \(error)")
             return []
         }
+    }
+
+    private static func isLikelyReachableFeedURL(_ urlString: String) -> Bool {
+        guard let components = URLComponents(string: urlString),
+              let host = components.host, !host.isEmpty else { return false }
+
+        if host == "localhost" || host == "127.0.0.1" { return true }
+        if host.contains(".") || host.contains(":") { return true }
+
+        let ipv4CharacterSet = CharacterSet(charactersIn: "0123456789.")
+        if host.unicodeScalars.allSatisfy({ ipv4CharacterSet.contains($0) }) {
+            return true
+        }
+
+        return false
     }
     
     // Downloads

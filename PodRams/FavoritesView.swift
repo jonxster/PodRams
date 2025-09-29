@@ -47,7 +47,7 @@ struct FavoritesView: View {
         .padding(24)
         .frame(minWidth: 420, minHeight: 340)
         .background(AppTheme.color(.background, in: currentMode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onAppear { preloadFavorites() }
     }
 
