@@ -114,14 +114,7 @@ struct FavoritesView: View {
                 .buttonStyle(.plain)
             }
 
-            GlassBadgeView(
-                symbolName: "waveform.circle",
-                title: "Episodes \(podcast.episodes.count)",
-                subtitle: podcast.feedArtworkURL == nil ? "Artwork pending" : "Artwork cached",
-                tint: favoriteTint,
-                namespace: badgeNamespace,
-                glassID: podcast.id.uuidString
-            )
+
         }
         .padding(16)
         .background(rowBackground)
@@ -139,7 +132,7 @@ struct FavoritesView: View {
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .fill(AppTheme.color(.surface, in: currentMode))
-            .shadow(color: AppTheme.color(.secondaryText, in: currentMode).opacity(colorScheme == .dark ? 0.18 : 0.08), radius: 6, x: 0, y: 4)
+
     }
 
     @ViewBuilder
