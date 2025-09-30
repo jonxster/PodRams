@@ -22,6 +22,8 @@ struct ShowNotesView: View {
                     .foregroundColor(AppTheme.secondaryText)
                     .lineLimit(2)
             }
+            
+            
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isLoading {

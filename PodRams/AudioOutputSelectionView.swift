@@ -14,7 +14,7 @@ struct AudioOutputSelectionView: View {
     private var secondaryText: Color { AppTheme.color(.secondaryText, in: mode) }
 
     var body: some View {
-        GlassEffectContainer(spacing: 18) {
+        GlassEffectContainer(spacing: 20) {
             Text("Audio Outputs")
                 .font(.title3.weight(.semibold))
                 .foregroundColor(primaryText)
@@ -76,8 +76,8 @@ struct AudioOutputSelectionView: View {
                         .foregroundColor(AppTheme.accent)
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 20)
             .background(rowBackground(isSelected: isSelected))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }

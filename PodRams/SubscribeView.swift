@@ -20,7 +20,7 @@ struct SubscribeView: View {
     @State private var loadingPodcastId: UUID?
 
     var body: some View {
-        GlassEffectContainer(spacing: 18) {
+        GlassEffectContainer(spacing: 20) {
             Text("Subscriptions")
                 .font(.title2.weight(.semibold))
                 .foregroundColor(primaryText)
@@ -84,7 +84,7 @@ struct SubscribeView: View {
     }
 
     private func subscriptionRow(for podcast: Podcast) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             CachedAsyncImage(
                 url: podcast.feedArtworkURL,
                 width: 48,
@@ -137,7 +137,7 @@ struct SubscribeView: View {
         if podcast.episodes.isEmpty {
             HStack(spacing: 12) {
                 LoadingIndicator()
-                    .frame(width: 18, height: 18)
+                    .frame(width: 20, height: 20)
                 Text("Loading episodes...")
                     .foregroundColor(secondaryText)
             }
@@ -174,7 +174,7 @@ struct SubscribeView: View {
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(AppTheme.color(.surface, in: currentMode))
-            .shadow(color: AppTheme.color(.secondaryText, in: currentMode).opacity(colorScheme == .dark ? 0.2 : 0.1), radius: 6, x: 0, y: 4)
+
     }
 
     private var controlBackground: Color {
@@ -192,7 +192,7 @@ struct SubscribeView: View {
                 .fill(Color.black.opacity(0.08))
                 .overlay(
                     LoadingIndicator()
-                        .frame(width: 22, height: 22)
+                        .frame(width: 20, height: 20)
                 )
         }
     }

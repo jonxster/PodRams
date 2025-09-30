@@ -85,3 +85,5 @@
 - Always build and make sure it runs.
 - Always add testcases for new functionality.
 - Always make sure translation is always respected in all supported languages when adding new features.
+- Try to keep the corner radius of windows consistent at 10.
+
