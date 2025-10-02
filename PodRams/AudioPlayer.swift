@@ -67,8 +67,8 @@ class AudioPlayer: ObservableObject {
     private var panTap: MTAudioProcessingTap?
     /// Token for the AVPlayer's time observer.
     private var timeObserverToken: Any?
-    /// Observes changes in the player's status, especially for duration.
-    private var durationObserver: NSKeyValueObservation?
+    /// Observes status changes for the current AVPlayerItem.
+    private var statusObserver: AnyCancellable?
     /// Set of Combine subscriptions.
     private var cancellables = Set<AnyCancellable>()
     /// URL of the currently playing audio.
@@ -822,8 +822,8 @@ class AudioPlayer: ObservableObject {
             player.removeTimeObserver(token)
             timeObserverToken = nil
         }
-        durationObserver?.invalidate()
-        durationObserver = nil
+        statusObserver?.cancel()
+        statusObserver = nil
         // Remove the audio mix from the current item to tear down taps and release MediaToolbox resources
         if let item = player?.currentItem {
             item.audioMix = nil
@@ -907,30 +907,31 @@ class AudioPlayer: ObservableObject {
         playerItem.audioMix = mix
         
         // Observe status for potential errors or buffering states
-        durationObserver = playerItem.observe(\.status, options: [.new, .old]) { [weak self] item, change in
-            guard let self = self else { return }
-            Task { @MainActor in // Ensure UI updates are on main thread
-                switch item.status {
+        statusObserver?.cancel()
+        statusObserver = playerItem
+            .publisher(for: \.status, options: [.initial, .new])
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self = self else { return }
+                switch status {
                 case .readyToPlay:
                     // If duration wasn't pre-loaded or differs, update it
-                    let currentDuration = item.duration.seconds
+                    let currentDuration = playerItem.duration.seconds
                     if self.duration != currentDuration && currentDuration.isFinite && currentDuration >= 0 {
                         self.duration = currentDuration
                         self.audioState.duration = currentDuration
                     }
                     self.isLoading = false // Ready, no longer loading
                 case .failed:
-                    print("Error: AVPlayerItem failed: \(item.error?.localizedDescription ?? "Unknown error")")
+                    print("Error: AVPlayerItem failed: \(playerItem.error?.localizedDescription ?? "Unknown error")")
                     self.isLoading = false
                     self.isPlaying = false
-                    // Maybe reset player or show error
                 case .unknown:
                     self.isLoading = true // Still loading or unknown state
                 @unknown default:
                     self.isLoading = true
                 }
             }
-        }
         
         // Optionally observe other properties like playbackBufferEmpty, playbackLikelyToKeepUp
     }
