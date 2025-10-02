@@ -34,12 +34,18 @@
 "Delete download" = "刪除下載";
 "Retry download" = "重試下載";
 /* Help menu translations */
-"Getting Started" = "入門指南";
-"Playback Controls" = "播放控制";
-"Episode Management" = "集數管理";
-"Podcast Management" = "播客管理";
-"Keyboard Shortcuts" = "鍵盤快捷鍵";
-"About PodRams" = "關於 PodRams";
+"Help.GettingStarted.Title" = "快速上手";
+"Help.GettingStarted.Content" = "歡迎使用 PodRams！\n\n開始之前：\n1. 點選搜尋圖示 (🔍) 以尋找播客。\n2. 使用訂閱按鈕訂閱喜歡的節目。\n3. 下載集數或直接串流播放。\n4. 利用 Cue 佇列系統建立播放清單。\n5. 將常用播客標記為收藏，方便快速存取。\n\n工具列圖示可讓你立即進入常用功能。";
+"Help.PlaybackControls.Title" = "播放控制";
+"Help.PlaybackControls.Content" = "播放控制：\n\n• 播放/暫停 (⌘P)：切換目前集數的播放狀態。\n• 停止 (⌘S)：停止播放並重設位置。\n• 上一/下一集 (⌘←/→)：在集數間切換。\n• 倒退/前進 (⌥⌘←/→)：跳轉 30 秒。\n• 音量加/減 (⌘↑/↓)：調整音量。\n• 靜音/取消靜音 (⌘M)：開啟或關閉聲音。\n\n這些控制也可在「播放」選單和下方列出的快捷鍵中找到。";
+"Help.EpisodeManagement.Title" = "集數管理";
+"Help.EpisodeManagement.Content" = "集數管理：\n\n• 下載集數以供離線收聽。\n• 將集數加入 Cue 佇列。\n• 透過拖曳調整佇列順序。\n• 檢視集數詳情與節目筆記。\n• 監控下載進度。\n• 刪除已下載的集數。\n\n在任何集數上開啟內容選單 (•••) 以查看這些操作。";
+"Help.PodcastManagement.Title" = "播客管理";
+"Help.PodcastManagement.Content" = "播客管理：\n\n• 訂閱播客以取得最新集數。\n• 將播客加入收藏以快速存取。\n• 檢視節目資訊與集數列表。\n• 管理你的訂閱。\n• 搜尋新的播客。\n• 匯入或匯出訂閱清單。\n\n工具列圖示可直接帶你前往這些管理頁面。";
+"Help.KeyboardShortcuts.Title" = "鍵盤快捷鍵";
+"Help.KeyboardShortcuts.Content" = "鍵盤快捷鍵：\n\n播放：\n• ⌘P — 播放/暫停\n• ⌘S — 停止\n• ⌘← — 上一集\n• ⌘→ — 下一集\n• ⌥⌘← — 倒退 30 秒\n• ⌥⌘→ — 前進 30 秒\n• ⌘↑ — 提高音量\n• ⌘↓ — 降低音量\n• ⌘M — 靜音/取消靜音\n\n導覽：\n• ⌘F — 搜尋\n• ⌘C — 顯示佇列\n• 空白鍵 — 播放/暫停\n\n說明：\n• ⇧⌘1 — 快速上手\n• ⇧⌘2 — 播放控制\n• ⇧⌘3 — 集數管理\n• ⇧⌘4 — 播客管理\n• ⇧⌘5 — 鍵盤快捷鍵\n• ⇧⌘6 — 關於";
+"Help.About.Title" = "關於 PodRams";
+"Help.About.Content" = "PodRams —— 現代化的 macOS 播客播放器。\n\n重點特色：\n• 智慧播放控制\n• 下載管理\n• Cue 佇列系統\n• 強大的搜尋整合\n• 收藏與訂閱\n• 進階音訊控制\n• 持續保存播放進度\n• 支援封面插圖\n• 彈性的音訊輸出選擇\n\n採用 SwiftUI 打造，適用於 macOS 11.0 及以上版本。";
 
 /* Play menu translations */
 "Play" = "播放";
