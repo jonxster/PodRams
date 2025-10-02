@@ -15,6 +15,7 @@ struct PersistedEpisode: Codable, Equatable, Sendable {
     let audioURL: String
     let duration: Double?
     let podcastName: String?
+    let artworkURL: String?
     
     var isValid: Bool {
         !feedUrl.isEmpty && !title.isEmpty && !audioURL.isEmpty && URL(string: audioURL) != nil
@@ -173,7 +174,8 @@ struct PersistenceManager {
                 title: episode.title,
                 audioURL: urlString,
                 duration: episode.duration,
-                podcastName: episode.podcastName
+                podcastName: episode.podcastName,
+                artworkURL: episode.artworkURL?.absoluteString
             )
         }
         
@@ -208,10 +210,11 @@ struct PersistenceManager {
                 print("Warning: Invalid persisted episode: \(pe.title)")
                 return nil
             }
+            let artworkURL = pe.artworkURL.flatMap { URL(string: $0) }
             return PodcastEpisode(
                 title: pe.title,
                 url: url,
-                artworkURL: nil,
+                artworkURL: artworkURL,
                 duration: pe.duration,
                 showNotes: nil,
                 feedUrl: pe.feedUrl,
@@ -240,7 +243,8 @@ struct PersistenceManager {
             title: episode.title,
             audioURL: episode.url.absoluteString,
             duration: episode.duration,
-            podcastName: episode.podcastName
+            podcastName: episode.podcastName,
+            artworkURL: episode.artworkURL?.absoluteString
         )
         state.lastPlaybackCache = episode
         saveData(persisted, to: .lastPlayback)
@@ -250,10 +254,11 @@ struct PersistenceManager {
         if let cached = state.lastPlaybackCache { return cached }
         let pe: PersistedEpisode? = await loadData(from: .lastPlayback)
         if let pe = pe, pe.isValid, let url = URL(string: pe.audioURL) {
+            let artworkURL = pe.artworkURL.flatMap { URL(string: $0) }
             let episode = PodcastEpisode(
                 title: pe.title,
                 url: url,
-                artworkURL: nil,
+                artworkURL: artworkURL,
                 duration: pe.duration,
                 showNotes: nil,
                 feedUrl: pe.feedUrl,

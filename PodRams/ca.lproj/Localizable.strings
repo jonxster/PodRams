@@ -51,3 +51,27 @@
 "Volume Up" = "Augmentar volum";
 "Volume Down" = "Disminuir volum";
 "Mute/Unmute" = "Silenciar/Activar so";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Començar";
+"Help.GettingStarted.Content" = "Benvingut a PodRams!\n\nPer començar:\n1. Fes clic a la icona de cerca (🔍) per trobar podcasts.\n2. Subscriu-te als programes que t’agradin amb el botó de subscripció.\n3. Descarrega els episodis o escolta’ls en línia.\n4. Crea una llista de reproducció amb el sistema de cua (Cue).\n5. Marca els teus podcasts preferits per a un accés ràpid.\n\nLes icones de la barra d’eines et donen accés immediat a les funcions bàsiques.";
+"Help.PlaybackControls.Title" = "Controls de reproducció";
+"Help.PlaybackControls.Content" = "Control de la reproducció:\n\n• Reproduir/Pausa (⌘P): Alterna la reproducció de l’episodi actual.\n• Atura (⌘S): Atura i torna a l’inici.\n• Episodi anterior/següent (⌘←/→): Navega entre episodis.\n• Retrocedir/Avançar (⌥⌘←/→): Salta 30 segons.\n• Pujar/Baixar volum (⌘↑/↓): Ajusta el nivell de volum.\n• Silencia/Activa so (⌘M): Activa o desactiva el so.\n\nPots accedir a les mateixes ordres des del menú de reproducció i amb les dreceres de teclat següents.";
+"Help.EpisodeManagement.Title" = "Gestió d’episodis";
+"Help.EpisodeManagement.Content" = "Gestió dels episodis:\n\n• Descarrega episodis per escoltar-los fora de línia.\n• Afegeix episodis a la cua (Cue).\n• Reorganitza la cua arrossegant i deixant anar.\n• Consulta els detalls i les notes dels episodis.\n• Fes seguiment del progrés de descàrrega.\n• Esborra els episodis descarregats.\n\nObre el menú contextual (•••) de qualsevol episodi per veure aquestes accions.";
+"Help.PodcastManagement.Title" = "Gestió de podcasts";
+"Help.PodcastManagement.Content" = "Gestió dels podcasts:\n\n• Subscriu-te per rebre nous episodis.\n• Afegeix podcasts als preferits per accedir-hi ràpidament.\n• Consulta els detalls del programa i la llista d’episodis.\n• Gestiona les teves subscripcions.\n• Cerca nous podcasts.\n• Importa o exporta subscripcions.\n\nLes icones de la barra d’eines et porten directament a aquestes pantalles.";
+"Help.KeyboardShortcuts.Title" = "Dreceres de teclat";
+"Help.KeyboardShortcuts.Content" = "Dreceres de teclat:\n\nReproducció:\n• ⌘P — Reproduir/Pausa\n• ⌘S — Atura\n• ⌘← — Episodi anterior\n• ⌘→ — Episodi següent\n• ⌥⌘← — Retrocedir 30 segons\n• ⌥⌘→ — Avançar 30 segons\n• ⌘↑ — Pujar volum\n• ⌘↓ — Baixar volum\n• ⌘M — Silencia/Activa so\n\nNavegació:\n• ⌘F — Cerca\n• ⌘C — Alterna la cua\n• Barra espaiadora — Reproduir/Pausa\n\nAjuda:\n• ⇧⌘1 — Començar\n• ⇧⌘2 — Controls de reproducció\n• ⇧⌘3 — Gestió d’episodis\n• ⇧⌘4 — Gestió de podcasts\n• ⇧⌘5 — Dreceres de teclat\n• ⇧⌘6 — Quant a l’aplicació";
+"Help.About.Title" = "Quant a PodRams";
+"Help.About.Content" = "PodRams — reproductor de podcasts modern per a macOS.\n\nFuncions destacades:\n• Controls intel·ligents de reproducció\n• Gestió de descàrregues\n• Sistema de cua Cue\n• Cerca integrada avançada\n• Preferits i subscripcions\n• Control de volum avançat\n• Desament complet del progrés\n• Suport per a portades\n• Selecció flexible de sortida d’àudio\n\nConstruït amb SwiftUI per a macOS 11.0 i versions posteriors.";
+/* Play menu translations */
+"Play" = "Reproduir";
+"Pause" = "Pausa";
+"Stop" = "Atura";
+"Previous Episode" = "Episodi anterior";
+"Next Episode" = "Episodi següent";
+"Skip Backward 30 Seconds" = "Retrocedir 30 segons";
+"Skip Forward 30 Seconds" = "Avançar 30 segons";
+"Volume Up" = "Pujar volum";
+"Volume Down" = "Baixar volum";
+"Mute/Unmute" = "Silencia/Activa so";

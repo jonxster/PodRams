@@ -2,12 +2,18 @@
 "No available output devices" = "No available output devices";
 "Switch to:" = "Switch to:";
 /* Help menu translations */
-"Getting Started" = "Getting Started";
-"Playback Controls" = "Playback Controls";
-"Episode Management" = "Episode Management";
-"Podcast Management" = "Podcast Management";
-"Keyboard Shortcuts" = "Keyboard Shortcuts";
-"About PodRams" = "About PodRams";
+"Help.GettingStarted.Title" = "Getting Started";
+"Help.GettingStarted.Content" = "Welcome to PodRams!\n\nTo get started:\n1. Click the search icon (🔍) to find podcasts.\n2. Subscribe to shows you like using the subscribe button.\n3. Download episodes or stream them directly.\n4. Build a listening queue with the cue system.\n5. Mark favorite podcasts for quick access.\n\nUse the toolbar icons for quick access to common functions.";
+"Help.PlaybackControls.Title" = "Playback Controls";
+"Help.PlaybackControls.Content" = "Playback controls:\n\n• Play/Pause (⌘P): Toggle playback of the current episode.\n• Stop (⌘S): Stop playback and reset position.\n• Previous/Next Episode (⌘←/→): Navigate between episodes.\n• Skip Back/Forward (⌥⌘←/→): Jump 30 seconds.\n• Volume Up/Down (⌘↑/↓): Adjust volume.\n• Mute/Unmute (⌘M): Toggle audio.\n\nYou can access the same controls from the Play menu and the keyboard shortcuts listed above.";
+"Help.EpisodeManagement.Title" = "Episode Management";
+"Help.EpisodeManagement.Content" = "Episode management:\n\n• Download episodes for offline listening.\n• Add episodes to your cue (playlist).\n• Reorder the cue by dragging episodes.\n• View episode details and show notes.\n• Monitor download progress.\n• Delete downloaded episodes.\n\nOpen the context menu (•••) on any episode to see these actions.";
+"Help.PodcastManagement.Title" = "Podcast Management";
+"Help.PodcastManagement.Content" = "Podcast management:\n\n• Subscribe to podcasts to receive new episodes.\n• Add podcasts to favorites for quick access.\n• Review show details and episode lists.\n• Manage your subscriptions.\n• Search for new podcasts.\n• Import or export subscription lists.\n\nToolbar icons let you jump directly to these management screens.";
+"Help.KeyboardShortcuts.Title" = "Keyboard Shortcuts";
+"Help.KeyboardShortcuts.Content" = "Keyboard shortcuts:\n\nPlayback:\n• ⌘P — Play/Pause\n• ⌘S — Stop\n• ⌘← — Previous episode\n• ⌘→ — Next episode\n• ⌥⌘← — Skip back 30 s\n• ⌥⌘→ — Skip forward 30 s\n• ⌘↑ — Volume up\n• ⌘↓ — Volume down\n• ⌘M — Mute/Unmute\n\nNavigation:\n• ⌘F — Search\n• ⌘C — Toggle cue\n• Space — Play/Pause\n\nHelp:\n• ⇧⌘1 — Getting Started\n• ⇧⌘2 — Playback Controls\n• ⇧⌘3 — Episode Management\n• ⇧⌘4 — Podcast Management\n• ⇧⌘5 — Keyboard Shortcuts\n• ⇧⌘6 — About";
+"Help.About.Title" = "About PodRams";
+"Help.About.Content" = "PodRams — A modern macOS podcast player.\n\nHighlights:\n• Smart playback controls\n• Download management\n• Cue system\n• Rich search integration\n• Favorites and subscriptions\n• Advanced audio controls\n• Persistent progress tracking\n• Artwork support\n• Flexible audio output selection\n\nBuilt with SwiftUI for macOS 11.0 and later.";
 
 /* Play menu translations */
 "Play" = "Play";

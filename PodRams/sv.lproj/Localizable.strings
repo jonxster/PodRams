@@ -51,3 +51,27 @@
 "Volume Up" = "Höj volym";
 "Volume Down" = "Sänk volym";
 "Mute/Unmute" = "Ljud av/på";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Kom igång";
+"Help.GettingStarted.Content" = "Välkommen till PodRams!\n\nFör att komma igång:\n1. Klicka på sökikonen (🔍) för att hitta poddar.\n2. Prenumerera på program du gillar med prenumerationsknappen.\n3. Ladda ner avsnitt eller spela upp dem direkt.\n4. Skapa en spellista med kö-systemet (Cue).\n5. Markera favoritpoddar för snabb åtkomst.\n\nVerktygsfältsikonerna ger dig omedelbar åtkomst till de viktigaste funktionerna.";
+"Help.PlaybackControls.Title" = "Uppspelningskontroller";
+"Help.PlaybackControls.Content" = "Kontrollera uppspelningen:\n\n• Spela/Pausa (⌘P): Växlar uppspelningen av det aktuella avsnittet.\n• Stoppa (⌘S): Stoppar uppspelningen och återgår till början.\n• Föregående/Nästa avsnitt (⌘←/→): Navigera mellan avsnitt.\n• Hoppa bakåt/framåt (⌥⌘←/→): Hoppa 30 sekunder.\n• Höj/Sänk volymen (⌘↑/↓): Justera volymnivån.\n• Stäng av/På ljud (⌘M): Slå av eller på ljudet.\n\nSamma kommandon finns i uppspelningsmenyn och via kortkommandon nedan.";
+"Help.EpisodeManagement.Title" = "Hantera avsnitt";
+"Help.EpisodeManagement.Content" = "Hantera avsnitt:\n\n• Ladda ner avsnitt för att lyssna offline.\n• Lägg till avsnitt i kön (Cue).\n• Ändra ordning i kön genom att dra och släppa.\n• Visa detaljer och anteckningar för avsnitt.\n• Följ nedladdningsförloppet.\n• Ta bort nedladdade avsnitt.\n\nÖppna snabbmenyn (•••) för ett avsnitt för att se dessa åtgärder.";
+"Help.PodcastManagement.Title" = "Hantera poddar";
+"Help.PodcastManagement.Content" = "Hantera poddar:\n\n• Prenumerera för att få nya avsnitt.\n• Lägg till poddar som favoriter för snabb åtkomst.\n• Visa programinformation och avsnittslista.\n• Hantera dina prenumerationer.\n• Sök efter nya poddar.\n• Importera eller exportera prenumerationslistor.\n\nVerktygsfältsikonerna leder dig direkt till dessa vyer.";
+"Help.KeyboardShortcuts.Title" = "Kortkommandon";
+"Help.KeyboardShortcuts.Content" = "Kortkommandon:\n\nUppspelning:\n• ⌘P — Spela/Pausa\n• ⌘S — Stoppa\n• ⌘← — Föregående avsnitt\n• ⌘→ — Nästa avsnitt\n• ⌥⌘← — 30 sekunder bakåt\n• ⌥⌘→ — 30 sekunder framåt\n• ⌘↑ — Höj volymen\n• ⌘↓ — Sänk volymen\n• ⌘M — Stäng av/På ljud\n\nNavigering:\n• ⌘F — Sök\n• ⌘C — Växla kö\n• Mellanslag — Spela/Pausa\n\nHjälp:\n• ⇧⌘1 — Kom igång\n• ⇧⌘2 — Uppspelningskontroller\n• ⇧⌘3 — Hantera avsnitt\n• ⇧⌘4 — Hantera poddar\n• ⇧⌘5 — Kortkommandon\n• ⇧⌘6 — Om appen";
+"Help.About.Title" = "Om PodRams";
+"Help.About.Content" = "PodRams — en modern podcastspelare för macOS.\n\nHuvudfunktioner:\n• Smarta uppspelningskontroller\n• Hantering av nedladdningar\n• Cue-kösystem\n• Integrerad sökning\n• Favoriter och prenumerationer\n• Avancerad ljudkontroll\n• Fullständig framstegssparning\n• Stöd för omslagsbilder\n• Flexibelt val av ljudutgång\n\nByggd med SwiftUI för macOS 11.0 och senare.";
+/* Play menu translations */
+"Play" = "Spela";
+"Pause" = "Pausa";
+"Stop" = "Stoppa";
+"Previous Episode" = "Föregående avsnitt";
+"Next Episode" = "Nästa avsnitt";
+"Skip Backward 30 Seconds" = "30 sekunder bakåt";
+"Skip Forward 30 Seconds" = "30 sekunder framåt";
+"Volume Up" = "Höj volymen";
+"Volume Down" = "Sänk volymen";
+"Mute/Unmute" = "Stäng av/På ljud";

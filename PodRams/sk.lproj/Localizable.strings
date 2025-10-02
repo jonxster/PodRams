@@ -51,3 +51,27 @@
 "Volume Up" = "Zvýšiť hlasitosť";
 "Volume Down" = "Znížiť hlasitosť";
 "Mute/Unmute" = "Stlmiť/Zrušiť stlmenie";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Začíname";
+"Help.GettingStarted.Content" = "Vitajte v PodRams!\n\nNa začiatok:\n1. Kliknite na ikonu vyhľadávania (🔍), aby ste našli podcasty.\n2. Prihláste sa na odber programov, ktoré sa vám páčia, pomocou tlačidla odberu.\n3. Stiahnite si epizódy alebo ich prehrávajte priamo.\n4. Vytvorte zoznam skladieb pomocou systému fronty (Cue).\n5. Označte obľúbené podcasty pre rýchly prístup.\n\nIkony na paneli nástrojov poskytujú okamžitý prístup k základným funkciám.";
+"Help.PlaybackControls.Title" = "Ovládanie prehrávania";
+"Help.PlaybackControls.Content" = "Ovládanie prehrávania:\n\n• Prehrať/Pozastaviť (⌘P): Prepne prehrávanie aktuálnej epizódy.\n• Zastaviť (⌘S): Zastaví prehrávanie a vráti sa na začiatok.\n• Predchádzajúca/Nasledujúca epizóda (⌘←/→): Pohyb medzi epizódami.\n• Preskočiť dozadu/dopredu (⌥⌘←/→): Skok o 30 sekúnd.\n• Zvýšiť/Znížiť hlasitosť (⌘↑/↓): Nastavenie hlasitosti.\n• Stlmiť/Zrušiť stlmenie (⌘M): Vypne alebo zapne zvuk.\n\nRovnaké príkazy sú dostupné aj v ponuke Prehrávanie a cez klávesové skratky nižšie.";
+"Help.EpisodeManagement.Title" = "Správa epizód";
+"Help.EpisodeManagement.Content" = "Správa epizód:\n\n• Stiahnite si epizódy na počúvanie offline.\n• Pridajte epizódy do fronty (Cue).\n• Zmeňte poradie vo fronte ťahaním a pustením.\n• Zobrazte podrobnosti a poznámky epizód.\n• Sledujte priebeh sťahovania.\n• Odstráňte stiahnuté epizódy.\n\nOtvorte kontextové menu (•••) ľubovoľnej epizódy a zobrazte tieto akcie.";
+"Help.PodcastManagement.Title" = "Správa podcastov";
+"Help.PodcastManagement.Content" = "Správa podcastov:\n\n• Prihláste sa na odber, aby ste dostávali nové epizódy.\n• Pridajte podcasty medzi obľúbené pre rýchly prístup.\n• Prezrite si podrobnosti o programe a zoznam epizód.\n• Spravujte svoje odbery.\n• Vyhľadávajte nové podcasty.\n• Importujte alebo exportujte zoznamy odberov.\n\nIkony na paneli nástrojov vás priamo zavedú na tieto obrazovky.";
+"Help.KeyboardShortcuts.Title" = "Klávesové skratky";
+"Help.KeyboardShortcuts.Content" = "Klávesové skratky:\n\nPrehrávanie:\n• ⌘P — Prehrať/Pozastaviť\n• ⌘S — Zastaviť\n• ⌘← — Predchádzajúca epizóda\n• ⌘→ — Nasledujúca epizóda\n• ⌥⌘← — 30 sekúnd späť\n• ⌥⌘→ — 30 sekúnd dopredu\n• ⌘↑ — Zvýšiť hlasitosť\n• ⌘↓ — Znížiť hlasitosť\n• ⌘M — Stlmiť/Zrušiť stlmenie\n\nNavigácia:\n• ⌘F — Hľadať\n• ⌘C — Prepnúť frontu\n• Medzerník — Prehrať/Pozastaviť\n\nPomoc:\n• ⇧⌘1 — Začíname\n• ⇧⌘2 — Ovládanie prehrávania\n• ⇧⌘3 — Správa epizód\n• ⇧⌘4 — Správa podcastov\n• ⇧⌘5 — Klávesové skratky\n• ⇧⌘6 — O aplikácii";
+"Help.About.Title" = "O PodRams";
+"Help.About.Content" = "PodRams — moderný prehrávač podcastov pre macOS.\n\nHlavné funkcie:\n• Inteligentné ovládanie prehrávania\n• Správa sťahovania\n• Cue systém fronty\n• Integrované vyhľadávanie\n• Obľúbené a odbery\n• Pokročilé ovládanie zvuku\n• Úplné ukladanie postupu\n• Podpora obalov\n• Flexibilný výber zvukového výstupu\n\nVytvorené v SwiftUI pre macOS 11.0 a novšie.";
+/* Play menu translations */
+"Play" = "Prehrať";
+"Pause" = "Pozastaviť";
+"Stop" = "Zastaviť";
+"Previous Episode" = "Predchádzajúca epizóda";
+"Next Episode" = "Nasledujúca epizóda";
+"Skip Backward 30 Seconds" = "30 sekúnd späť";
+"Skip Forward 30 Seconds" = "30 sekúnd dopredu";
+"Volume Up" = "Zvýšiť hlasitosť";
+"Volume Down" = "Znížiť hlasitosť";
+"Mute/Unmute" = "Stlmiť/Zrušiť stlmenie";

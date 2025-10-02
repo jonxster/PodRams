@@ -51,3 +51,27 @@
 "Volume Up" = "Zwiększ głośność";
 "Volume Down" = "Zmniejsz głośność";
 "Mute/Unmute" = "Wycisz/Włącz dźwięk";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Pierwsze kroki";
+"Help.GettingStarted.Content" = "Witamy w PodRams!\n\nAby rozpocząć:\n1. Kliknij ikonę wyszukiwania (🔍), aby znaleźć podcasty.\n2. Subskrybuj programy, które lubisz, przyciskiem subskrypcji.\n3. Pobierz odcinki lub odtwarzaj je bezpośrednio.\n4. Utwórz listę odtwarzania za pomocą systemu kolejki (Cue).\n5. Oznacz ulubione podcasty, aby mieć do nich szybki dostęp.\n\nIkony na pasku narzędzi zapewniają natychmiastowy dostęp do podstawowych funkcji.";
+"Help.PlaybackControls.Title" = "Sterowanie odtwarzaniem";
+"Help.PlaybackControls.Content" = "Sterowanie odtwarzaniem:\n\n• Odtwórz/Wstrzymaj (⌘P): Przełącza odtwarzanie bieżącego odcinka.\n• Zatrzymaj (⌘S): Zatrzymuje odtwarzanie i wraca na początek.\n• Poprzedni/Następny odcinek (⌘←/→): Przechodzenie między odcinkami.\n• Cofnij/Przewiń do przodu (⌥⌘←/→): Skok o 30 sekund.\n• Głośniej/Ciszej (⌘↑/↓): Regulacja głośności.\n• Wycisz/Włącz dźwięk (⌘M): Wyłącza lub włącza dźwięk.\n\nTe same polecenia są dostępne w menu „Odtwarzanie” i przez poniższe skróty klawiaturowe.";
+"Help.EpisodeManagement.Title" = "Zarządzanie odcinkami";
+"Help.EpisodeManagement.Content" = "Zarządzanie odcinkami:\n\n• Pobieraj odcinki, aby słuchać offline.\n• Dodawaj odcinki do kolejki (Cue).\n• Zmieniaj kolejność w kolejce metodą przeciągnij i upuść.\n• Wyświetl szczegóły i notatki odcinka.\n• Monitoruj postęp pobierania.\n• Usuwaj pobrane odcinki.\n\nOtwórz menu kontekstowe (•••) dla dowolnego odcinka, aby zobaczyć te akcje.";
+"Help.PodcastManagement.Title" = "Zarządzanie podcastami";
+"Help.PodcastManagement.Content" = "Zarządzanie podcastami:\n\n• Subskrybuj, aby otrzymywać nowe odcinki.\n• Dodaj podcasty do ulubionych dla szybkiego dostępu.\n• Przeglądaj szczegóły programu i listę odcinków.\n• Zarządzaj swoimi subskrypcjami.\n• Wyszukuj nowe podcasty.\n• Importuj lub eksportuj listy subskrypcji.\n\nIkony na pasku narzędzi prowadzą bezpośrednio do tych ekranów.";
+"Help.KeyboardShortcuts.Title" = "Skróty klawiaturowe";
+"Help.KeyboardShortcuts.Content" = "Skróty klawiaturowe:\n\nOdtwarzanie:\n• ⌘P — Odtwórz/Wstrzymaj\n• ⌘S — Zatrzymaj\n• ⌘← — Poprzedni odcinek\n• ⌘→ — Następny odcinek\n• ⌥⌘← — Cofnij o 30 sekund\n• ⌥⌘→ — Do przodu o 30 sekund\n• ⌘↑ — Głośniej\n• ⌘↓ — Ciszej\n• ⌘M — Wycisz/Włącz dźwięk\n\nNawigacja:\n• ⌘F — Szukaj\n• ⌘C — Przełącz kolejkę\n• Spacja — Odtwórz/Wstrzymaj\n\nPomoc:\n• ⇧⌘1 — Pierwsze kroki\n• ⇧⌘2 — Sterowanie odtwarzaniem\n• ⇧⌘3 — Zarządzanie odcinkami\n• ⇧⌘4 — Zarządzanie podcastami\n• ⇧⌘5 — Skróty klawiaturowe\n• ⇧⌘6 — O aplikacji";
+"Help.About.Title" = "O PodRams";
+"Help.About.Content" = "PodRams — nowoczesny odtwarzacz podcastów dla macOS.\n\nNajważniejsze funkcje:\n• Inteligentne sterowanie odtwarzaniem\n• Zarządzanie pobieraniem\n• System kolejki Cue\n• Zintegrowane wyszukiwanie\n• Ulubione i subskrypcje\n• Zaawansowana kontrola dźwięku\n• Pełne zapisywanie postępu\n• Obsługa okładek\n• Elastyczny wybór wyjścia audio\n\nStworzony w SwiftUI dla macOS 11.0 i nowszych.";
+/* Play menu translations */
+"Play" = "Odtwórz";
+"Pause" = "Wstrzymaj";
+"Stop" = "Zatrzymaj";
+"Previous Episode" = "Poprzedni odcinek";
+"Next Episode" = "Następny odcinek";
+"Skip Backward 30 Seconds" = "Cofnij o 30 sekund";
+"Skip Forward 30 Seconds" = "Do przodu o 30 sekund";
+"Volume Up" = "Głośniej";
+"Volume Down" = "Ciszej";
+"Mute/Unmute" = "Wycisz/Włącz dźwięk";

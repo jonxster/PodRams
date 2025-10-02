@@ -13,6 +13,7 @@ struct SubscribeView: View {
     @ObservedObject var podcastFetcher: PodcastFetcher
     @ObservedObject var audioPlayer: AudioPlayer
     var onPodcastSelect: ((Podcast, Bool) -> Void)?
+    var onDismiss: (() -> Void)? = nil
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -231,6 +232,7 @@ struct SubscribeView: View {
     private func selectPodcast(_ podcast: Podcast) {
         if let onPodcastSelect {
             onPodcastSelect(podcast, true)
+            onDismiss?()
             return
         }
 
@@ -244,42 +246,45 @@ struct SubscribeView: View {
                         if let feedArt = feedArt {
                             subscribedPodcasts[index].feedArtworkURL = feedArt
                         }
-                        playAppropriateEpisode(for: subscribedPodcasts[index])
+                        playFirstEpisodeFromStart(for: subscribedPodcasts[index])
                     } else {
                         podcast.episodes = episodes
                         if let feedArt = feedArt {
                             podcast.feedArtworkURL = feedArt
                         }
-                        playAppropriateEpisode(for: podcast)
+                        playFirstEpisodeFromStart(for: podcast)
                     }
                     loadingPodcastId = nil
                 }
             }
         } else {
-            playAppropriateEpisode(for: podcast)
+            playFirstEpisodeFromStart(for: podcast)
         }
     }
 
-    private func playAppropriateEpisode(for podcast: Podcast) {
+    private func playFirstEpisodeFromStart(for podcast: Podcast) {
         guard !podcast.episodes.isEmpty else { return }
 
-        selectedPodcast = podcast
+        let firstEpisode = podcast.episodes[0]
 
         Task {
-            if let lastPlayedEpisode = await PersistenceManager.loadLastPlayback(),
-               let feedUrl = lastPlayedEpisode.feedUrl,
-               feedUrl == podcast.feedUrl,
-               let match = podcast.episodes.firstIndex(where: { $0.url == lastPlayedEpisode.url }) {
-                await MainActor.run {
-                    selectedEpisodeIndex = match
-                    audioPlayer.playEpisode(podcast.episodes[match])
-                }
-            } else {
-                await MainActor.run {
-                    selectedEpisodeIndex = 0
-                    let firstEpisode = podcast.episodes[0]
+            PersistenceManager.clearPlaybackProgress(for: firstEpisode)
+            PersistenceManager.waitForPersistenceQueue()
+
+            await MainActor.run {
+                selectedPodcast = podcast
+                selectedEpisodeIndex = 0
+
+                if audioPlayer.currentEpisode?.id == firstEpisode.id {
+                    audioPlayer.seek(to: 0)
+                    if !audioPlayer.isPlaying {
+                        audioPlayer.playEpisode(firstEpisode)
+                    }
+                } else {
                     audioPlayer.playEpisode(firstEpisode)
                 }
+
+                onDismiss?()
             }
         }
     }

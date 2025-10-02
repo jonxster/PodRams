@@ -51,3 +51,27 @@
 "Volume Up" = "Hangerő fel";
 "Volume Down" = "Hangerő le";
 "Mute/Unmute" = "Némítás/Némítás feloldása";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Kezdő lépések";
+"Help.GettingStarted.Content" = "Üdvözöljük a PodRams-ban!\n\nKezdéshez:\n1. Kattintson a keresés ikonra (🔍), hogy podcastokat találjon.\n2. Iratkozzon fel a műsorokra az előfizetés gombbal.\n3. Töltse le az epizódokat vagy hallgassa őket online.\n4. Hozzon létre lejátszási listát a Cue várólista rendszerrel.\n5. Jelölje meg kedvenc podcastjait a gyors eléréshez.\n\nAz eszköztár ikonok azonnali hozzáférést biztosítanak az alapvető funkciókhoz.";
+"Help.PlaybackControls.Title" = "Lejátszási vezérlők";
+"Help.PlaybackControls.Content" = "Lejátszás vezérlése:\n\n• Lejátszás/Szünet (⌘P): Az aktuális epizód lejátszását indítja vagy állítja meg.\n• Leállítás (⌘S): Megállítja a lejátszást és visszaugrik az elejére.\n• Előző/Következő epizód (⌘←/→): Epizódok közötti váltás.\n• Vissza/Előre ugrás (⌥⌘←/→): 30 másodperces ugrás.\n• Hangerő növelése/csökkentése (⌘↑/↓): A hangerő beállítása.\n• Némítás/Visszahangosítás (⌘M): Hang ki- vagy bekapcsolása.\n\nUgyanezek a parancsok elérhetők a Lejátszás menüből és a gyorsbillentyűkkel is.";
+"Help.EpisodeManagement.Title" = "Epizódkezelés";
+"Help.EpisodeManagement.Content" = "Epizódok kezelése:\n\n• Töltse le az epizódokat offline hallgatáshoz.\n• Adja hozzá az epizódokat a várólistához (Cue).\n• Rendezze át a várólistát húzással és ejtéssel.\n• Tekintse meg az epizód részleteit és jegyzeteit.\n• Kövesse a letöltés folyamatát.\n• Törölje a letöltött epizódokat.\n\nNyissa meg a helyi menüt (•••) bármelyik epizódnál ezekhez a műveletekhez.";
+"Help.PodcastManagement.Title" = "Podcastkezelés";
+"Help.PodcastManagement.Content" = "Podcastok kezelése:\n\n• Iratkozzon fel, hogy megkapja az új epizódokat.\n• Adja a podcastokat a kedvencekhez a gyors hozzáféréshez.\n• Tekintse meg a műsor részleteit és az epizódlistát.\n• Kezelje előfizetéseit.\n• Keressen új podcastokat.\n• Importáljon vagy exportáljon előfizetési listákat.\n\nAz eszköztár ikonok közvetlenül ezekhez a képernyőkhöz vezetnek.";
+"Help.KeyboardShortcuts.Title" = "Billentyűparancsok";
+"Help.KeyboardShortcuts.Content" = "Billentyűparancsok:\n\nLejátszás:\n• ⌘P — Lejátszás/Szünet\n• ⌘S — Leállítás\n• ⌘← — Előző epizód\n• ⌘→ — Következő epizód\n• ⌥⌘← — Vissza 30 másodpercet\n• ⌥⌘→ — Előre 30 másodpercet\n• ⌘↑ — Hangerő növelése\n• ⌘↓ — Hangerő csökkentése\n• ⌘M — Némítás/Visszahangosítás\n\nNavigáció:\n• ⌘F — Keresés\n• ⌘C — Várólista váltása\n• Szóköz — Lejátszás/Szünet\n\nSúgó:\n• ⇧⌘1 — Kezdő lépések\n• ⇧⌘2 — Lejátszási vezérlők\n• ⇧⌘3 — Epizódkezelés\n• ⇧⌘4 — Podcastkezelés\n• ⇧⌘5 — Billentyűparancsok\n• ⇧⌘6 — Az alkalmazásról";
+"Help.About.Title" = "A PodRams-ról";
+"Help.About.Content" = "PodRams — modern podcast-lejátszó macOS-hez.\n\nFő funkciók:\n• Intelligens lejátszásvezérlés\n• Letöltéskezelés\n• Cue várólista rendszer\n• Integrált keresés\n• Kedvencek és előfizetések\n• Fejlett hangerőszabályzás\n• Teljes előrehaladás mentése\n• Borítótámogatás\n• Rugalmas hangkimenet-választás\n\nSwiftUI-val készült macOS 11.0 és újabb verziókhoz.";
+/* Play menu translations */
+"Play" = "Lejátszás";
+"Pause" = "Szünet";
+"Stop" = "Leállítás";
+"Previous Episode" = "Előző epizód";
+"Next Episode" = "Következő epizód";
+"Skip Backward 30 Seconds" = "Vissza 30 másodpercet";
+"Skip Forward 30 Seconds" = "Előre 30 másodpercet";
+"Volume Up" = "Hangerő növelése";
+"Volume Down" = "Hangerő csökkentése";
+"Mute/Unmute" = "Némítás/Visszahangosítás";

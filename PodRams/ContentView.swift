@@ -462,7 +462,8 @@ struct ContentView: View {
                     selectedEpisodeIndex: $selectedEpisodeIndex,
                     podcastFetcher: podcastFetcher,
                     audioPlayer: audioPlayer,
-                    onPodcastSelect: handlePodcastSelect
+                    onPodcastSelect: handlePodcastSelect,
+                    onDismiss: { isSubscribeVisible = false }
                 )
                 .glassBackgroundEffect(.inspector)
             }
@@ -601,50 +602,62 @@ struct ContentView: View {
 
     /// Loads the podcast episodes, updates the UI state, and starts playback if requested.
     private func handlePodcastSelect(_ podcast: Podcast, autoPlay: Bool = false) {
-        // Reset cue playing state when selecting a podcast
         isCuePlaying = false
 
         let needsReload = selectedPodcast?.id != podcast.id || (selectedPodcast?.episodes.isEmpty ?? true)
-        if !needsReload { return }
+
+        if !needsReload {
+            if autoPlay {
+                Task {
+                    await startFirstEpisodeFromBeginning(for: podcast, episodes: podcast.episodes)
+                }
+            }
+            return
+        }
 
         selectedPodcast = podcast
         isPodcastLoading = true
         selectedEpisodeIndex = nil
 
-        // Fetch episodes for the selected podcast
-            Task {
+        Task {
             let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
-            
+
             await MainActor.run {
-                // Update podcast with fetched data
                 podcast.episodes = episodes
                 if let feedArt = feedArt {
                     podcast.feedArtworkURL = feedArt
                 }
-
-                // Update selected podcast and episode index
                 selectedPodcast = podcast
-
-                // If autoPlay is true, start playback of the first episode
-                if autoPlay && !episodes.isEmpty {
-                    // First set the episode index
-                    selectedEpisodeIndex = 0
-                    
-                    // Then start playback with a small delay to ensure UI is updated
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        // Make sure we're still on the same podcast/episode
-                        if selectedPodcast?.id == podcast.id && selectedEpisodeIndex == 0 {
-                            if let firstEpisode = episodes.first {
-                                audioPlayer.playEpisode(firstEpisode)
-                            }
-                        }
-                    }
-                }
-                
-                // Mark loading as finished
                 isPodcastLoading = false
                 refreshShowNotes()
             }
+
+            if autoPlay {
+                await startFirstEpisodeFromBeginning(for: podcast, episodes: episodes)
+            }
+        }
+    }
+
+    private func startFirstEpisodeFromBeginning(for podcast: Podcast, episodes: [PodcastEpisode]) async {
+        guard let firstEpisode = episodes.first else { return }
+
+        PersistenceManager.clearPlaybackProgress(for: firstEpisode)
+        PersistenceManager.waitForPersistenceQueue()
+
+        await MainActor.run {
+            selectedPodcast = podcast
+            selectedEpisodeIndex = 0
+
+            if audioPlayer.currentEpisode?.id == firstEpisode.id {
+                audioPlayer.seek(to: 0)
+                if !audioPlayer.isPlaying {
+                    audioPlayer.playEpisode(firstEpisode)
+                }
+            } else {
+                audioPlayer.playEpisode(firstEpisode)
+            }
+
+            isSubscribeVisible = false
         }
     }
 

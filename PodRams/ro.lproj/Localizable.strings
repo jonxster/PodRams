@@ -52,3 +52,27 @@
 "Volume Up" = "Creșteți volumul";
 "Volume Down" = "Reduceți volumul";
 "Mute/Unmute" = "Dezactivare/Activare sunet";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Început";
+"Help.GettingStarted.Content" = "Bun venit în PodRams!\n\nPentru a începe:\n1. Fă clic pe pictograma de căutare (🔍) pentru a găsi podcasturi.\n2. Abonează-te la emisiunile care îți plac folosind butonul de abonare.\n3. Descarcă episoade sau redă-le direct.\n4. Creează o listă de redare folosind sistemul de coadă (Cue).\n5. Marchează podcasturile favorite pentru acces rapid.\n\nPictogramele din bara de instrumente oferă acces instant la funcțiile de bază.";
+"Help.PlaybackControls.Title" = "Controale redare";
+"Help.PlaybackControls.Content" = "Controlul redării:\n\n• Redare/Pauză (⌘P): Pornește sau oprește episodul curent.\n• Oprire (⌘S): Oprește redarea și revine la început.\n• Episod anterior/următor (⌘←/→): Navighează între episoade.\n• Derulare înapoi/înainte (⌥⌘←/→): Salt de 30 de secunde.\n• Crește/Scade volumul (⌘↑/↓): Ajustează nivelul volumului.\n• Mute/Anulare mute (⌘M): Dezactivează sau activează sunetul.\n\nAceleași comenzi sunt disponibile în meniul Redare și prin scurtăturile de tastatură de mai jos.";
+"Help.EpisodeManagement.Title" = "Gestionare episoade";
+"Help.EpisodeManagement.Content" = "Gestionarea episoadelor:\n\n• Descarcă episoade pentru ascultare offline.\n• Adaugă episoade în coadă (Cue).\n• Reordonează coada prin drag & drop.\n• Vezi detaliile și notițele episoadelor.\n• Monitorizează progresul descărcării.\n• Șterge episoadele descărcate.\n\nDeschide meniul contextual (•••) pentru orice episod pentru a vedea aceste acțiuni.";
+"Help.PodcastManagement.Title" = "Gestionare podcasturi";
+"Help.PodcastManagement.Content" = "Gestionarea podcasturilor:\n\n• Abonează-te pentru a primi episoade noi.\n• Adaugă podcasturile la favorite pentru acces rapid.\n• Vezi detalii despre program și lista de episoade.\n• Gestionează-ți abonamentele.\n• Caută podcasturi noi.\n• Importă sau exportă liste de abonamente.\n\nPictogramele din bara de instrumente te duc direct la aceste ecrane.";
+"Help.KeyboardShortcuts.Title" = "Scurtături tastatură";
+"Help.KeyboardShortcuts.Content" = "Scurtături de tastatură:\n\nRedare:\n• ⌘P — Redare/Pauză\n• ⌘S — Oprire\n• ⌘← — Episod anterior\n• ⌘→ — Episod următor\n• ⌥⌘← — Înapoi 30 de secunde\n• ⌥⌘→ — Înainte 30 de secunde\n• ⌘↑ — Crește volumul\n• ⌘↓ — Scade volumul\n• ⌘M — Mute/Anulare mute\n\nNavigare:\n• ⌘F — Căutare\n• ⌘C — Comută coada\n• Space — Redare/Pauză\n\nAjutor:\n• ⇧⌘1 — Început\n• ⇧⌘2 — Controale redare\n• ⇧⌘3 — Gestionare episoade\n• ⇧⌘4 — Gestionare podcasturi\n• ⇧⌘5 — Scurtături tastatură\n• ⇧⌘6 — Despre aplicație";
+"Help.About.Title" = "Despre PodRams";
+"Help.About.Content" = "PodRams — un player modern de podcast pentru macOS.\n\nFuncții principale:\n• Controale inteligente de redare\n• Gestionare descărcări\n• Sistem de coadă Cue\n• Căutare integrată\n• Favorite și abonamente\n• Control avansat al sunetului\n• Salvarea completă a progresului\n• Suport pentru coperți\n• Alegere flexibilă a ieșirii audio\n\nCreat cu SwiftUI pentru macOS 11.0 și versiunile ulterioare.";
+/* Play menu translations */
+"Play" = "Redare";
+"Pause" = "Pauză";
+"Stop" = "Oprire";
+"Previous Episode" = "Episod anterior";
+"Next Episode" = "Episod următor";
+"Skip Backward 30 Seconds" = "Înapoi 30 de secunde";
+"Skip Forward 30 Seconds" = "Înainte 30 de secunde";
+"Volume Up" = "Crește volumul";
+"Volume Down" = "Scade volumul";
+"Mute/Unmute" = "Mute/Anulare mute";

@@ -51,3 +51,27 @@
 "Volume Up" = "볼륨 높이기";
 "Volume Down" = "볼륨 낮추기";
 "Mute/Unmute" = "음소거/음소거 해제";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "시작하기";
+"Help.GettingStarted.Content" = "PodRams에 오신 것을 환영합니다!\n\n시작하려면:\n1. 검색 아이콘 (🔍)을 클릭하여 팟캐스트를 찾으세요.\n2. 구독 버튼으로 원하는 프로그램을 구독하세요.\n3. 에피소드를 다운로드하거나 바로 재생하세요.\n4. 대기열(Cue) 시스템으로 재생 목록을 만드세요.\n5. 즐겨찾기에 팟캐스트를 추가해 빠르게 접근하세요.\n\n도구 모음 아이콘은 주요 기능에 즉시 접근할 수 있게 합니다.";
+"Help.PlaybackControls.Title" = "재생 컨트롤";
+"Help.PlaybackControls.Content" = "재생 제어:\n\n• 재생/일시정지 (⌘P): 현재 에피소드를 재생하거나 일시정지합니다.\n• 정지 (⌘S): 재생을 멈추고 처음으로 돌아갑니다.\n• 이전/다음 에피소드 (⌘←/→): 에피소드 간 탐색.\n• 30초 뒤로/앞으로 (⌥⌘←/→): 30초 건너뛰기.\n• 볼륨 높이기/낮추기 (⌘↑/↓): 볼륨 조절.\n• 음소거/해제 (⌘M): 소리를 끄거나 켭니다.\n\n같은 명령은 재생 메뉴와 단축키로도 사용할 수 있습니다.";
+"Help.EpisodeManagement.Title" = "에피소드 관리";
+"Help.EpisodeManagement.Content" = "에피소드 관리:\n\n• 오프라인 청취를 위해 에피소드를 다운로드하세요.\n• 에피소드를 대기열(Cue)에 추가하세요.\n• 드래그 앤 드롭으로 대기열 순서를 변경하세요.\n• 에피소드 세부정보와 노트를 확인하세요.\n• 다운로드 진행 상황을 확인하세요.\n• 다운로드된 에피소드를 삭제하세요.\n\n에피소드의 컨텍스트 메뉴 (•••)를 열어 이러한 작업을 확인하세요.";
+"Help.PodcastManagement.Title" = "팟캐스트 관리";
+"Help.PodcastManagement.Content" = "팟캐스트 관리:\n\n• 새 에피소드를 받으려면 구독하세요.\n• 즐겨찾기에 추가하여 빠르게 접근하세요.\n• 프로그램 세부정보와 에피소드 목록을 확인하세요.\n• 구독을 관리하세요.\n• 새로운 팟캐스트를 검색하세요.\n• 구독 목록을 가져오거나 내보내세요.\n\n도구 모음 아이콘을 통해 직접 이 화면으로 이동할 수 있습니다.";
+"Help.KeyboardShortcuts.Title" = "키보드 단축키";
+"Help.KeyboardShortcuts.Content" = "키보드 단축키:\n\n재생:\n• ⌘P — 재생/일시정지\n• ⌘S — 정지\n• ⌘← — 이전 에피소드\n• ⌘→ — 다음 에피소드\n• ⌥⌘← — 30초 뒤로\n• ⌥⌘→ — 30초 앞으로\n• ⌘↑ — 볼륨 높이기\n• ⌘↓ — 볼륨 낮추기\n• ⌘M — 음소거/해제\n\n탐색:\n• ⌘F — 검색\n• ⌘C — 대기열 전환\n• 스페이스바 — 재생/일시정지\n\n도움말:\n• ⇧⌘1 — 시작하기\n• ⇧⌘2 — 재생 컨트롤\n• ⇧⌘3 — 에피소드 관리\n• ⇧⌘4 — 팟캐스트 관리\n• ⇧⌘5 — 키보드 단축키\n• ⇧⌘6 — 앱 정보";
+"Help.About.Title" = "PodRams 정보";
+"Help.About.Content" = "PodRams — macOS용 현대적인 팟캐스트 플레이어.\n\n주요 기능:\n• 스마트 재생 컨트롤\n• 다운로드 관리\n• Cue 대기열 시스템\n• 통합 검색\n• 즐겨찾기 및 구독\n• 고급 볼륨 제어\n• 진행 상황 저장\n• 커버 이미지 지원\n• 유연한 오디오 출력 선택\n\nSwiftUI로 제작, macOS 11.0 이상 지원.";
+/* Play menu translations */
+"Play" = "재생";
+"Pause" = "일시정지";
+"Stop" = "정지";
+"Previous Episode" = "이전 에피소드";
+"Next Episode" = "다음 에피소드";
+"Skip Backward 30 Seconds" = "30초 뒤로";
+"Skip Forward 30 Seconds" = "30초 앞으로";
+"Volume Up" = "볼륨 높이기";
+"Volume Down" = "볼륨 낮추기";
+"Mute/Unmute" = "음소거/해제";

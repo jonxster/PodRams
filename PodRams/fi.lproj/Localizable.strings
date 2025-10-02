@@ -51,3 +51,27 @@
 "Volume Up" = "Lisää äänenvoimakkuutta";
 "Volume Down" = "Vähennä äänenvoimakkuutta";
 "Mute/Unmute" = "Mykistä/Poista mykistys";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Aloittaminen";
+"Help.GettingStarted.Content" = "Tervetuloa PodRamsiin!\n\nAloittaaksesi:\n1. Napsauta hakukuvaketta (🔍) löytääksesi podcasteja.\n2. Tilaa ohjelmat, joista pidät, tilauspainikkeella.\n3. Lataa jaksot tai kuuntele niitä suoraan.\n4. Luo soittolista Cue-järjestelmän avulla.\n5. Merkitse suosikkipodcastit nopeaa käyttöä varten.\n\nTyökalupalkin kuvakkeet antavat välittömän pääsyn tärkeimpiin toimintoihin.";
+"Help.PlaybackControls.Title" = "Toiston hallinta";
+"Help.PlaybackControls.Content" = "Toiston hallinta:\n\n• Toista/Tauko (⌘P): Vaihtaa nykyisen jakson toiston päälle tai pois.\n• Pysäytä (⌘S): Pysäyttää ja palauttaa alkuun.\n• Edellinen/Seuraava jakso (⌘←/→): Siirtyminen jaksojen välillä.\n• Kelaa taaksepäin/eteenpäin (⌥⌘←/→): Hyppy 30 sekuntia.\n• Lisää/Vähennä äänenvoimakkuutta (⌘↑/↓): Säädä äänenvoimakkuutta.\n• Mykistä/Poista mykistys (⌘M): Ota ääni pois tai päälle.\n\nSamat komennot löytyvät myös Toisto-valikosta ja alla olevista pikanäppäimistä.";
+"Help.EpisodeManagement.Title" = "Jaksojen hallinta";
+"Help.EpisodeManagement.Content" = "Jaksojen hallinta:\n\n• Lataa jaksot kuunneltavaksi offline-tilassa.\n• Lisää jaksot jonoon (Cue).\n• Järjestä jono uudelleen vetämällä ja pudottamalla.\n• Katso jakson tiedot ja muistiinpanot.\n• Seuraa latauksen etenemistä.\n• Poista ladatut jaksot.\n\nAvaa kontekstivalikko (•••) missä tahansa jaksossa nähdäksesi nämä toiminnot.";
+"Help.PodcastManagement.Title" = "Podcastien hallinta";
+"Help.PodcastManagement.Content" = "Podcastien hallinta:\n\n• Tilaa podcastit saadaksesi uudet jaksot.\n• Lisää podcastit suosikkeihin nopeaa käyttöä varten.\n• Selaa ohjelman tietoja ja jaksolistaa.\n• Hallitse tilauksiasi.\n• Etsi uusia podcasteja.\n• Tuo tai vie tilauslistoja.\n\nTyökalupalkin kuvakkeet vievät sinut suoraan näihin näkymiin.";
+"Help.KeyboardShortcuts.Title" = "Pikanäppäimet";
+"Help.KeyboardShortcuts.Content" = "Pikanäppäimet:\n\nToisto:\n• ⌘P — Toista/Tauko\n• ⌘S — Pysäytä\n• ⌘← — Edellinen jakso\n• ⌘→ — Seuraava jakso\n• ⌥⌘← — Taaksepäin 30 sekuntia\n• ⌥⌘→ — Eteenpäin 30 sekuntia\n• ⌘↑ — Lisää ääntä\n• ⌘↓ — Vähennä ääntä\n• ⌘M — Mykistä/Poista mykistys\n\nNavigointi:\n• ⌘F — Haku\n• ⌘C — Vaihda jono\n• Välilyönti — Toista/Tauko\n\nOhje:\n• ⇧⌘1 — Aloittaminen\n• ⇧⌘2 — Toiston hallinta\n• ⇧⌘3 — Jaksojen hallinta\n• ⇧⌘4 — Podcastien hallinta\n• ⇧⌘5 — Pikanäppäimet\n• ⇧⌘6 — Tietoja sovelluksesta";
+"Help.About.Title" = "Tietoja PodRamsista";
+"Help.About.Content" = "PodRams — moderni podcast-soitin macOS:lle.\n\nTärkeimmät ominaisuudet:\n• Älykkäät toiston hallintatoiminnot\n• Latausten hallinta\n• Cue-jono\n• Integroitu haku\n• Suosikit ja tilaukset\n• Kehittynyt äänensäätö\n• Täysi edistymisen tallennus\n• Kannen kuvan tuki\n• Joustava äänilähteen valinta\n\nRakennettu SwiftUI:lla macOS 11.0:lle ja uudemmille.";
+/* Play menu translations */
+"Play" = "Toista";
+"Pause" = "Tauko";
+"Stop" = "Pysäytä";
+"Previous Episode" = "Edellinen jakso";
+"Next Episode" = "Seuraava jakso";
+"Skip Backward 30 Seconds" = "30 sekuntia taaksepäin";
+"Skip Forward 30 Seconds" = "30 sekuntia eteenpäin";
+"Volume Up" = "Lisää ääntä";
+"Volume Down" = "Vähennä ääntä";
+"Mute/Unmute" = "Mykistä/Poista mykistys";

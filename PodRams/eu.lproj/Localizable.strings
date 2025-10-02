@@ -51,3 +51,27 @@
 "Volume Up" = "Igo bolumena";
 "Volume Down" = "Jaitsi bolumena";
 "Mute/Unmute" = "Mututu/Ez mututu";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Hasteko";
+"Help.GettingStarted.Content" = "Ongi etorri PodRams-era!\n\nHasteko:\n1. Egin klik bilaketa-ikonoan (🔍) podcastak aurkitzeko.\n2. Harpidetu gustuko dituzun programetara harpidetza botoiarekin.\n3. Deskargatu edo zuzenean erreproduzitu episodioen edukia.\n4. Sortu erreprodukzio-zerrenda ilara (Cue) sistemarekin.\n5. Markatu gogoko podcastak sarbide azkarrerako.\n\nTresna-barrako ikonek funtzio nagusietara berehalako sarbidea ematen dute.";
+"Help.PlaybackControls.Title" = "Erreprodukzio-kontrolak";
+"Help.PlaybackControls.Content" = "Erreprodukzioaren kontrola:\n\n• Erreproduzitu/Pausatu (⌘P): Uneko episodioa erreproduzitu edo pausatzen du.\n• Gelditu (⌘S): Erreprodukzioa gelditu eta hasierara itzultzen da.\n• Aurreko/Hurrengo atala (⌘←/→): Episodioen artean nabigatu.\n• Atzera/Aurrera salto (⌥⌘←/→): 30 segundo aurrera edo atzera.\n• Bolumena igo/jaitsi (⌘↑/↓): Doitu bolumen-maila.\n• Isilarazi/Desisilarazi (⌘M): Aktibatu edo desaktibatu soinua.\n\nKomando berak erabilgarri daude erreprodukzio-menutik eta beheko lasterbideen bidez.";
+"Help.EpisodeManagement.Title" = "Episodioen kudeaketa";
+"Help.EpisodeManagement.Content" = "Episodioen kudeaketa:\n\n• Deskargatu episodioen edukia lineaz kanpo entzuteko.\n• Gehitu episodioen edukia ilaran (Cue).\n• Aldatu ilararen ordena arrastatu eta jareginez.\n• Ikusi atalaren xehetasunak eta oharrak.\n• Jarraitu deskargen aurrerapena.\n• Ezabatu deskargatutako atalak.\n\nIreki testuinguru-menua (•••) edozein ataletarako ekintza hauek ikusteko.";
+"Help.PodcastManagement.Title" = "Podcasten kudeaketa";
+"Help.PodcastManagement.Content" = "Podcasten kudeaketa:\n\n• Harpidetu podcastetara atal berriak jasotzeko.\n• Gehitu podcastak gogokoetan sarbide azkarrerako.\n• Ikusi programaren xehetasunak eta atal-zerrenda.\n• Kudeatu zure harpidetzak.\n• Bilatu podcast berriak.\n• Inportatu edo esportatu harpidetza-zerrendak.\n\nTresna-barrako ikonek zuzenean eramaten zaituzte pantaila hauetara.";
+"Help.KeyboardShortcuts.Title" = "Teklatu-lasterbideak";
+"Help.KeyboardShortcuts.Content" = "Teklatu-lasterbideak:\n\nErreprodukzioa:\n• ⌘P — Erreproduzitu/Pausatu\n• ⌘S — Gelditu\n• ⌘← — Aurreko atala\n• ⌘→ — Hurrengo atala\n• ⌥⌘← — Atzera 30 segundo\n• ⌥⌘→ — Aurrera 30 segundo\n• ⌘↑ — Bolumena igo\n• ⌘↓ — Bolumena jaitsi\n• ⌘M — Isilarazi/Desisilarazi\n\nNabigazioa:\n• ⌘F — Bilatu\n• ⌘C — Ilara aldatu\n• Zuriunea — Erreproduzitu/Pausatu\n\nLaguntza:\n• ⇧⌘1 — Hasteko\n• ⇧⌘2 — Erreprodukzio-kontrolak\n• ⇧⌘3 — Episodioen kudeaketa\n• ⇧⌘4 — Podcasten kudeaketa\n• ⇧⌘5 — Teklatu-lasterbideak\n• ⇧⌘6 — Aplikazioari buruz";
+"Help.About.Title" = "PodRams-i buruz";
+"Help.About.Content" = "PodRams — macOS-erako podcast erreproduzitzaile modernoa.\n\nEzaugarri nagusiak:\n• Erreprodukzio-kontrol adimendunak\n• Deskargen kudeaketa\n• Cue ilara-sistema\n• Bilaketa integratua\n• Gogokoak eta harpidetzak\n• Audio-kontrol aurreratua\n• Aurrerapenaren gordetzea\n• Azal-irudien euskarria\n• Audio-irteeraren hautaketa malgua\n\nSwiftUI-rekin eraikia, macOS 11.0 eta berriagoetarako.";
+/* Play menu translations */
+"Play" = "Erreproduzitu";
+"Pause" = "Pausatu";
+"Stop" = "Gelditu";
+"Previous Episode" = "Aurreko atala";
+"Next Episode" = "Hurrengo atala";
+"Skip Backward 30 Seconds" = "Atzera 30 segundo";
+"Skip Forward 30 Seconds" = "Aurrera 30 segundo";
+"Volume Up" = "Bolumena igo";
+"Volume Down" = "Bolumena jaitsi";
+"Mute/Unmute" = "Isilarazi/Desisilarazi";

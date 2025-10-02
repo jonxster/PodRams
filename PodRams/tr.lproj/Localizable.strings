@@ -51,3 +51,27 @@
 "Volume Up" = "Sesi Artır";
 "Volume Down" = "Sesi Azalt";
 "Mute/Unmute" = "Sessiz/Sesi Aç";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Başlarken";
+"Help.GettingStarted.Content" = "PodRams'a hoş geldiniz!\n\nBaşlamak için:\n1. Podcast bulmak için arama simgesine (🔍) tıklayın.\n2. Beğendiğiniz programlara abone olun.\n3. Bölümleri indirin veya doğrudan oynatın.\n4. Kuyruk (Cue) sistemiyle çalma listesi oluşturun.\n5. Favori podcastlerinizi hızlı erişim için işaretleyin.\n\nAraç çubuğu simgeleri temel işlevlere anında erişim sağlar.";
+"Help.PlaybackControls.Title" = "Oynatma Kontrolleri";
+"Help.PlaybackControls.Content" = "Oynatma kontrolü:\n\n• Oynat/Duraklat (⌘P): Mevcut bölümü oynatır veya duraklatır.\n• Durdur (⌘S): Oynatmayı durdurur ve başa döner.\n• Önceki/Sonraki bölüm (⌘←/→): Bölümler arasında geçiş yapın.\n• Geri/İleri sar (⌥⌘←/→): 30 saniye atla.\n• Sesi artır/azalt (⌘↑/↓): Ses seviyesini ayarlayın.\n• Sessize al/Sesi aç (⌘M): Sesi kapatır veya açar.\n\nAynı komutlara Oynatma menüsünden ve aşağıdaki klavye kısayollarıyla da erişebilirsiniz.";
+"Help.EpisodeManagement.Title" = "Bölüm Yönetimi";
+"Help.EpisodeManagement.Content" = "Bölüm yönetimi:\n\n• Çevrimdışı dinlemek için bölümleri indirin.\n• Bölümleri kuyruğa (Cue) ekleyin.\n• Kuyruğu sürükle-bırak yöntemiyle yeniden düzenleyin.\n• Bölüm ayrıntılarını ve notlarını görüntüleyin.\n• İndirme ilerlemesini takip edin.\n• İndirilen bölümleri silin.\n\nHerhangi bir bölüm için bağlam menüsünü (•••) açarak bu işlemleri görebilirsiniz.";
+"Help.PodcastManagement.Title" = "Podcast Yönetimi";
+"Help.PodcastManagement.Content" = "Podcast yönetimi:\n\n• Yeni bölümler almak için abone olun.\n• Hızlı erişim için podcastleri favorilere ekleyin.\n• Program ayrıntılarını ve bölüm listesini inceleyin.\n• Aboneliklerinizi yönetin.\n• Yeni podcastler arayın.\n• Abonelik listelerini içe veya dışa aktarın.\n\nAraç çubuğu simgeleri sizi doğrudan bu ekranlara götürür.";
+"Help.KeyboardShortcuts.Title" = "Klavye Kısayolları";
+"Help.KeyboardShortcuts.Content" = "Klavye kısayolları:\n\nOynatma:\n• ⌘P — Oynat/Duraklat\n• ⌘S — Durdur\n• ⌘← — Önceki bölüm\n• ⌘→ — Sonraki bölüm\n• ⌥⌘← — 30 saniye geri\n• ⌥⌘→ — 30 saniye ileri\n• ⌘↑ — Sesi artır\n• ⌘↓ — Sesi azalt\n• ⌘M — Sessize al/Sesi aç\n\nGezinme:\n• ⌘F — Ara\n• ⌘C — Kuyruğu değiştir\n• Boşluk — Oynat/Duraklat\n\nYardım:\n• ⇧⌘1 — Başlarken\n• ⇧⌘2 — Oynatma Kontrolleri\n• ⇧⌘3 — Bölüm Yönetimi\n• ⇧⌘4 — Podcast Yönetimi\n• ⇧⌘5 — Klavye Kısayolları\n• ⇧⌘6 — Uygulama Hakkında";
+"Help.About.Title" = "PodRams Hakkında";
+"Help.About.Content" = "PodRams — macOS için modern bir podcast oynatıcı.\n\nÖne çıkan özellikler:\n• Akıllı oynatma kontrolleri\n• İndirme yönetimi\n• Cue kuyruk sistemi\n• Entegre arama\n• Favoriler ve abonelikler\n• Gelişmiş ses kontrolü\n• Tam ilerleme kaydı\n• Kapak görseli desteği\n• Esnek ses çıkışı seçimi\n\nmacOS 11.0 ve sonrası için SwiftUI ile geliştirilmiştir.";
+/* Play menu translations */
+"Play" = "Oynat";
+"Pause" = "Duraklat";
+"Stop" = "Durdur";
+"Previous Episode" = "Önceki bölüm";
+"Next Episode" = "Sonraki bölüm";
+"Skip Backward 30 Seconds" = "30 saniye geri";
+"Skip Forward 30 Seconds" = "30 saniye ileri";
+"Volume Up" = "Sesi artır";
+"Volume Down" = "Sesi azalt";
+"Mute/Unmute" = "Sessize al/Sesi aç";

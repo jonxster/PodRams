@@ -51,3 +51,27 @@
 "Volume Up" = "Povečaj glasnost";
 "Volume Down" = "Zmanjšaj glasnost";
 "Mute/Unmute" = "Utišaj/Vklopi zvok";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Začetek";
+"Help.GettingStarted.Content" = "Dobrodošli v PodRams!\n\nZa začetek:\n1. Kliknite ikono iskanja (🔍), da poiščete podcaste.\n2. Naročite se na oddaje, ki so vam všeč, z gumbom za naročnino.\n3. Prenesite epizode ali jih predvajajte neposredno.\n4. Ustvarite seznam predvajanja s sistemom čakalne vrste (Cue).\n5. Označite priljubljene podcaste za hiter dostop.\n\nIkone v orodni vrstici omogočajo takojšen dostop do osnovnih funkcij.";
+"Help.PlaybackControls.Title" = "Kontrole predvajanja";
+"Help.PlaybackControls.Content" = "Nadzor predvajanja:\n\n• Predvajaj/Pavza (⌘P): Preklopi predvajanje trenutne epizode.\n• Ustavi (⌘S): Ustavi predvajanje in se vrne na začetek.\n• Prejšnja/Naslednja epizoda (⌘←/→): Premik med epizodami.\n• Preskok nazaj/naprej (⌥⌘←/→): Preskok za 30 sekund.\n• Povečaj/Zmanjšaj glasnost (⌘↑/↓): Nastavi glasnost.\n• Utišaj/Vključi zvok (⌘M): Izklopi ali vklopi zvok.\n\nEnake ukaze lahko najdete v meniju Predvajanje in s spodnjimi bližnjicami na tipkovnici.";
+"Help.EpisodeManagement.Title" = "Upravljanje epizod";
+"Help.EpisodeManagement.Content" = "Upravljanje epizod:\n\n• Prenesite epizode za poslušanje brez povezave.\n• Dodajte epizode v čakalno vrsto (Cue).\n• Spremenite vrstni red v čakalni vrsti s povleci in spusti.\n• Oglejte si podrobnosti in opombe epizod.\n• Spremljajte napredek prenosa.\n• Izbrišite prenesene epizode.\n\nOdprite kontekstni meni (•••) za katerokoli epizodo, da vidite te možnosti.";
+"Help.PodcastManagement.Title" = "Upravljanje podcastov";
+"Help.PodcastManagement.Content" = "Upravljanje podcastov:\n\n• Naročite se za prejem novih epizod.\n• Dodajte podcaste med priljubljene za hiter dostop.\n• Oglejte si podrobnosti programa in seznam epizod.\n• Upravljajte svoje naročnine.\n• Poiščite nove podcaste.\n• Uvozite ali izvozite sezname naročnin.\n\nIkone v orodni vrstici vas popeljejo neposredno na te zaslone.";
+"Help.KeyboardShortcuts.Title" = "Bližnjice na tipkovnici";
+"Help.KeyboardShortcuts.Content" = "Bližnjice na tipkovnici:\n\nPredvajanje:\n• ⌘P — Predvajaj/Pavza\n• ⌘S — Ustavi\n• ⌘← — Prejšnja epizoda\n• ⌘→ — Naslednja epizoda\n• ⌥⌘← — 30 sekund nazaj\n• ⌥⌘→ — 30 sekund naprej\n• ⌘↑ — Povečaj glasnost\n• ⌘↓ — Zmanjšaj glasnost\n• ⌘M — Utišaj/Vključi zvok\n\nNavigacija:\n• ⌘F — Iskanje\n• ⌘C — Preklopi čakalno vrsto\n• Preslednica — Predvajaj/Pavza\n\nPomoč:\n• ⇧⌘1 — Začetek\n• ⇧⌘2 — Kontrole predvajanja\n• ⇧⌘3 — Upravljanje epizod\n• ⇧⌘4 — Upravljanje podcastov\n• ⇧⌘5 — Bližnjice na tipkovnici\n• ⇧⌘6 — O aplikaciji";
+"Help.About.Title" = "O PodRams";
+"Help.About.Content" = "PodRams — sodoben predvajalnik podcastov za macOS.\n\nGlavne funkcije:\n• Pametne kontrole predvajanja\n• Upravljanje prenosov\n• Cue sistem čakalne vrste\n• Integrirano iskanje\n• Priljubljeni in naročnine\n• Napredni nadzor zvoka\n• Shranjevanje napredka\n• Podpora za naslovnice\n• Prilagodljiva izbira zvočnega izhoda\n\nZgrajeno s SwiftUI za macOS 11.0 in novejše.";
+/* Play menu translations */
+"Play" = "Predvajaj";
+"Pause" = "Pavza";
+"Stop" = "Ustavi";
+"Previous Episode" = "Prejšnja epizoda";
+"Next Episode" = "Naslednja epizoda";
+"Skip Backward 30 Seconds" = "30 sekund nazaj";
+"Skip Forward 30 Seconds" = "30 sekund naprej";
+"Volume Up" = "Povečaj glasnost";
+"Volume Down" = "Zmanjšaj glasnost";
+"Mute/Unmute" = "Utišaj/Vključi zvok";

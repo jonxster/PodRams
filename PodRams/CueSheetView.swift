@@ -134,6 +134,7 @@ struct CueSheetView: View {
             debugDurations()
             updateMissingDurations()
             updateMissingPodcastNames()
+            updateMissingArtwork()
         }
     }
     
@@ -164,6 +165,72 @@ struct CueSheetView: View {
                         NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                     }
                 }
+            }
+        }
+    }
+
+    /// Fills in missing artwork by pulling from the selected podcast or stored subscription data.
+    private func updateMissingArtwork() {
+        guard !cue.isEmpty else { return }
+
+        Task { @MainActor in
+            var updatedCue = cue
+            var hasUpdates = false
+            var cachedArtworkByFeed: [String: URL?] = [:]
+            var fallbackArtwork = updatedCue.compactMap { $0.artworkURL }.first ?? selectedPodcast?.feedArtworkURL
+
+            for index in updatedCue.indices {
+                guard updatedCue[index].artworkURL == nil else { continue }
+
+                var resolvedArtwork: URL?
+
+                if let feedUrl = updatedCue[index].feedUrl {
+                    if let cached = cachedArtworkByFeed[feedUrl] {
+                        resolvedArtwork = cached ?? resolvedArtwork
+                    } else {
+                        let podcast = PersistenceManager.loadPodcast(feedUrl: feedUrl)
+                        let artwork = podcast?.feedArtworkURL
+                        cachedArtworkByFeed[feedUrl] = artwork
+                        resolvedArtwork = artwork
+                    }
+                }
+
+                if resolvedArtwork == nil {
+                    resolvedArtwork = fallbackArtwork
+                }
+
+                if resolvedArtwork == nil {
+                    resolvedArtwork = selectedPodcast?.feedArtworkURL
+                }
+
+                guard let artworkURL = resolvedArtwork else { continue }
+
+                let episode = updatedCue[index]
+                let enrichedEpisode = PodcastEpisode(
+                    id: episode.id,
+                    title: episode.title,
+                    url: episode.url,
+                    artworkURL: artworkURL,
+                    duration: episode.duration,
+                    showNotes: episode.showNotes,
+                    feedUrl: episode.feedUrl,
+                    podcastName: episode.podcastName ?? selectedPodcast?.title
+                )
+
+                updatedCue[index] = enrichedEpisode
+                hasUpdates = true
+
+                if fallbackArtwork == nil {
+                    fallbackArtwork = artworkURL
+                }
+            }
+
+            guard hasUpdates else { return }
+
+            cue = updatedCue
+            if let feedUrl = cue.first?.feedUrl {
+                PersistenceManager.saveCue(cue, feedUrl: feedUrl)
+                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
             }
         }
     }
@@ -330,12 +397,15 @@ struct CueRowView: View {
     
     /// Gets the podcast artwork URL, falling back to the episode artwork if needed
     private var podcastArtworkURL: URL? {
+        if let artwork = episode.artworkURL {
+            return artwork
+        }
         if let feedUrl = episode.feedUrl,
            let podcast = PersistenceManager.loadPodcast(feedUrl: feedUrl),
            let artworkURL = podcast.feedArtworkURL {
             return artworkURL
         }
-        return episode.artworkURL
+        return nil
     }
     
     var body: some View {

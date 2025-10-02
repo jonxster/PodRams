@@ -34,12 +34,18 @@
 "Delete download" = "Download löschen";
 "Retry download" = "Download wiederholen";
 /* Help menu translations */
-"Getting Started" = "Erste Schritte";
-"Playback Controls" = "Wiedergabesteuerung";
-"Episode Management" = "Episodenverwaltung";
-"Podcast Management" = "Podcast-Verwaltung";
-"Keyboard Shortcuts" = "Tastaturkürzel";
-"About PodRams" = "Über PodRams";
+"Help.GettingStarted.Title" = "Erste Schritte";
+"Help.GettingStarted.Content" = "Willkommen bei PodRams!\n\nSo legen Sie los:\n1. Tippen Sie auf das Suchsymbol (🔍), um Podcasts zu finden.\n2. Abonnieren Sie interessante Sendungen über den Button \"Abonnieren\".\n3. Laden Sie Episoden herunter oder streamen Sie sie direkt.\n4. Stellen Sie mit dem Cue-System eine Hörreihenfolge zusammen.\n5. Markieren Sie Lieblingspodcasts für den schnellen Zugriff.\n\nÜber die Symbolleiste erreichen Sie die wichtigsten Funktionen sofort.";
+"Help.PlaybackControls.Title" = "Wiedergabesteuerung";
+"Help.PlaybackControls.Content" = "Wiedergabesteuerung:\n\n• Wiedergabe/Pause (⌘P): Aktuelle Episode starten oder anhalten.\n• Stopp (⌘S): Wiedergabe beenden und Position zurücksetzen.\n• Vorherige/Nächste Episode (⌘←/→): Zwischen Episoden wechseln.\n• Zurück/Vor springen (⌥⌘←/→): 30 Sekunden springen.\n• Lauter/Leiser (⌘↑/↓): Lautstärke anpassen.\n• Stumm/Ton (⌘M): Audio ein- oder ausschalten.\n\nDieselben Befehle finden Sie auch im Menü „Wiedergabe“ und in den Tastenkürzeln oben.";
+"Help.EpisodeManagement.Title" = "Episodenverwaltung";
+"Help.EpisodeManagement.Content" = "Episodenverwaltung:\n\n• Episoden für die Offline-Wiedergabe herunterladen.\n• Episoden zur Cue-Wiedergabeliste hinzufügen.\n• Cue-Reihenfolge per Ziehen ändern.\n• Episodendetails und Shownotes anzeigen.\n• Downloadfortschritt beobachten.\n• Heruntergeladene Episoden löschen.\n\nÖffnen Sie das Kontextmenü (•••) einer Episode, um diese Aktionen aufzurufen.";
+"Help.PodcastManagement.Title" = "Podcast-Verwaltung";
+"Help.PodcastManagement.Content" = "Podcast-Verwaltung:\n\n• Podcasts abonnieren, um neue Episoden zu erhalten.\n• Podcasts zu Favoriten hinzufügen.\n• Show-Details und Episodenlisten ansehen.\n• Ihre Abonnements verwalten.\n• Nach neuen Podcasts suchen.\n• Abonnementlisten importieren oder exportieren.\n\nÜber die Symbolleiste gelangen Sie direkt zu diesen Bereichen.";
+"Help.KeyboardShortcuts.Title" = "Tastaturkürzel";
+"Help.KeyboardShortcuts.Content" = "Tastaturkürzel:\n\nWiedergabe:\n• ⌘P — Wiedergabe/Pause\n• ⌘S — Stopp\n• ⌘← — Vorherige Episode\n• ⌘→ — Nächste Episode\n• ⌥⌘← — 30 s zurück\n• ⌥⌘→ — 30 s vor\n• ⌘↑ — Lauter\n• ⌘↓ — Leiser\n• ⌘M — Stumm/Ton\n\nNavigation:\n• ⌘F — Suchen\n• ⌘C — Cue ein/aus\n• Leertaste — Wiedergabe/Pause\n\nHilfe:\n• ⇧⌘1 — Erste Schritte\n• ⇧⌘2 — Wiedergabesteuerung\n• ⇧⌘3 — Episodenverwaltung\n• ⇧⌘4 — Podcast-Verwaltung\n• ⇧⌘5 — Tastaturkürzel\n• ⇧⌘6 — Über";
+"Help.About.Title" = "Über PodRams";
+"Help.About.Content" = "PodRams – der moderne Podcast-Player für macOS.\n\nHighlights:\n• Intelligente Wiedergabesteuerung\n• Download-Verwaltung\n• Cue-System\n• Leistungsstarke Suche\n• Favoriten und Abonnements\n• Erweiterte Audio-Steuerung\n• Dauerhaft gespeicherte Fortschritte\n• Artwork-Unterstützung\n• Flexible Audioausgabe\n\nEntwickelt mit SwiftUI für macOS 11.0 und neuer.";
 
 /* Play menu translations */
 "Play" = "Wiedergabe";

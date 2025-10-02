@@ -34,12 +34,18 @@
 "Delete download" = "Slett nedlasting";
 "Retry download" = "Prøv nedlasting på nytt";
 /* Help menu translations */
-"Getting Started" = "Kom i gang";
-"Playback Controls" = "Avspillingskontroller";
-"Episode Management" = "Episodehåndtering";
-"Podcast Management" = "Podkasthåndtering";
-"Keyboard Shortcuts" = "Tastatursnarveier";
-"About PodRams" = "Om PodRams";
+"Help.GettingStarted.Title" = "Kom i gang";
+"Help.GettingStarted.Content" = "Velkommen til PodRams!\n\nSlik kommer du i gang:\n1. Trykk på søkeikonet (🔍) for å finne podkaster.\n2. Abonner på programmene du liker med Abonner-knappen.\n3. Last ned episoder eller strøm dem direkte.\n4. Bygg en lyttekø med Cue-systemet.\n5. Merk podkaster som favoritter for rask tilgang.\n\nVerktøylinjeikonene gir deg umiddelbar tilgang til de viktigste funksjonene.";
+"Help.PlaybackControls.Title" = "Avspillingskontroller";
+"Help.PlaybackControls.Content" = "Avspillingskontroller:\n\n• Spill av/Pause (⌘P): Veksler avspillingen av nåværende episode.\n• Stopp (⌘S): Stopper avspillingen og nullstiller posisjonen.\n• Forrige/Neste episode (⌘←/→): Bytter mellom episoder.\n• Hopp tilbake/frem (⌥⌘←/→): Hopper 30 sekunder.\n• Volum opp/ned (⌘↑/↓): Justerer volumet.\n• Demp/opphev demping (⌘M): Slår lyden av eller på.\n\nDe samme kontrollene finnes i menyen «Avspilling» og i snarveiene nedenfor.";
+"Help.EpisodeManagement.Title" = "Episodehåndtering";
+"Help.EpisodeManagement.Content" = "Episodehåndtering:\n\n• Last ned episoder for lytting uten nett.\n• Legg episoder i Cue-køen.\n• Endre rekkefølgen i køen ved å dra og slippe.\n• Se episodeinformasjon og notater.\n• Følg med på nedlastingsfremdriften.\n• Slett nedlastede episoder.\n\nÅpne kontekstmenyen (•••) på en episode for å se disse valgene.";
+"Help.PodcastManagement.Title" = "Podkastadministrasjon";
+"Help.PodcastManagement.Content" = "Podkastadministrasjon:\n\n• Abonner på podkaster for å få nye episoder.\n• Legg til podkaster i favoritter for enkel tilgang.\n• Vis programdetaljer og episodelister.\n• Administrer abonnementene dine.\n• Søk etter nye podkaster.\n• Importer eller eksporter abonnementslister.\n\nVerktøylinjeikonene fører deg rett til disse visningene.";
+"Help.KeyboardShortcuts.Title" = "Tastatursnarveier";
+"Help.KeyboardShortcuts.Content" = "Tastatursnarveier:\n\nAvspilling:\n• ⌘P — Spill av/Pause\n• ⌘S — Stopp\n• ⌘← — Forrige episode\n• ⌘→ — Neste episode\n• ⌥⌘← — 30 s tilbake\n• ⌥⌘→ — 30 s fram\n• ⌘↑ — Volum opp\n• ⌘↓ — Volum ned\n• ⌘M — Demp/opphev demping\n\nNavigasjon:\n• ⌘F — Søk\n• ⌘C — Vis kø\n• Mellomrom — Spill av/Pause\n\nHjelp:\n• ⇧⌘1 — Kom i gang\n• ⇧⌘2 — Avspillingskontroller\n• ⇧⌘3 — Episodehåndtering\n• ⇧⌘4 — Podkastadministrasjon\n• ⇧⌘5 — Tastatursnarveier\n• ⇧⌘6 — Om";
+"Help.About.Title" = "Om PodRams";
+"Help.About.Content" = "PodRams — en moderne podkastspiller for macOS.\n\nHøydepunkter:\n• Smarte avspillingskontroller\n• Nedlastingsadministrasjon\n• Cue-køsystem\n• Kraftig søkeintegrasjon\n• Favoritter og abonnementer\n• Avanserte lydkontroller\n• Lagret fremdrift\n• Støtte for illustrasjoner\n• Fleksibelt valg av lydutgang\n\nBygget med SwiftUI for macOS 11.0 og nyere.";
 /* Play menu translations */
 "Play" = "Spill av";
 "Pause" = "Pause";

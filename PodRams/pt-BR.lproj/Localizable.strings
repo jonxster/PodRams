@@ -34,12 +34,18 @@
 "Delete download" = "Excluir download";
 "Retry download" = "Tentar baixar novamente";
 /* Help menu translations */
-"Getting Started" = "Primeiros passos";
-"Playback Controls" = "Controles de reprodução";
-"Episode Management" = "Gerenciamento de episódios";
-"Podcast Management" = "Gerenciamento de podcasts";
-"Keyboard Shortcuts" = "Atalhos de teclado";
-"About PodRams" = "Sobre o PodRams";
+"Help.GettingStarted.Title" = "Primeiros passos";
+"Help.GettingStarted.Content" = "Bem-vindo ao PodRams!\n\nPara começar:\n1. Toque no ícone de busca (🔍) para encontrar podcasts.\n2. Assine os programas de que você gosta usando o botão Assinar.\n3. Baixe os episódios ou reproduza-os por streaming.\n4. Monte uma fila de reprodução com o sistema Cue.\n5. Marque seus podcasts favoritos para acessá-los rapidamente.\n\nOs ícones da barra de ferramentas dão acesso imediato às principais funções.";
+"Help.PlaybackControls.Title" = "Controles de reprodução";
+"Help.PlaybackControls.Content" = "Controles de reprodução:\n\n• Reproduzir/Pausar (⌘P): Alterna a reprodução do episódio atual.\n• Parar (⌘S): Interrompe a reprodução e reinicia a posição.\n• Episódio anterior/próximo (⌘←/→): Navega entre os episódios.\n• Voltar/Avançar (⌥⌘←/→): Salta 30 segundos.\n• Aumentar/Diminuir volume (⌘↑/↓): Ajusta o volume.\n• Silenciar/Ativar som (⌘M): Liga ou desliga o áudio.\n\nOs mesmos comandos estão disponíveis no menu Reproduzir e nos atalhos listados abaixo.";
+"Help.EpisodeManagement.Title" = "Gerenciamento de episódios";
+"Help.EpisodeManagement.Content" = "Gerenciamento de episódios:\n\n• Baixe episódios para ouvir offline.\n• Adicione episódios à fila Cue.\n• Reorganize a fila arrastando os itens.\n• Veja detalhes e notas de cada episódio.\n• Acompanhe o progresso dos downloads.\n• Exclua os episódios baixados.\n\nAbra o menu de contexto (•••) de qualquer episódio para ver essas ações.";
+"Help.PodcastManagement.Title" = "Gerenciamento de podcasts";
+"Help.PodcastManagement.Content" = "Gerenciamento de podcasts:\n\n• Assine podcasts para receber novos episódios.\n• Adicione podcasts aos favoritos para acesso rápido.\n• Confira os detalhes do programa e a lista de episódios.\n• Administre suas assinaturas.\n• Busque novos podcasts.\n• Importe ou exporte listas de assinaturas.\n\nOs ícones da barra de ferramentas levam você diretamente a essas telas.";
+"Help.KeyboardShortcuts.Title" = "Atalhos de teclado";
+"Help.KeyboardShortcuts.Content" = "Atalhos de teclado:\n\nReprodução:\n• ⌘P — Reproduzir/Pausar\n• ⌘S — Parar\n• ⌘← — Episódio anterior\n• ⌘→ — Próximo episódio\n• ⌥⌘← — Voltar 30 s\n• ⌥⌘→ — Avançar 30 s\n• ⌘↑ — Aumentar volume\n• ⌘↓ — Diminuir volume\n• ⌘M — Silenciar/Ativar som\n\nNavegação:\n• ⌘F — Buscar\n• ⌘C — Alternar fila\n• Barra de espaço — Reproduzir/Pausar\n\nAjuda:\n• ⇧⌘1 — Primeiros passos\n• ⇧⌘2 — Controles de reprodução\n• ⇧⌘3 — Gerenciamento de episódios\n• ⇧⌘4 — Gerenciamento de podcasts\n• ⇧⌘5 — Atalhos de teclado\n• ⇧⌘6 — Sobre";
+"Help.About.Title" = "Sobre o PodRams";
+"Help.About.Content" = "PodRams — o player de podcasts moderno para macOS.\n\nDestaques:\n• Controles inteligentes de reprodução\n• Gerenciamento de downloads\n• Sistema Cue\n• Busca avançada\n• Favoritos e assinaturas\n• Controles de áudio avançados\n• Salvamento contínuo do progresso\n• Suporte a artes de capa\n• Seleção flexível de saída de áudio\n\nDesenvolvido com SwiftUI para macOS 11.0 ou posterior.";
 /* Play menu translations */
 "Play" = "Reproduzir";
 "Pause" = "Pausar";

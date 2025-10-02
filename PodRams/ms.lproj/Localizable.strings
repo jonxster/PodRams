@@ -51,3 +51,27 @@
 "Volume Up" = "Naikkan Volum";
 "Volume Down" = "Turunkan Volum";
 "Mute/Unmute" = "Senyap/Nyahsenyap";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Mula";
+"Help.GettingStarted.Content" = "Selamat datang ke PodRams!\n\nUntuk bermula:\n1. Klik ikon carian (🔍) untuk mencari podcast.\n2. Langgan program yang anda suka dengan butang langganan.\n3. Muat turun atau strim episod secara langsung.\n4. Buat senarai main dengan sistem giliran (Cue).\n5. Tandakan podcast kegemaran untuk akses pantas.\n\nIkon bar alat memberi anda akses segera kepada fungsi utama.";
+"Help.PlaybackControls.Title" = "Kawalan Main Balik";
+"Help.PlaybackControls.Content" = "Kawalan main balik:\n\n• Main/Jeda (⌘P): Tukar main balik episod semasa.\n• Henti (⌘S): Hentikan main balik dan kembali ke awal.\n• Episod sebelumnya/seterusnya (⌘←/→): Navigasi antara episod.\n• Langkau ke belakang/hadapan (⌥⌘←/→): Lompat 30 saat.\n• Naik/Turun volum (⌘↑/↓): Laraskan tahap volum.\n• Bisukan/Nyahbisukan (⌘M): Matikan atau hidupkan bunyi.\n\nArahan yang sama boleh dicapai dari menu Main Balik dan pintasan papan kekunci di bawah.";
+"Help.EpisodeManagement.Title" = "Pengurusan Episod";
+"Help.EpisodeManagement.Content" = "Pengurusan episod:\n\n• Muat turun episod untuk didengar di luar talian.\n• Tambah episod ke dalam giliran (Cue).\n• Susun semula giliran dengan seret dan lepas.\n• Lihat butiran dan nota episod.\n• Pantau kemajuan muat turun.\n• Padam episod yang telah dimuat turun.\n\nBuka menu konteks (•••) pada episod untuk melihat tindakan ini.";
+"Help.PodcastManagement.Title" = "Pengurusan Podcast";
+"Help.PodcastManagement.Content" = "Pengurusan podcast:\n\n• Langgan untuk menerima episod baharu.\n• Tambah podcast ke kegemaran untuk akses cepat.\n• Lihat butiran program dan senarai episod.\n• Urus langganan anda.\n• Cari podcast baharu.\n• Import atau eksport senarai langganan.\n\nIkon bar alat membawa anda terus ke skrin ini.";
+"Help.KeyboardShortcuts.Title" = "Pintasan Papan Kekunci";
+"Help.KeyboardShortcuts.Content" = "Pintasan papan kekunci:\n\nMain Balik:\n• ⌘P — Main/Jeda\n• ⌘S — Henti\n• ⌘← — Episod sebelumnya\n• ⌘→ — Episod seterusnya\n• ⌥⌘← — Undur 30 saat\n• ⌥⌘→ — Maju 30 saat\n• ⌘↑ — Volum naik\n• ⌘↓ — Volum turun\n• ⌘M — Bisukan/Nyahbisukan\n\nNavigasi:\n• ⌘F — Cari\n• ⌘C — Tukar giliran\n• Spacebar — Main/Jeda\n\nBantuan:\n• ⇧⌘1 — Mula\n• ⇧⌘2 — Kawalan Main Balik\n• ⇧⌘3 — Pengurusan Episod\n• ⇧⌘4 — Pengurusan Podcast\n• ⇧⌘5 — Pintasan Papan Kekunci\n• ⇧⌘6 — Tentang Aplikasi";
+"Help.About.Title" = "Tentang PodRams";
+"Help.About.Content" = "PodRams — pemain podcast moden untuk macOS.\n\nCiri utama:\n• Kawalan main balik pintar\n• Pengurusan muat turun\n• Sistem giliran Cue\n• Carian bersepadu\n• Kegemaran dan langganan\n• Kawalan bunyi lanjutan\n• Simpan kemajuan penuh\n• Sokongan imej kulit album\n• Pilihan output audio yang fleksibel\n\nDibina menggunakan SwiftUI untuk macOS 11.0 dan ke atas.";
+/* Play menu translations */
+"Play" = "Main";
+"Pause" = "Jeda";
+"Stop" = "Henti";
+"Previous Episode" = "Episod sebelumnya";
+"Next Episode" = "Episod seterusnya";
+"Skip Backward 30 Seconds" = "Undur 30 saat";
+"Skip Forward 30 Seconds" = "Maju 30 saat";
+"Volume Up" = "Volum naik";
+"Volume Down" = "Volum turun";
+"Mute/Unmute" = "Bisukan/Nyahbisukan";

@@ -51,3 +51,27 @@
 "Volume Up" = "Tăng âm lượng";
 "Volume Down" = "Giảm âm lượng";
 "Mute/Unmute" = "Tắt/Bật âm thanh";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Bắt đầu";
+"Help.GettingStarted.Content" = "Chào mừng đến với PodRams!\n\nĐể bắt đầu:\n1. Nhấn vào biểu tượng tìm kiếm (🔍) để tìm podcast.\n2. Đăng ký các chương trình bạn yêu thích bằng nút đăng ký.\n3. Tải xuống hoặc phát trực tiếp các tập.\n4. Tạo danh sách phát bằng hệ thống hàng đợi (Cue).\n5. Đánh dấu podcast yêu thích để truy cập nhanh.\n\nCác biểu tượng trên thanh công cụ cho phép bạn truy cập ngay vào các chức năng chính.";
+"Help.PlaybackControls.Title" = "Điều khiển phát lại";
+"Help.PlaybackControls.Content" = "Điều khiển phát lại:\n\n• Phát/Tạm dừng (⌘P): Bật hoặc tạm dừng tập hiện tại.\n• Dừng (⌘S): Dừng phát và quay lại đầu.\n• Tập trước/Sau (⌘←/→): Chuyển đổi giữa các tập.\n• Lùi/Tiến (⌥⌘←/→): Nhảy 30 giây.\n• Tăng/Giảm âm lượng (⌘↑/↓): Điều chỉnh âm lượng.\n• Tắt tiếng/Bật tiếng (⌘M): Tắt hoặc bật âm thanh.\n\nCác lệnh này cũng có trong menu Phát lại và thông qua phím tắt bàn phím bên dưới.";
+"Help.EpisodeManagement.Title" = "Quản lý tập";
+"Help.EpisodeManagement.Content" = "Quản lý tập:\n\n• Tải tập để nghe ngoại tuyến.\n• Thêm tập vào hàng đợi (Cue).\n• Sắp xếp lại hàng đợi bằng cách kéo và thả.\n• Xem chi tiết và ghi chú của tập.\n• Theo dõi tiến trình tải xuống.\n• Xóa các tập đã tải xuống.\n\nMở menu ngữ cảnh (•••) của bất kỳ tập nào để xem các hành động này.";
+"Help.PodcastManagement.Title" = "Quản lý podcast";
+"Help.PodcastManagement.Content" = "Quản lý podcast:\n\n• Đăng ký để nhận các tập mới.\n• Thêm podcast vào mục yêu thích để truy cập nhanh.\n• Xem chi tiết chương trình và danh sách tập.\n• Quản lý đăng ký của bạn.\n• Tìm podcast mới.\n• Nhập hoặc xuất danh sách đăng ký.\n\nCác biểu tượng trên thanh công cụ đưa bạn trực tiếp đến các màn hình này.";
+"Help.KeyboardShortcuts.Title" = "Phím tắt";
+"Help.KeyboardShortcuts.Content" = "Phím tắt:\n\nPhát lại:\n• ⌘P — Phát/Tạm dừng\n• ⌘S — Dừng\n• ⌘← — Tập trước\n• ⌘→ — Tập sau\n• ⌥⌘← — Lùi 30 giây\n• ⌥⌘→ — Tiến 30 giây\n• ⌘↑ — Tăng âm lượng\n• ⌘↓ — Giảm âm lượng\n• ⌘M — Tắt/Bật tiếng\n\nĐiều hướng:\n• ⌘F — Tìm kiếm\n• ⌘C — Chuyển hàng đợi\n• Phím cách — Phát/Tạm dừng\n\nTrợ giúp:\n• ⇧⌘1 — Bắt đầu\n• ⇧⌘2 — Điều khiển phát lại\n• ⇧⌘3 — Quản lý tập\n• ⇧⌘4 — Quản lý podcast\n• ⇧⌘5 — Phím tắt\n• ⇧⌘6 — Giới thiệu ứng dụng";
+"Help.About.Title" = "Giới thiệu PodRams";
+"Help.About.Content" = "PodRams — trình phát podcast hiện đại cho macOS.\n\nTính năng chính:\n• Điều khiển phát thông minh\n• Quản lý tải xuống\n• Hệ thống hàng đợi Cue\n• Tìm kiếm tích hợp\n• Yêu thích và đăng ký\n• Điều khiển âm thanh nâng cao\n• Lưu tiến trình đầy đủ\n• Hỗ trợ ảnh bìa\n• Lựa chọn đầu ra âm thanh linh hoạt\n\nĐược xây dựng bằng SwiftUI cho macOS 11.0 trở lên.";
+/* Play menu translations */
+"Play" = "Phát";
+"Pause" = "Tạm dừng";
+"Stop" = "Dừng";
+"Previous Episode" = "Tập trước";
+"Next Episode" = "Tập sau";
+"Skip Backward 30 Seconds" = "Lùi 30 giây";
+"Skip Forward 30 Seconds" = "Tiến 30 giây";
+"Volume Up" = "Tăng âm lượng";
+"Volume Down" = "Giảm âm lượng";
+"Mute/Unmute" = "Tắt/Bật tiếng";

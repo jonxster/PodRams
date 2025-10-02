@@ -51,3 +51,27 @@
 "Volume Up" = "Lydstyrke op";
 "Volume Down" = "Lydstyrke ned";
 "Mute/Unmute" = "Slå lyd fra/til";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Kom godt i gang";
+"Help.GettingStarted.Content" = "Velkommen til PodRams!\n\nSådan kommer du i gang:\n1. Klik på søgeikonet (🔍) for at finde podcasts.\n2. Abonnér på de programmer, du kan lide, med abonnements-knappen.\n3. Download episoder eller stream dem direkte.\n4. Opret en afspilningsliste med kø-systemet (Cue).\n5. Marker dine favoritpodcasts for hurtig adgang.\n\nVærktøjslinjens ikoner giver dig øjeblikkelig adgang til de vigtigste funktioner.";
+"Help.PlaybackControls.Title" = "Afspilningskontroller";
+"Help.PlaybackControls.Content" = "Styring af afspilning:\n\n• Afspil/Pause (⌘P): Skifter afspilning af den aktuelle episode.\n• Stop (⌘S): Stopper og går tilbage til starten.\n• Forrige/Næste episode (⌘←/→): Naviger mellem episoder.\n• Spol tilbage/frem (⌥⌘←/→): Hop 30 sekunder.\n• Lydstyrke op/ned (⌘↑/↓): Juster lydstyrken.\n• Slå lyd fra/til (⌘M): Aktiver eller deaktiver lyden.\n\nDe samme kommandoer er tilgængelige i afspilningsmenuen og via genvejstasterne nedenfor.";
+"Help.EpisodeManagement.Title" = "Administration af episoder";
+"Help.EpisodeManagement.Content" = "Administrér episoder:\n\n• Download episoder til offline-lytning.\n• Tilføj episoder til køen (Cue).\n• Omarrangér køen med træk og slip.\n• Se detaljer og noter om episoder.\n• Følg download-status.\n• Slet downloadede episoder.\n\nÅbn kontekstmenuen (•••) for en episode for at se disse handlinger.";
+"Help.PodcastManagement.Title" = "Administration af podcasts";
+"Help.PodcastManagement.Content" = "Administrér podcasts:\n\n• Abonnér for at modtage nye episoder.\n• Tilføj podcasts til favoritter for hurtig adgang.\n• Se programdetaljer og episodelister.\n• Administrér dine abonnementer.\n• Søg efter nye podcasts.\n• Importér eller eksportér abonnementslister.\n\nIkonerne i værktøjslinjen fører dig direkte til disse skærmbilleder.";
+"Help.KeyboardShortcuts.Title" = "Tastaturgenveje";
+"Help.KeyboardShortcuts.Content" = "Tastaturgenveje:\n\nAfspilning:\n• ⌘P — Afspil/Pause\n• ⌘S — Stop\n• ⌘← — Forrige episode\n• ⌘→ — Næste episode\n• ⌥⌘← — Tilbage 30 sekunder\n• ⌥⌘→ — Frem 30 sekunder\n• ⌘↑ — Lydstyrke op\n• ⌘↓ — Lydstyrke ned\n• ⌘M — Slå lyd fra/til\n\nNavigation:\n• ⌘F — Søg\n• ⌘C — Skift kø\n• Mellemrum — Afspil/Pause\n\nHjælp:\n• ⇧⌘1 — Kom godt i gang\n• ⇧⌘2 — Afspilningskontroller\n• ⇧⌘3 — Administration af episoder\n• ⇧⌘4 — Administration af podcasts\n• ⇧⌘5 — Tastaturgenveje\n• ⇧⌘6 — Om appen";
+"Help.About.Title" = "Om PodRams";
+"Help.About.Content" = "PodRams — en moderne podcastafspiller til macOS.\n\nVigtigste funktioner:\n• Smarte afspilningskontroller\n• Downloadstyring\n• Cue-køsystem\n• Integreret avanceret søgning\n• Favoritter og abonnementer\n• Avanceret lydstyring\n• Fuldt fremskridtsgemning\n• Understøttelse af coverbilleder\n• Fleksibelt valg af lydudgang\n\nBygget med SwiftUI til macOS 11.0 og nyere.";
+/* Play menu translations */
+"Play" = "Afspil";
+"Pause" = "Pause";
+"Stop" = "Stop";
+"Previous Episode" = "Forrige episode";
+"Next Episode" = "Næste episode";
+"Skip Backward 30 Seconds" = "Tilbage 30 sekunder";
+"Skip Forward 30 Seconds" = "Frem 30 sekunder";
+"Volume Up" = "Lydstyrke op";
+"Volume Down" = "Lydstyrke ned";
+"Mute/Unmute" = "Slå lyd fra/til";

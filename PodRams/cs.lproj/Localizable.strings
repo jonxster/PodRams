@@ -51,3 +51,27 @@
 "Volume Up" = "Zvýšit hlasitost";
 "Volume Down" = "Snížit hlasitost";
 "Mute/Unmute" = "Ztlumit/Zrušit ztlumení";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Začínáme";
+"Help.GettingStarted.Content" = "Vítejte v PodRams!\n\nJak začít:\n1. Klikněte na ikonu hledání (🔍) pro nalezení podcastů.\n2. Přihlaste se k odběru pořadů, které se vám líbí, pomocí tlačítka odběru.\n3. Stahujte epizody nebo je poslouchejte online.\n4. Vytvořte seznam stop pomocí systému fronty (Cue).\n5. Označte oblíbené podcasty pro rychlý přístup.\n\nIkony na panelu nástrojů vám dávají okamžitý přístup k základním funkcím.";
+"Help.PlaybackControls.Title" = "Ovládání přehrávání";
+"Help.PlaybackControls.Content" = "Ovládání přehrávání:\n\n• Přehrát/Pozastavit (⌘P): Přepne přehrávání aktuální epizody.\n• Zastavit (⌘S): Zastaví přehrávání a vrátí se na začátek.\n• Předchozí/Další epizoda (⌘←/→): Pohyb mezi epizodami.\n• Přeskočit zpět/vpřed (⌥⌘←/→): Skok o 30 sekund.\n• Zvýšit/Snížit hlasitost (⌘↑/↓): Úprava úrovně hlasitosti.\n• Ztlumit/Obnovit zvuk (⌘M): Zapnutí nebo vypnutí zvuku.\n\nStejné příkazy jsou dostupné v nabídce „Přehrávání“ a pomocí klávesových zkratek níže.";
+"Help.EpisodeManagement.Title" = "Správa epizod";
+"Help.EpisodeManagement.Content" = "Správa epizod:\n\n• Stahujte epizody pro poslech offline.\n• Přidávejte epizody do fronty (Cue).\n• Měňte pořadí ve frontě přetažením.\n• Zobrazte detaily a poznámky k epizodám.\n• Sledujte průběh stahování.\n• Mažte stažené epizody.\n\nOtevřete kontextovou nabídku (•••) u libovolné epizody a zobrazte tyto akce.";
+"Help.PodcastManagement.Title" = "Správa podcastů";
+"Help.PodcastManagement.Content" = "Správa podcastů:\n\n• Přihlaste se k odběru, abyste získávali nové epizody.\n• Přidejte podcasty k oblíbeným pro rychlý přístup.\n• Prohlédněte si detaily pořadu a seznam epizod.\n• Spravujte své odběry.\n• Hledejte nové podcasty.\n• Importujte nebo exportujte odběry.\n\nIkony na panelu nástrojů vás zavedou přímo na tyto obrazovky.";
+"Help.KeyboardShortcuts.Title" = "Klávesové zkratky";
+"Help.KeyboardShortcuts.Content" = "Klávesové zkratky:\n\nPřehrávání:\n• ⌘P — Přehrát/Pozastavit\n• ⌘S — Zastavit\n• ⌘← — Předchozí epizoda\n• ⌘→ — Další epizoda\n• ⌥⌘← — Zpět o 30 sekund\n• ⌥⌘→ — Vpřed o 30 sekund\n• ⌘↑ — Zvýšit hlasitost\n• ⌘↓ — Snížit hlasitost\n• ⌘M — Ztlumit/Obnovit\n\nNavigace:\n• ⌘F — Hledat\n• ⌘C — Přepnout frontu\n• Mezerník — Přehrát/Pozastavit\n\nNápověda:\n• ⇧⌘1 — Začínáme\n• ⇧⌘2 — Ovládání přehrávání\n• ⇧⌘3 — Správa epizod\n• ⇧⌘4 — Správa podcastů\n• ⇧⌘5 — Klávesové zkratky\n• ⇧⌘6 — O aplikaci";
+"Help.About.Title" = "O PodRams";
+"Help.About.Content" = "PodRams — moderní přehrávač podcastů pro macOS.\n\nHlavní funkce:\n• Inteligentní ovládání přehrávání\n• Správa stahování\n• Systém fronty Cue\n• Integrované pokročilé vyhledávání\n• Oblíbené a odběry\n• Pokročilé ovládání zvuku\n• Úplné ukládání postupu\n• Podpora obalů\n• Flexibilní výběr zvukového výstupu\n\nPostaveno pomocí SwiftUI pro macOS 11.0 a novější.";
+/* Play menu translations */
+"Play" = "Přehrát";
+"Pause" = "Pozastavit";
+"Stop" = "Zastavit";
+"Previous Episode" = "Předchozí epizoda";
+"Next Episode" = "Další epizoda";
+"Skip Backward 30 Seconds" = "Zpět o 30 sekund";
+"Skip Forward 30 Seconds" = "Vpřed o 30 sekund";
+"Volume Up" = "Zvýšit hlasitost";
+"Volume Down" = "Snížit hlasitost";
+"Mute/Unmute" = "Ztlumit/Obnovit";

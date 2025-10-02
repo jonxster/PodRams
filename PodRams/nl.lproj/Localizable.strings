@@ -51,3 +51,27 @@
 "Volume Up" = "Volume omhoog";
 "Volume Down" = "Volume omlaag";
 "Mute/Unmute" = "Dempen/Ontdempen";
+/* Help menu translations */
+"Help.GettingStarted.Title" = "Aan de slag";
+"Help.GettingStarted.Content" = "Welkom bij PodRams!\n\nOm te beginnen:\n1. Klik op het zoekpictogram (🔍) om podcasts te vinden.\n2. Abonneer je op programma’s die je leuk vindt met de abonneerknop.\n3. Download afleveringen of stream ze direct.\n4. Maak een afspeellijst met het wachtrijsysteem (Cue).\n5. Markeer favoriete podcasts voor snelle toegang.\n\nDe pictogrammen in de werkbalk geven je directe toegang tot de belangrijkste functies.";
+"Help.PlaybackControls.Title" = "Afspeelbediening";
+"Help.PlaybackControls.Content" = "Afspeelbediening:\n\n• Afspelen/Pauzeren (⌘P): Start of pauzeert de huidige aflevering.\n• Stoppen (⌘S): Stopt het afspelen en gaat terug naar het begin.\n• Vorige/Volgende aflevering (⌘←/→): Navigeer tussen afleveringen.\n• Terug/Vooruit springen (⌥⌘←/→): 30 seconden overslaan.\n• Volume omhoog/omlaag (⌘↑/↓): Pas het volume aan.\n• Dempen/Dempen opheffen (⌘M): Schakel het geluid uit of in.\n\nDezelfde commando’s zijn beschikbaar in het menu Afspelen en via de onderstaande sneltoetsen.";
+"Help.EpisodeManagement.Title" = "Afleveringen beheren";
+"Help.EpisodeManagement.Content" = "Afleveringen beheren:\n\n• Download afleveringen om offline te beluisteren.\n• Voeg afleveringen toe aan de wachtrij (Cue).\n• Wijzig de volgorde in de wachtrij met slepen en neerzetten.\n• Bekijk details en notities van de aflevering.\n• Volg de voortgang van downloads.\n• Verwijder gedownloade afleveringen.\n\nOpen het contextmenu (•••) van een aflevering om deze acties te zien.";
+"Help.PodcastManagement.Title" = "Podcasts beheren";
+"Help.PodcastManagement.Content" = "Podcasts beheren:\n\n• Abonneer je om nieuwe afleveringen te ontvangen.\n• Voeg podcasts toe aan favorieten voor snelle toegang.\n• Bekijk programmagegevens en afleveringslijsten.\n• Beheer je abonnementen.\n• Zoek naar nieuwe podcasts.\n• Importeer of exporteer abonnementen.\n\nDe pictogrammen in de werkbalk brengen je direct naar deze schermen.";
+"Help.KeyboardShortcuts.Title" = "Sneltoetsen";
+"Help.KeyboardShortcuts.Content" = "Sneltoetsen:\n\nAfspelen:\n• ⌘P — Afspelen/Pauzeren\n• ⌘S — Stoppen\n• ⌘← — Vorige aflevering\n• ⌘→ — Volgende aflevering\n• ⌥⌘← — 30 seconden terug\n• ⌥⌘→ — 30 seconden vooruit\n• ⌘↑ — Volume omhoog\n• ⌘↓ — Volume omlaag\n• ⌘M — Dempen/Dempen opheffen\n\nNavigatie:\n• ⌘F — Zoeken\n• ⌘C — Wachtrij wisselen\n• Spatiebalk — Afspelen/Pauzeren\n\nHelp:\n• ⇧⌘1 — Aan de slag\n• ⇧⌘2 — Afspeelbediening\n• ⇧⌘3 — Afleveringen beheren\n• ⇧⌘4 — Podcasts beheren\n• ⇧⌘5 — Sneltoetsen\n• ⇧⌘6 — Over de app";
+"Help.About.Title" = "Over PodRams";
+"Help.About.Content" = "PodRams — moderne podcastspeler voor macOS.\n\nBelangrijkste functies:\n• Slimme afspeelbediening\n• Downloadbeheer\n• Cue-wachtrijsysteem\n• Geïntegreerd zoeken\n• Favorieten en abonnementen\n• Geavanceerde volumeregeling\n• Volledige voortgangsopslag\n• Ondersteuning voor covers\n• Flexibele keuze voor audio-uitvoer\n\nGebouwd met SwiftUI voor macOS 11.0 en nieuwer.";
+/* Play menu translations */
+"Play" = "Afspelen";
+"Pause" = "Pauzeren";
+"Stop" = "Stoppen";
+"Previous Episode" = "Vorige aflevering";
+"Next Episode" = "Volgende aflevering";
+"Skip Backward 30 Seconds" = "30 seconden terug";
+"Skip Forward 30 Seconds" = "30 seconden vooruit";
+"Volume Up" = "Volume omhoog";
+"Volume Down" = "Volume omlaag";
+"Mute/Unmute" = "Dempen/Dempen opheffen";

@@ -9,7 +9,7 @@ struct HelpCommands: Commands {
         // Replace the default Help menu with our custom help items
         CommandGroup(replacing: .help) {
             // Getting Started section
-            Button("Getting Started") {
+            Button(HelpSection.gettingStarted.localizedTitleKey) {
                 showHelp(section: .gettingStarted)
             }
             .keyboardShortcut("1", modifiers: [.command, .shift])
@@ -17,19 +17,19 @@ struct HelpCommands: Commands {
             Divider()
             
             // Playback Controls section
-            Button("Playback Controls") {
+            Button(HelpSection.playbackControls.localizedTitleKey) {
                 showHelp(section: .playbackControls)
             }
             .keyboardShortcut("2", modifiers: [.command, .shift])
             
             // Episode Management section
-            Button("Episode Management") {
+            Button(HelpSection.episodeManagement.localizedTitleKey) {
                 showHelp(section: .episodeManagement)
             }
             .keyboardShortcut("3", modifiers: [.command, .shift])
             
             // Podcast Management section
-            Button("Podcast Management") {
+            Button(HelpSection.podcastManagement.localizedTitleKey) {
                 showHelp(section: .podcastManagement)
             }
             .keyboardShortcut("4", modifiers: [.command, .shift])
@@ -37,13 +37,13 @@ struct HelpCommands: Commands {
             Divider()
             
             // Keyboard Shortcuts section
-            Button("Keyboard Shortcuts") {
+            Button(HelpSection.keyboardShortcuts.localizedTitleKey) {
                 showHelp(section: .keyboardShortcuts)
             }
             .keyboardShortcut("5", modifiers: [.command, .shift])
             
             // About section
-            Button("About PodRams") {
+            Button(HelpSection.about.localizedTitleKey) {
                 showHelp(section: .about)
             }
             .keyboardShortcut("6", modifiers: [.command, .shift])
@@ -59,122 +59,35 @@ struct HelpCommands: Commands {
 }
 
 /// Represents different sections of the help documentation
-enum HelpSection: String {
-    case gettingStarted = "Getting Started"
-    case playbackControls = "Playback Controls"
-    case episodeManagement = "Episode Management"
-    case podcastManagement = "Podcast Management"
-    case keyboardShortcuts = "Keyboard Shortcuts"
-    case about = "About PodRams"
-    
-    var title: String { rawValue }
-    
-    var content: String {
+enum HelpSection: CaseIterable, Hashable {
+    case gettingStarted
+    case playbackControls
+    case episodeManagement
+    case podcastManagement
+    case keyboardShortcuts
+    case about
+
+    private var identifier: String {
         switch self {
-        case .gettingStarted:
-            return """
-            Welcome to PodRams!
-            
-            To get started:
-            1. Click the search icon (🔍) to find podcasts
-            2. Subscribe to podcasts you like using the subscribe button
-            3. Download episodes or stream them directly
-            4. Create playlists using the cue system
-            5. Mark your favorite podcasts for quick access
-            
-            Use the toolbar icons for quick access to common functions.
-            """
-            
-        case .playbackControls:
-            return """
-            Playback Controls:
-            
-            • Play/Pause (⌘P): Toggle playback of current episode
-            • Stop (⌘S): Stop playback and reset position
-            • Previous/Next Episode (⌘←/→): Navigate between episodes
-            • Skip Back/Forward (⌥⌘←/→): Skip 30 seconds
-            • Volume Up/Down (⌘↑/↓): Adjust volume
-            • Mute/Unmute (⌘M): Toggle audio
-            
-            The playback controls are available in the Play menu and through keyboard shortcuts.
-            """
-            
-        case .episodeManagement:
-            return """
-            Episode Management:
-            
-            • Download episodes for offline listening
-            • Add episodes to your cue (playlist)
-            • Reorder episodes in the cue by dragging
-            • View episode details and show notes
-            • Track download progress
-            • Delete downloaded episodes
-            
-            Access episode options through the context menu (•••).
-            """
-            
-        case .podcastManagement:
-            return """
-            Podcast Management:
-            
-            • Subscribe to podcasts to receive new episodes
-            • Add podcasts to favorites for quick access
-            • View podcast details and episode list
-            • Manage your subscriptions
-            • Search for new podcasts
-            • Import/Export subscriptions
-            
-            Use the toolbar icons for podcast management functions.
-            """
-            
-        case .keyboardShortcuts:
-            return """
-            Keyboard Shortcuts:
-            
-            Playback:
-            • ⌘P - Play/Pause
-            • ⌘S - Stop
-            • ⌘← - Previous Episode
-            • ⌘→ - Next Episode
-            • ⌥⌘← - Skip Back 30s
-            • ⌥⌘→ - Skip Forward 30s
-            • ⌘↑ - Volume Up
-            • ⌘↓ - Volume Down
-            • ⌘M - Mute/Unmute
-            
-            Navigation:
-            • ⌘F - Search
-            • ⌘C - Toggle Cue
-            • Space - Play/Pause
-            
-            Help:
-            • ⇧⌘1 - Getting Started
-            • ⇧⌘2 - Playback Controls
-            • ⇧⌘3 - Episode Management
-            • ⇧⌘4 - Podcast Management
-            • ⇧⌘5 - Keyboard Shortcuts
-            • ⇧⌘6 - About
-            """
-            
-        case .about:
-            return """
-            PodRams - A Modern macOS Podcast Player
-            
-            Features:
-            • Smart Playback
-            • Download Management
-            • Cue System
-            • Search Integration
-            • Favorites
-            • Subscriptions
-            • Audio Controls
-            • Persistence
-            • Artwork Support
-            • Audio Output Selection
-            
-            Built with SwiftUI for macOS 11.0 and later.
-            """
+        case .gettingStarted: return "GettingStarted"
+        case .playbackControls: return "PlaybackControls"
+        case .episodeManagement: return "EpisodeManagement"
+        case .podcastManagement: return "PodcastManagement"
+        case .keyboardShortcuts: return "KeyboardShortcuts"
+        case .about: return "About"
         }
+    }
+
+    var localizedTitleKey: LocalizedStringKey {
+        LocalizedStringKey("Help.\(identifier).Title")
+    }
+
+    var title: String {
+        NSLocalizedString("Help.\(identifier).Title", comment: "Help section title")
+    }
+
+    var content: String {
+        NSLocalizedString("Help.\(identifier).Content", comment: "Detailed help content for the section")
     }
 }
 
