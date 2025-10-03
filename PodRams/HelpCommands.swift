@@ -9,42 +9,42 @@ struct HelpCommands: Commands {
         // Replace the default Help menu with our custom help items
         CommandGroup(replacing: .help) {
             // Getting Started section
-            Button(HelpSection.gettingStarted.localizedTitleKey) {
-                showHelp(section: .gettingStarted)
+            Button(action: { showHelp(section: .gettingStarted) }) {
+                Text(HelpSection.gettingStarted.title)
             }
             .keyboardShortcut("1", modifiers: [.command, .shift])
-            
+
             Divider()
-            
+
             // Playback Controls section
-            Button(HelpSection.playbackControls.localizedTitleKey) {
-                showHelp(section: .playbackControls)
+            Button(action: { showHelp(section: .playbackControls) }) {
+                Text(HelpSection.playbackControls.title)
             }
             .keyboardShortcut("2", modifiers: [.command, .shift])
-            
+
             // Episode Management section
-            Button(HelpSection.episodeManagement.localizedTitleKey) {
-                showHelp(section: .episodeManagement)
+            Button(action: { showHelp(section: .episodeManagement) }) {
+                Text(HelpSection.episodeManagement.title)
             }
             .keyboardShortcut("3", modifiers: [.command, .shift])
-            
+
             // Podcast Management section
-            Button(HelpSection.podcastManagement.localizedTitleKey) {
-                showHelp(section: .podcastManagement)
+            Button(action: { showHelp(section: .podcastManagement) }) {
+                Text(HelpSection.podcastManagement.title)
             }
             .keyboardShortcut("4", modifiers: [.command, .shift])
-            
+
             Divider()
-            
+
             // Keyboard Shortcuts section
-            Button(HelpSection.keyboardShortcuts.localizedTitleKey) {
-                showHelp(section: .keyboardShortcuts)
+            Button(action: { showHelp(section: .keyboardShortcuts) }) {
+                Text(HelpSection.keyboardShortcuts.title)
             }
             .keyboardShortcut("5", modifiers: [.command, .shift])
-            
+
             // About section
-            Button(HelpSection.about.localizedTitleKey) {
-                showHelp(section: .about)
+            Button(action: { showHelp(section: .about) }) {
+                Text(HelpSection.about.title)
             }
             .keyboardShortcut("6", modifiers: [.command, .shift])
         }
