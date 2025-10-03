@@ -26,6 +26,7 @@ struct SearchSheetView: View {
 
     var dismiss: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var isSearchFieldFocused: Bool
 
     var body: some View {
         GlassEffectContainer(spacing: 16) {
@@ -49,6 +50,11 @@ struct SearchSheetView: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .background(AppTheme.color(.background, in: currentMode))
         .frame(minWidth: 420, minHeight: 520)
+        .onAppear {
+            DispatchQueue.main.async {
+                isSearchFieldFocused = true
+            }
+        }
     }
 
     private var currentMode: AppTheme.Mode {
@@ -80,6 +86,12 @@ struct SearchSheetView: View {
             .foregroundColor(primaryText)
             .font(.body)
             .onSubmit { Task { await podcastFetcher.searchPodcasts() } }
+            .focused($isSearchFieldFocused)
+            .onChange(of: podcastFetcher.searchQuery) { _, newValue in
+                if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    podcastFetcher.podcasts.removeAll()
+                }
+            }
     }
 
     private var resultsList: some View {

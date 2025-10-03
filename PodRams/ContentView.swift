@@ -32,6 +32,8 @@ struct ContentView: View {
     @State private var selectedPodcast: Podcast?
     /// Index of the selected episode within the active episode list.
     @State private var selectedEpisodeIndex: Int?
+    /// Cached episodes for the currently selected podcast so SwiftUI reacts to updates.
+    @State private var selectedPodcastEpisodes: [PodcastEpisode] = []
 
     /// Namespace used for Liquid Glass morphing identifiers.
     @Namespace private var glassNamespace
@@ -59,10 +61,8 @@ struct ContentView: View {
     private var activeEpisodes: [PodcastEpisode] {
         if isCuePlaying {
             return cue
-        } else if let podcast = selectedPodcast {
-            return podcast.episodes
         }
-        return []
+        return selectedPodcastEpisodes
     }
     
     private var currentShowNotesEpisode: PodcastEpisode? {
@@ -107,6 +107,7 @@ struct ContentView: View {
             _lastPlayedEpisode = State(initialValue: initialState.lastPlayedEpisode)
             _selectedPodcast = State(initialValue: initialState.selectedPodcast)
             _selectedEpisodeIndex = State(initialValue: initialState.selectedEpisodeIndex)
+            _selectedPodcastEpisodes = State(initialValue: initialState.selectedPodcast?.episodes ?? [])
             _isCuePlaying = State(initialValue: initialState.isCuePlaying)
             _isInitialized = State(initialValue: initialState.isInitialized)
         }
@@ -325,7 +326,9 @@ struct ContentView: View {
                         if let feedArt = feedArt {
                             subscribedPodcast.feedArtworkURL = feedArt
                         }
-                        
+                        selectedPodcast = subscribedPodcast
+                        selectedPodcastEpisodes = episodes
+
                         // Find and set the correct episode index
                         if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
                             selectedEpisodeIndex = index
@@ -360,7 +363,9 @@ struct ContentView: View {
                         if let feedArt = feedArt {
                             tmpPodcast.feedArtworkURL = feedArt
                         }
-                        
+                        selectedPodcast = tmpPodcast
+                        selectedPodcastEpisodes = episodes
+
                         if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
                             selectedEpisodeIndex = index
                             audioPlayer.playEpisode(lastEp)
@@ -430,6 +435,7 @@ struct ContentView: View {
         }
         .onChange(of: selectedPodcast) { _, newPodcast in
             appSelectedPodcast = newPodcast
+            selectedPodcastEpisodes = newPodcast?.episodes ?? []
             refreshShowNotes()
         }
         .onChange(of: cue) { _, _ in
@@ -611,10 +617,19 @@ struct ContentView: View {
     /// Loads the podcast episodes, updates the UI state, and starts playback if requested.
     private func handlePodcastSelect(_ podcast: Podcast, autoPlay: Bool = false) {
         isCuePlaying = false
+        if Thread.isMainThread {
+            selectedPodcastEpisodes = podcast.episodes
+        } else {
+            DispatchQueue.main.async {
+                self.selectedPodcastEpisodes = podcast.episodes
+            }
+        }
 
         let needsReload = selectedPodcast?.id != podcast.id || (selectedPodcast?.episodes.isEmpty ?? true)
 
         if !needsReload {
+            selectedPodcast = podcast
+            selectedPodcastEpisodes = podcast.episodes
             if autoPlay {
                 Task {
                     await startFirstEpisodeFromBeginning(for: podcast, episodes: podcast.episodes)
@@ -636,7 +651,9 @@ struct ContentView: View {
                     podcast.feedArtworkURL = feedArt
                 }
                 selectedPodcast = podcast
+                selectedPodcastEpisodes = episodes
                 isPodcastLoading = false
+                contentLogger.info("📚 handlePodcastSelect: loaded episodes count=\(episodes.count, privacy: .public)")
                 refreshShowNotes()
             }
 
@@ -764,15 +781,18 @@ struct ContentView: View {
                 
                 // Fetch episodes for this podcast
                 let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
-                
+
                 // Update the podcast with the fetched episodes
                 await MainActor.run {
                     podcast.episodes = episodes
                     if let feedArt = feedArt {
                         podcast.feedArtworkURL = feedArt
                     }
+                    if selectedPodcast?.id == podcast.id {
+                        selectedPodcastEpisodes = episodes
+                    }
                 }
-                
+
                 // Preload only the first episode's audio to reduce startup time
                 if let firstEpisode = episodes.first {
                     audioPlayer.preloadAudio(url: firstEpisode.url)
@@ -784,7 +804,7 @@ struct ContentView: View {
             // Add a smaller delay between starting fetches
             try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
         }
-        
+
         contentLogger.info("Completed optimized background prefetch of subscribed podcasts")
     }
 
@@ -802,6 +822,7 @@ struct ContentView: View {
         if !podcast.episodes.isEmpty {
             await MainActor.run {
                 selectedPodcast = podcast
+                selectedPodcastEpisodes = podcast.episodes
                 if autoSelectFirstEpisode && selectedEpisodeIndex == nil {
                     selectedEpisodeIndex = 0
                 }
@@ -820,9 +841,11 @@ struct ContentView: View {
             if autoSelectFirstEpisode && !episodes.isEmpty {
                 selectedEpisodeIndex = 0
             }
+            selectedPodcastEpisodes = episodes
             isPodcastLoading = false
         }
     }
+
 }
 
 #if DEBUG

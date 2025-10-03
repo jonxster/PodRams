@@ -74,6 +74,7 @@
 - 2025-09-26 — PodcastFetcher and PersistenceManager now drop obviously invalid feed hosts so subscriptions stop spamming network errors and fetch artwork/episodes normally.
 - 2025-10-14 — Subscription popover play button now restarts the first episode from 0:00, closes the modal, and persists cue artwork so thumbnails survive subsequent launches.
 - 2025-10-16 — Replaced all `print` usage with structured OSLog `Logger` calls via `AppLogger`; added `NSAllowsArbitraryLoadsInMedia` and automatic HTTPS normalization for playback URLs so HTTP-hosted episodes continue to load.
+- 2025-10-16 — Search sheet now autofocuses the field, clears results when empty, and sanitises search-provided feed/audio URLs so playback and episode lists stay populated after selecting a result.
 
 ## Project Rules
 - Always adhere to Liquid Glass design when writing code.

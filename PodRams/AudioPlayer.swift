@@ -553,6 +553,12 @@ class AudioPlayer: ObservableObject {
                 // Create player item and asset
                 let asset = AVURLAsset(url: normalizedURL)
                 let playerItem = AVPlayerItem(asset: asset)
+
+                let videoTracks = try await asset.loadTracks(withMediaType: .video)
+                if videoTracks.isEmpty {
+                    playerItem.preferredMaximumResolution = .zero
+                    playerItem.appliesPerFrameHDRDisplayMetadata = false
+                }
                 
                 // Load asset duration asynchronously
                 let loadedDuration = try await asset.load(.duration)

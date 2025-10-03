@@ -66,7 +66,7 @@ final class PodcastFetcher: ObservableObject {
             let response = try JSONDecoder().decode(PodcastSearchResponse.self, from: data)
 
             let results = response.results.compactMap { result -> Podcast? in
-                guard let feedUrl = result.feedUrl, URL(string: feedUrl) != nil else { return nil }
+                guard let feedUrl = result.feedUrl else { return nil }
                 let podcast = Podcast(title: result.collectionName, feedUrl: feedUrl)
                 if let art = result.artworkUrl600, let artURL = MediaURLSanitizer.sanitize(art) {
                     podcast.feedArtworkURL = artURL
@@ -90,17 +90,20 @@ final class PodcastFetcher: ObservableObject {
     }
     
     func fetchEpisodes(for podcast: Podcast) async {
-        guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
+        guard let feedUrlString = podcast.feedUrl,
+              let sanitizedFeedURL = MediaURLSanitizer.sanitize(feedUrlString) else {
             podcastFetcherLogger.error("Invalid feed URL")
             return
         }
 
-        guard shouldAttemptNetwork(for: feedUrl) else {
+        let cacheKey = sanitizedFeedURL.absoluteString
+
+        guard shouldAttemptNetwork(for: sanitizedFeedURL) else {
             podcastFetcherLogger.warning("Skipping episode fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return
         }
 
-        if let cached = episodeCache[feedUrlString] {
+        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
             podcast.episodes = Array(cached.episodes.prefix(maxEpisodesPerFeed))
             if let feedArt = cached.feedArtwork {
                 podcast.feedArtworkURL = feedArt
@@ -109,14 +112,14 @@ final class PodcastFetcher: ObservableObject {
         }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: feedUrl)
+            let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: feedUrlString)
+            let parser = FeedKitRSSParser(feedUrl: cacheKey)
             let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
 
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
 
-            episodeCache[feedUrlString] = (limitedEpisodes, feedArt)
+            episodeCache[cacheKey] = (limitedEpisodes, feedArt)
             if episodeCache.count > maxEpisodeCacheSize {
                 let overflow = episodeCache.count - maxEpisodeCacheSize
                 let keysToRemove = Array(episodeCache.keys.prefix(overflow))
@@ -138,23 +141,26 @@ final class PodcastFetcher: ObservableObject {
     }
     
     func fetchEpisodesDirect(for podcast: Podcast) async -> (episodes: [PodcastEpisode], feedArtwork: URL?) {
-        guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
+        guard let feedUrlString = podcast.feedUrl,
+              let sanitizedFeedURL = MediaURLSanitizer.sanitize(feedUrlString) else {
             return ([], nil)
         }
 
-        guard shouldAttemptNetwork(for: feedUrl) else {
+        let cacheKey = sanitizedFeedURL.absoluteString
+
+        guard shouldAttemptNetwork(for: sanitizedFeedURL) else {
             podcastFetcherLogger.warning("Skipping direct episode fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return ([], nil)
         }
 
-        if let cached = episodeCache[feedUrlString] {
+        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
             return (Array(cached.episodes.prefix(maxEpisodesPerFeed)), cached.feedArtwork)
         }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: feedUrl)
+            let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: feedUrlString)
+            let parser = FeedKitRSSParser(feedUrl: cacheKey)
             let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
 
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
@@ -163,7 +169,7 @@ final class PodcastFetcher: ObservableObject {
                 podcast.title = channelTitle
             }
 
-            episodeCache[feedUrlString] = (limitedEpisodes, feedArt)
+            episodeCache[cacheKey] = (limitedEpisodes, feedArt)
             if episodeCache.count > maxEpisodeCacheSize {
                 let overflow = episodeCache.count - maxEpisodeCacheSize
                 let keysToRemove = Array(episodeCache.keys.prefix(overflow))
@@ -180,26 +186,29 @@ final class PodcastFetcher: ObservableObject {
     }
     
     func fetchChannelInfoDirect(for podcast: Podcast) async -> (channelTitle: String?, feedArtwork: URL?) {
-        guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
+        guard let feedUrlString = podcast.feedUrl,
+              let sanitizedFeedURL = MediaURLSanitizer.sanitize(feedUrlString) else {
             return (nil, nil)
         }
 
-        guard shouldAttemptNetwork(for: feedUrl) else {
+        let cacheKey = sanitizedFeedURL.absoluteString
+
+        guard shouldAttemptNetwork(for: sanitizedFeedURL) else {
             podcastFetcherLogger.warning("Skipping channel info fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return (nil, nil)
         }
 
-        if let cached = episodeCache[feedUrlString] {
+        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
             return (podcast.title, cached.feedArtwork)
         }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: feedUrl)
+            let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: feedUrlString)
+            let parser = FeedKitRSSParser(feedUrl: cacheKey)
             let (_, feedArt, channelTitle) = parser.parse(data: data)
 
-            episodeCache[feedUrlString] = ([], feedArt)
+            episodeCache[cacheKey] = ([], feedArt)
             if episodeCache.count > maxEpisodeCacheSize {
                 let overflow = episodeCache.count - maxEpisodeCacheSize
                 let keysToRemove = Array(episodeCache.keys.prefix(overflow))
