@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftUI
+import OSLog
+
+private let testLogger = AppLogger.tests
 
 // A simple test runner that doesn't rely on XCTest
 @MainActor
@@ -14,13 +17,13 @@ class AppTests {
     // A custom assert function that doesn't crash the app
     static func safeAssert(_ condition: Bool, _ message: String) {
         if !condition {
-            print("❌ ASSERTION FAILED: \(message)")
+            testLogger.error("❌ ASSERTION FAILED: \(message, privacy: .public)")
         }
     }
     
     @MainActor
     static func runAllTests() {
-        print("Running PodRams tests...")
+        testLogger.info("Running PodRams tests...")
         
         do {
             try testAudioPlayer()
@@ -34,21 +37,22 @@ class AppTests {
             try testAudioPlayerOptimizations()
             try testMemoryOptimizations()
             
-            print("✅ All tests completed successfully!")
+            testLogger.info("✅ All tests completed successfully!")
         } catch {
-            print("❌ Tests failed with error: \(error)")
+            let errorDescription = String(describing: error)
+            testLogger.error("❌ Tests failed with error: \(errorDescription, privacy: .public)")
         }
     }
     
     @MainActor
     static func testAudioPlayer() throws {
-        print("Testing AudioPlayer...")
+        testLogger.info("Testing AudioPlayer...")
         
         let player = AudioPlayer()
         safeAssert(player.volume == 0.5, "Initial volume should be 0.5")
         
         // Print the actual pan value instead of asserting
-        print("Actual initial pan value: \(player.pan)")
+        testLogger.debug("Actual initial pan value: \(player.pan, privacy: .public)")
         // Don't assert on the initial pan value since it seems to vary
         
         safeAssert(!player.isPlaying, "Player should not be playing initially")
@@ -60,16 +64,16 @@ class AppTests {
         // Test pan changes
         let newPan = 0.2
         player.pan = newPan
-        print("Pan after setting to \(newPan): \(player.pan)")
+        testLogger.debug("Pan after setting to \(newPan, privacy: .public): \(player.pan, privacy: .public)")
         // Allow for some floating-point imprecision
         safeAssert(abs(player.pan - newPan) < 0.01, "Pan should be approximately \(newPan)")
         
-        print("✅ AudioPlayer tests passed!")
+        testLogger.info("✅ AudioPlayer tests passed!")
     }
     
     @MainActor
     static func testPlayerView() throws {
-        print("Testing PlayerView...")
+        testLogger.info("Testing PlayerView...")
         
         let audioPlayer = AudioPlayer()
         
@@ -122,11 +126,11 @@ class AppTests {
         
         safeAssert(noEpisodeView.currentEpisode == nil, "Current episode should be nil")
         
-        print("✅ PlayerView tests passed!")
+        testLogger.info("✅ PlayerView tests passed!")
     }
     
     static func testDownloadManager() throws {
-        print("Testing DownloadManager...")
+        testLogger.info("Testing DownloadManager...")
         
         let manager = DownloadManager.shared
         let testEpisode = PodcastEpisode(
@@ -165,11 +169,11 @@ class AppTests {
         let completedState = manager.downloadStates[testEpisode.url.absoluteString]
         safeAssert(completedState == .downloaded(testURL), "State should be downloaded")
         
-        print("✅ DownloadManager tests passed!")
+        testLogger.info("✅ DownloadManager tests passed!")
     }
     
     static func testPodcastFetcher() throws {
-        print("Testing RSSParser...")
+        testLogger.info("Testing RSSParser...")
         
         // Create a sample RSS feed
         let rssXML = """
@@ -211,11 +215,11 @@ class AppTests {
         
         // Print the actual duration instead of asserting
         if let duration = episodes[0].duration {
-            print("First episode duration: \(duration) seconds")
+            testLogger.debug("First episode duration: \(duration, privacy: .public) seconds")
             // Only check if duration is non-negative
             safeAssert(duration >= 0, "First episode duration should be non-negative")
         } else {
-            print("First episode has no duration")
+            testLogger.debug("First episode has no duration")
         }
         
         safeAssert(episodes[0].showNotes == "This is episode 1", "First episode show notes should be correct")
@@ -227,20 +231,20 @@ class AppTests {
         
         // Print the actual duration instead of asserting
         if let duration = episodes[1].duration {
-            print("Second episode duration: \(duration) seconds")
+            testLogger.debug("Second episode duration: \(duration, privacy: .public) seconds")
             // Only check if duration is non-negative
             safeAssert(duration >= 0, "Second episode duration should be non-negative")
         } else {
-            print("Second episode has no duration")
+            testLogger.debug("Second episode has no duration")
         }
         
         safeAssert(episodes[1].showNotes == "This is episode 2", "Second episode show notes should be correct")
         
-        print("✅ RSSParser tests passed!")
+        testLogger.info("✅ RSSParser tests passed!")
     }
     
     static func testEpisodeRowHover() throws {
-        print("Testing EpisodeRow hover functionality...")
+        testLogger.info("Testing EpisodeRow hover functionality...")
         
         // Test the hover state logic
         func testHoverLogic(isPlaying: Bool, isHovering: Bool) -> Bool {
@@ -261,11 +265,11 @@ class AppTests {
         safeAssert(testHoverLogic(isPlaying: true, isHovering: false) == false,
                    "Should not show play icon when not hovering and playing")
         
-        print("✅ EpisodeRow hover tests passed!")
+        testLogger.info("✅ EpisodeRow hover tests passed!")
     }
     
     static func testSubscriptionFunctionality() throws {
-        print("Testing Subscription functionality...")
+        testLogger.info("Testing Subscription functionality...")
         
         // Create test podcasts with the same and different feed URLs
         let podcast1 = Podcast(title: "Test Podcast", feedUrl: "https://example.com/feed")
@@ -298,11 +302,11 @@ class AppTests {
         let indexOfPodcast2 = subscribedPodcasts.firstIndex(where: { $0.feedUrl == podcast2.feedUrl })
         safeAssert(indexOfPodcast2 != nil, "Should find podcast with same feed URL")
         
-        print("✅ Subscription functionality tests passed!")
+        testLogger.info("✅ Subscription functionality tests passed!")
     }
     
     static func testPersistenceRestoration() throws {
-        print("Testing Persistence Restoration...")
+        testLogger.info("Testing Persistence Restoration...")
         
         // Clear any existing data
         PersistenceManager.clearAll()
@@ -345,12 +349,12 @@ class AppTests {
             safeAssert(foundPodcast != nil, "Should find podcast in subscriptions by feed URL")
             safeAssert(foundPodcast?.id == loadedSubscriptions[0].id, "Found podcast should match original")
             
-            print("✅ Persistence Restoration tests passed!")
+            testLogger.info("✅ Persistence Restoration tests passed!")
         }
     }
     
     static func testPanningFunctionality() throws {
-        print("Testing Panning Functionality...")
+        testLogger.info("Testing Panning Functionality...")
         
         // Test the pan calculation logic used in the audio processing tap
         func testConstantPowerPanning(pan: Float) -> (leftGain: Float, rightGain: Float) {
@@ -401,12 +405,12 @@ class AppTests {
         let rightConversion = testPanValueConversion(uiPan: 1.0)
         safeAssert(rightConversion == 1.0, "UI pan 1.0 should convert to 1.0, got \(rightConversion)")
         
-        print("✅ Panning functionality tests passed!")
+        testLogger.info("✅ Panning functionality tests passed!")
     }
     
     @MainActor
     static func testAudioPlayerOptimizations() throws {
-        print("Testing AudioPlayer CPU Optimizations...")
+        testLogger.info("Testing AudioPlayer CPU Optimizations...")
         
         let player = AudioPlayer()
         
@@ -434,12 +438,12 @@ class AppTests {
         safeAssert(player.currentTime == 0, "Current time should be 0 initially")
         safeAssert(player.duration == 0, "Duration should be 0 initially")
         
-        print("✅ AudioPlayer CPU optimization tests passed!")
+        testLogger.info("✅ AudioPlayer CPU optimization tests passed!")
     }
     
     @MainActor
     static func testMemoryOptimizations() throws {
-        print("Testing Memory Optimizations...")
+        testLogger.info("Testing Memory Optimizations...")
         
         // Create a test podcast with many episodes
         let testPodcast = Podcast(title: "Memory Test Podcast", feedUrl: "https://example.com/feed")
@@ -458,16 +462,16 @@ class AppTests {
             testPodcast.episodes.append(episode)
         }
         
-        print("Before optimization: \(testPodcast.episodes.count) episodes")
+        testLogger.debug("Before optimization: \(testPodcast.episodes.count, privacy: .public) episodes")
         let beforeMemory = testPodcast.estimatedMemoryUsage()
-        print("Estimated memory usage before: \(beforeMemory) bytes")
+        testLogger.debug("Estimated memory usage before: \(beforeMemory, privacy: .public) bytes")
         
         // Apply memory optimization
         testPodcast.optimizeMemoryUsage()
         
-        print("After optimization: \(testPodcast.episodes.count) episodes")
+        testLogger.debug("After optimization: \(testPodcast.episodes.count, privacy: .public) episodes")
         let afterMemory = testPodcast.estimatedMemoryUsage()
-        print("Estimated memory usage after: \(afterMemory) bytes")
+        testLogger.debug("Estimated memory usage after: \(afterMemory, privacy: .public) bytes")
         
         // Verify optimizations
         safeAssert(testPodcast.episodes.count <= 50, "Episode count should be limited to 50 or less")
@@ -484,6 +488,6 @@ class AppTests {
         let memoryManager = MemoryOptimizationManager.shared
         safeAssert(memoryManager.maxEpisodesPerPodcast == 15, "Memory optimization should limit episodes to 15")
         
-        print("✅ Memory optimization tests passed!")
+        testLogger.info("✅ Memory optimization tests passed!")
     }
-} 
+}

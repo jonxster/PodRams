@@ -11,6 +11,9 @@ import Foundation
 import Combine
 import AVFoundation
 @preconcurrency import FeedKit
+import OSLog
+
+private let podcastFetcherLogger = AppLogger.networking
 
 @MainActor
 final class PodcastFetcher: ObservableObject {
@@ -54,7 +57,7 @@ final class PodcastFetcher: ObservableObject {
 
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "https://itunes.apple.com/search?media=podcast&term=\(encodedQuery)&entity=podcast&limit=25") else {
-            print("Invalid search query")
+            podcastFetcherLogger.error("Invalid search query")
             return
         }
 
@@ -65,7 +68,7 @@ final class PodcastFetcher: ObservableObject {
             let results = response.results.compactMap { result -> Podcast? in
                 guard let feedUrl = result.feedUrl, URL(string: feedUrl) != nil else { return nil }
                 let podcast = Podcast(title: result.collectionName, feedUrl: feedUrl)
-                if let art = result.artworkUrl600, let artURL = URL(string: art) {
+                if let art = result.artworkUrl600, let artURL = MediaURLSanitizer.sanitize(art) {
                     podcast.feedArtworkURL = artURL
                 }
                 return podcast
@@ -82,18 +85,18 @@ final class PodcastFetcher: ObservableObject {
 
             podcasts = results
         } catch {
-            print("Error fetching podcasts: \(error)")
+            podcastFetcherLogger.error("Error fetching podcasts: \(error, privacy: .public)")
         }
     }
     
     func fetchEpisodes(for podcast: Podcast) async {
         guard let feedUrlString = podcast.feedUrl, let feedUrl = URL(string: feedUrlString) else {
-            print("Invalid feed URL")
+            podcastFetcherLogger.error("Invalid feed URL")
             return
         }
 
         guard shouldAttemptNetwork(for: feedUrl) else {
-            print("Skipping episode fetch for unresolved host: \(feedUrlString)")
+            podcastFetcherLogger.warning("Skipping episode fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return
         }
 
@@ -130,7 +133,7 @@ final class PodcastFetcher: ObservableObject {
                 podcast.title = channelTitle
             }
         } catch {
-            print("Error fetching episodes: \(error)")
+            podcastFetcherLogger.error("Error fetching episodes: \(error, privacy: .public)")
         }
     }
     
@@ -140,7 +143,7 @@ final class PodcastFetcher: ObservableObject {
         }
 
         guard shouldAttemptNetwork(for: feedUrl) else {
-            print("Skipping direct episode fetch for unresolved host: \(feedUrlString)")
+            podcastFetcherLogger.warning("Skipping direct episode fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return ([], nil)
         }
 
@@ -171,7 +174,7 @@ final class PodcastFetcher: ObservableObject {
 
             return (limitedEpisodes, feedArt)
         } catch {
-            print("Error: \(error)")
+            podcastFetcherLogger.error("Direct episode fetch failed: \(error, privacy: .public)")
             return ([], nil)
         }
     }
@@ -182,7 +185,7 @@ final class PodcastFetcher: ObservableObject {
         }
 
         guard shouldAttemptNetwork(for: feedUrl) else {
-            print("Skipping channel info fetch for unresolved host: \(feedUrlString)")
+            podcastFetcherLogger.warning("Skipping channel info fetch for unresolved host: \(feedUrlString, privacy: .private)")
             return (nil, nil)
         }
 
@@ -207,7 +210,7 @@ final class PodcastFetcher: ObservableObject {
 
             return (channelTitle, feedArt)
         } catch {
-            print("Error: \(error)")
+            podcastFetcherLogger.error("Channel info fetch failed: \(error, privacy: .public)")
             return (nil, nil)
         }
     }
@@ -216,7 +219,7 @@ final class PodcastFetcher: ObservableObject {
     func clearCaches() {
         searchCache.removeAll()
         episodeCache.removeAll()
-        print("PodcastFetcher caches cleared for memory optimization")
+        podcastFetcherLogger.info("PodcastFetcher caches cleared for memory optimization")
     }
 
     private func shouldAttemptNetwork(for url: URL) -> Bool {
@@ -265,7 +268,7 @@ class RSSParser: NSObject, XMLParserDelegate {
         let parser = XMLParser(data: data)
         parser.delegate = self
         parser.parse()
-        let feedURL = feedArtworkURL.flatMap { URL(string: $0) }
+        let feedURL = feedArtworkURL.flatMap { MediaURLSanitizer.sanitize($0) }
         // Return only the first 10 episodes
         let limitedEpisodes = Array(episodes.prefix(10))
         return (limitedEpisodes, feedURL, channelTitle)
@@ -348,8 +351,8 @@ class RSSParser: NSObject, XMLParserDelegate {
         }
         
         if elementName == "item" {
-            if let audioURL = URL(string: currentAudioURL) {
-                let artworkURL = currentArtworkURL.flatMap { URL(string: $0) }
+            if let audioURL = MediaURLSanitizer.sanitize(currentAudioURL) {
+                let artworkURL = currentArtworkURL.flatMap { MediaURLSanitizer.sanitize($0) }
                 let showNotes = currentDescription.htmlStripped
                 
                 // Create episode
@@ -395,7 +398,7 @@ class RSSParser: NSObject, XMLParserDelegate {
     }
     
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
-        print("RSS Parser error: \(parseError)")
+        podcastFetcherLogger.error("RSS Parser error: \(parseError, privacy: .public)")
     }
     
     private func parseDuration(_ durationString: String) -> Double {

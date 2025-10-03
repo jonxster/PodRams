@@ -8,6 +8,9 @@ import Foundation
 import AVFoundation
 import Accelerate
 import simd
+import OSLog
+
+private let audioOptimizationsLogger = AppLogger.audio
 
 /// This file contains optimization techniques for Apple Silicon M1/M2 chips
 /// based on Apple's Silicon CPU Optimization Guide.
@@ -324,7 +327,7 @@ class AudioPlayerOptimizations {
             let mappedData = try fileHandle.readToEnd() // Using standard method instead of custom extension
             return mappedData
         } catch {
-            print("Error mapping file: \(error)")
+            audioOptimizationsLogger.error("Error mapping file: \(error, privacy: .public)")
             return nil
         }
     }
@@ -346,4 +349,3 @@ class AudioPlayerOptimizations {
         return result
     }
 }
-

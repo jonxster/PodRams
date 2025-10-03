@@ -1,8 +1,12 @@
+import OSLog
+
+private let legacyTestLogger = AppLogger.tests
+
 class AppTests {
     static func testPodcastFetcher() throws {
-        print("Testing RSSParser...")
+        legacyTestLogger.info("Testing RSSParser...")
         // [existing test code for RSSParser]
-        print("✅ RSSParser tests passed!")
+        legacyTestLogger.info("✅ RSSParser tests passed!")
     }
 
     static func testProgressBarTimeFormatting() throws {
@@ -24,11 +28,11 @@ class AppTests {
         let result4 = ProgressBarView.timerText(currentTime: 700, duration: 600)
         safeAssert(result4 == "0:00 of 10:00 remaining", "Expected '0:00 of 10:00 remaining', got \(result4)")
         
-        print("✅ ProgressBar time formatting tests passed!")
+        legacyTestLogger.info("✅ ProgressBar time formatting tests passed!")
     }
 
     static func runAllTests() {
-        print("Running PodRams tests...")
+        legacyTestLogger.info("Running PodRams tests...")
         
         do {
             try testAudioPlayer()
@@ -37,9 +41,10 @@ class AppTests {
             try testPodcastFetcher()
             try testProgressBarTimeFormatting()
             
-            print("✅ All tests completed successfully!")
+            legacyTestLogger.info("✅ All tests completed successfully!")
         } catch {
-            print("❌ Tests failed with error: \(error)")
+            let errorDescription = String(describing: error)
+            legacyTestLogger.error("❌ Tests failed with error: \(errorDescription, privacy: .public)")
         }
     }
 } 

@@ -5,6 +5,9 @@
 //
 
 import SwiftUI
+import OSLog
+
+private let downloadButtonLogger = AppLogger.downloads
 
 /// A view representing a button for downloading or managing a podcast episode.
 /// The button's appearance and action depend on the episode's current download state.
@@ -18,32 +21,30 @@ struct DownloadButton: View {
         // Retrieve the download state for this episode using its URL as the key.
         // If no state exists, default to .none.
         let downloadState = downloadManager.downloadStates[episode.url.absoluteString] ?? DownloadManager.DownloadState.none
-        
-        // Debug print to check the download state (outside the view builder)
-        let _ = print("DownloadButton: Episode \(episode.title) has state: \(String(describing: downloadState))")
-        
-        Button(action: {
+        logDownloadState(downloadState)
+
+        return Button(action: {
             // Perform an action based on the current download state.
             switch downloadState {
             case .none:
                 // Start downloading the episode if not already in progress.
-                print("DownloadButton: Starting download for \(episode.title)")
+                downloadButtonLogger.info("DownloadButton: Starting download for \(episode.title, privacy: .public)")
                 downloadManager.downloadEpisode(episode)
             case .downloaded:
                 // Remove the downloaded file if the episode is already downloaded.
-                print("DownloadButton: Removing download for \(episode.title)")
+                downloadButtonLogger.info("DownloadButton: Removing download for \(episode.title, privacy: .public)")
                 downloadManager.removeDownload(for: episode)
             case .downloading:
                 // No action for the button itself when downloading - pause/resume is handled by hover indicator
-                print("DownloadButton: Episode \(episode.title) is currently downloading")
+                downloadButtonLogger.debug("DownloadButton: Episode \(episode.title, privacy: .public) is currently downloading")
                 break
             case .paused:
                 // Resume download when clicking the main button for paused downloads
-                print("DownloadButton: Resuming download for \(episode.title)")
+                downloadButtonLogger.info("DownloadButton: Resuming download for \(episode.title, privacy: .public)")
                 downloadManager.resumeDownload(for: episode)
             case .failed:
                 // Retry downloading the episode if a previous download attempt failed.
-                print("DownloadButton: Retrying download for \(episode.title)")
+                downloadButtonLogger.info("DownloadButton: Retrying download for \(episode.title, privacy: .public)")
                 downloadManager.downloadEpisode(episode)
             }
         }) {
@@ -57,20 +58,10 @@ struct DownloadButton: View {
                         .foregroundColor(.accentColor)
                 case .downloading(let progress):
                     // Show a hoverable progress indicator with pause/resume functionality.
-                    let _ = print("DownloadButton: Showing hoverable progress indicator for \(episode.title): \(progress)")
-                    HoverableDownloadIndicator(
-                        episode: episode,
-                        progress: progress,
-                        isPaused: false
-                    )
+                    progressIndicator(progress: progress, isPaused: false)
                 case .paused(let progress, _):
                     // Show a hoverable progress indicator in paused state with resume functionality.
-                    let _ = print("DownloadButton: Showing paused progress indicator for \(episode.title): \(progress)")
-                    HoverableDownloadIndicator(
-                        episode: episode,
-                        progress: progress,
-                        isPaused: true
-                    )
+                    progressIndicator(progress: progress, isPaused: true)
                 case .downloaded:
                     // Show a trash icon to indicate the option to remove the download.
                     Image(systemName: "trash")
@@ -100,5 +91,27 @@ extension DownloadManager.DownloadState {
         default:
             return false
         }
+    }
+}
+
+private extension DownloadButton {
+    func logDownloadState(_ state: DownloadManager.DownloadState) {
+        let description = String(describing: state)
+        downloadButtonLogger.debug("DownloadButton: Episode \(episode.title, privacy: .public) has state: \(description, privacy: .public)")
+    }
+
+    func logDownloadProgress(_ progress: Double, isPaused: Bool) {
+        let status = isPaused ? "paused" : "active"
+        downloadButtonLogger.debug("DownloadButton: Showing \(status, privacy: .public) progress indicator for \(episode.title, privacy: .public): \(progress, privacy: .public)")
+    }
+
+    func progressIndicator(progress: Double, isPaused: Bool) -> some View {
+        logDownloadProgress(progress, isPaused: isPaused)
+        return HoverableDownloadIndicator(
+            episode: episode,
+            progress: progress,
+            isPaused: isPaused
+        )
+        .frame(width: 20, height: 20)
     }
 }

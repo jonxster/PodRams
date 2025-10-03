@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let persistenceLogger = AppLogger.persistence
 
 fileprivate enum PersistenceKeys: String {
     case favorites = "favorites.json"
@@ -64,18 +67,19 @@ struct PersistenceManager {
     }
     
     private static func saveData<T: Encodable & Sendable>(_ data: T, to key: PersistenceKeys) {
-        print("PersistenceManager: saveData called for key: \(key.rawValue)")
+        persistenceLogger.debug("PersistenceManager: saveData called for key: \(key.rawValue, privacy: .public)")
         
         state.queue.async {
             do {
                 let encoder = JSONEncoder()
                 let encoded = try encoder.encode(data)
                 let url = fileURL(for: key)
-                print("PersistenceManager: Saving data to \(url.path)")
+                persistenceLogger.debug("PersistenceManager: Saving data to \(url.path, privacy: .private)")
                 try encoded.write(to: url, options: [.atomic])
-                print("PersistenceManager: Successfully saved data to \(key.rawValue)")
+                persistenceLogger.info("PersistenceManager: Successfully saved data to \(key.rawValue, privacy: .public)")
             } catch {
-                print("Error saving \(key.rawValue): \(error)")
+                let errorDescription = String(describing: error)
+                persistenceLogger.error("Error saving \(key.rawValue, privacy: .public): \(errorDescription, privacy: .public)")
             }
         }
     }
@@ -91,7 +95,8 @@ struct PersistenceManager {
                     continuation.resume(returning: result)
                 } catch {
                     // File missing or decoding error
-                    print("Error loading \(key.rawValue): \(error)")
+                    let errorDescription = String(describing: error)
+                    persistenceLogger.error("Error loading \(key.rawValue, privacy: .public): \(errorDescription, privacy: .public)")
                     continuation.resume(returning: nil)
                 }
             }
@@ -103,7 +108,7 @@ struct PersistenceManager {
     static func saveFavorites(_ favorites: [Podcast]) {
         let persisted = favorites.compactMap { podcast -> PersistedPodcast? in
             guard let feedUrl = podcast.feedUrl, !feedUrl.isEmpty, URL(string: feedUrl) != nil else {
-                print("Warning: Skipping podcast with invalid feed URL: \(podcast.title)")
+                persistenceLogger.warning("Warning: Skipping podcast with invalid feed URL: \(podcast.title, privacy: .private)")
                 return nil
             }
             return PersistedPodcast(
@@ -122,7 +127,7 @@ struct PersistenceManager {
         let persisted: [PersistedPodcast]? = await loadData(from: .favorites)
         let result = (persisted ?? []).compactMap { p -> Podcast? in
             guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
-                print("Warning: Invalid feed URL found in favorites: \(p.feedUrl)")
+                persistenceLogger.warning("Warning: Invalid feed URL found in favorites: \(p.feedUrl, privacy: .private)")
                 return nil
             }
             let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
@@ -137,14 +142,14 @@ struct PersistenceManager {
     
     // Cue
     static func saveCue(_ episodes: [PodcastEpisode], feedUrl: String?) {
-        print("PersistenceManager: saveCue called with \(episodes.count) episodes and feedUrl: \(feedUrl ?? "nil")")
+        persistenceLogger.debug("PersistenceManager: saveCue called with \(episodes.count, privacy: .public) episodes and feedUrl: \((feedUrl ?? "nil"), privacy: .private)")
         
         // Check if we have a valid feedUrl
         let validFeedUrl = feedUrl ?? episodes.first?.feedUrl ?? ""
         
         // Only proceed if we have a valid feedUrl or at least one episode with a feedUrl
         guard !validFeedUrl.isEmpty || episodes.contains(where: { $0.feedUrl != nil && !$0.feedUrl!.isEmpty }) else {
-            print("Warning: Cannot save cue without a valid feedUrl")
+            persistenceLogger.warning("Warning: Cannot save cue without a valid feedUrl")
             state.queue.async { try? state.fileManager.removeItem(at: fileURL(for: .cue)) }
             state.cueCache = nil
             return
@@ -154,20 +159,20 @@ struct PersistenceManager {
         let effectiveFeedUrl = !validFeedUrl.isEmpty ? validFeedUrl : 
                               (episodes.first(where: { $0.feedUrl != nil && !$0.feedUrl!.isEmpty })?.feedUrl ?? "")
         
-        print("PersistenceManager: Saving cue with \(episodes.count) episodes using feedUrl: \(effectiveFeedUrl)")
-        
+        persistenceLogger.info("PersistenceManager: Saving cue with \(episodes.count, privacy: .public) episodes using feedUrl: \(effectiveFeedUrl, privacy: .private)")
+
         if !episodes.isEmpty {
-            print("PersistenceManager: First episode in cue: \(episodes[0].title), URL: \(episodes[0].url.absoluteString)")
+            persistenceLogger.debug("PersistenceManager: First episode in cue: \(episodes[0].title, privacy: .private), URL: \(episodes[0].url.absoluteString, privacy: .private)")
         }
         
         let persistedEpisodes = episodes.compactMap { episode -> PersistedEpisode? in
             let urlString = episode.url.absoluteString
             guard !urlString.isEmpty else {
-                print("Warning: Skipping episode with invalid URL: \(episode.title)")
+                persistenceLogger.warning("Warning: Skipping episode with invalid URL: \(episode.title, privacy: .private)")
                 return nil
             }
-            
-            print("PersistenceManager: Persisting episode: \(episode.title), URL: \(urlString)")
+
+            persistenceLogger.debug("PersistenceManager: Persisting episode: \(episode.title, privacy: .private), URL: \(urlString, privacy: .private)")
             
             return PersistedEpisode(
                 feedUrl: effectiveFeedUrl,
@@ -179,7 +184,7 @@ struct PersistenceManager {
             )
         }
         
-        print("PersistenceManager: Created \(persistedEpisodes.count) persisted episodes")
+        persistenceLogger.info("PersistenceManager: Created \(persistedEpisodes.count, privacy: .public) persisted episodes")
         
         // Update the cache before saving to disk
         state.cueCache = episodes
@@ -190,14 +195,14 @@ struct PersistenceManager {
         // Post a notification that the cue has been updated
         Task { @MainActor in
             NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-            print("PersistenceManager: Posted CueUpdated notification")
+            persistenceLogger.info("PersistenceManager: Posted CueUpdated notification")
         }
     }
-    
+
     static func loadCue() async -> [PodcastEpisode] {
         // Return cached cue if available and not empty
         if let cached = state.cueCache, !cached.isEmpty { 
-            print("PersistenceManager: Returning cached cue with \(cached.count) episodes")
+            persistenceLogger.info("PersistenceManager: Returning cached cue with \(cached.count, privacy: .public) episodes")
             return cached 
         }
         
@@ -207,7 +212,7 @@ struct PersistenceManager {
         // Process the loaded data
         let result = persisted?.compactMap { pe -> PodcastEpisode? in
             guard pe.isValid, let url = URL(string: pe.audioURL) else {
-                print("Warning: Invalid persisted episode: \(pe.title)")
+                persistenceLogger.warning("Warning: Invalid persisted episode: \(pe.title, privacy: .private)")
                 return nil
             }
             let artworkURL = pe.artworkURL.flatMap { URL(string: $0) }
@@ -222,7 +227,7 @@ struct PersistenceManager {
             )
         } ?? []
         
-        print("PersistenceManager: Loaded cue from disk with \(result.count) episodes")
+        persistenceLogger.info("PersistenceManager: Loaded cue from disk with \(result.count, privacy: .public) episodes")
         
         // Update the cache
         state.cueCache = result
@@ -275,11 +280,11 @@ struct PersistenceManager {
     static func saveSubscriptions(_ subscriptions: [Podcast]) {
         let persisted = subscriptions.compactMap { podcast -> PersistedPodcast? in
             guard let feedUrl = podcast.feedUrl, !feedUrl.isEmpty, URL(string: feedUrl) != nil else {
-                print("Warning: Skipping podcast with invalid feed URL: \(podcast.title)")
+                persistenceLogger.warning("Warning: Skipping podcast with invalid feed URL: \(podcast.title, privacy: .private)")
                 return nil
             }
             guard isLikelyReachableFeedURL(feedUrl) else {
-                print("Warning: Skipping podcast with unreachable host: \(feedUrl)")
+                persistenceLogger.warning("Warning: Skipping podcast with unreachable host: \(feedUrl, privacy: .private)")
                 return nil
             }
             return PersistedPodcast(
@@ -298,11 +303,11 @@ struct PersistenceManager {
         let persisted: [PersistedPodcast]? = await loadData(from: .subscriptions)
         let filtered = (persisted ?? []).filter { candidate in
             guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
-                print("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl)")
+                persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl, privacy: .private)")
                 return false
             }
             guard isLikelyReachableFeedURL(candidate.feedUrl) else {
-                print("Warning: Removing unreachable subscription host: \(candidate.feedUrl)")
+                persistenceLogger.warning("Warning: Removing unreachable subscription host: \(candidate.feedUrl, privacy: .private)")
                 return false
             }
             return true
@@ -310,7 +315,7 @@ struct PersistenceManager {
 
         let result = filtered.compactMap { p -> Podcast? in
             guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
-                print("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl)")
+                persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl, privacy: .private)")
                 return nil
             }
             let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
@@ -349,11 +354,11 @@ struct PersistenceManager {
             
             let filtered = persisted.filter { candidate in
                 guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
-                    print("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl)")
+                    persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl, privacy: .private)")
                     return false
                 }
                 guard isLikelyReachableFeedURL(candidate.feedUrl) else {
-                    print("Warning: Removing unreachable subscription host: \(candidate.feedUrl)")
+                    persistenceLogger.warning("Warning: Removing unreachable subscription host: \(candidate.feedUrl, privacy: .private)")
                     return false
                 }
                 return true
@@ -361,7 +366,7 @@ struct PersistenceManager {
 
             let result = filtered.compactMap { p -> Podcast? in
                 guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
-                    print("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl)")
+                    persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl, privacy: .private)")
                     return nil
                 }
                 let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
@@ -379,7 +384,8 @@ struct PersistenceManager {
 
             return result
         } catch {
-            print("Error loading subscriptions synchronously: \(error)")
+            let errorDescription = String(describing: error)
+            persistenceLogger.error("Error loading subscriptions synchronously: \(errorDescription, privacy: .public)")
             return []
         }
     }
@@ -428,7 +434,8 @@ struct PersistenceManager {
             state.playbackProgressCache = cache
             return cache
         } catch {
-            print("Error loading playback progress: \(error)")
+            let errorDescription = String(describing: error)
+            persistenceLogger.error("Error loading playback progress: \(errorDescription, privacy: .public)")
             state.playbackProgressCache = [:]
             return [:]
         }
@@ -475,7 +482,8 @@ struct PersistenceManager {
                 let data = try encoder.encode(cache)
                 try data.write(to: fileURL(for: .playbackProgress), options: [.atomic])
             } catch {
-                print("Error saving playback progress: \(error)")
+                let errorDescription = String(describing: error)
+                persistenceLogger.error("Error saving playback progress: \(errorDescription, privacy: .public)")
             }
         }
     }
@@ -495,7 +503,8 @@ struct PersistenceManager {
                     let data = try encoder.encode(cache)
                     try data.write(to: url, options: [.atomic])
                 } catch {
-                    print("Error clearing playback progress: \(error)")
+                    let errorDescription = String(describing: error)
+                    persistenceLogger.error("Error clearing playback progress: \(errorDescription, privacy: .public)")
                 }
             }
         }
@@ -515,7 +524,8 @@ struct PersistenceManager {
                     let data = try encoder.encode(cache)
                     try data.write(to: path, options: [.atomic])
                 } catch {
-                    print("Error clearing playback progress for URL: \(error)")
+                    let errorDescription = String(describing: error)
+                    persistenceLogger.error("Error clearing playback progress for URL: \(errorDescription, privacy: .public)")
                 }
             }
         }
@@ -557,7 +567,7 @@ struct PersistenceManager {
     
     /// Optimizes memory usage by clearing all caches
     static func optimizeMemoryUsage() {
-        print("PersistenceManager: Optimizing memory usage by clearing caches")
+        persistenceLogger.info("PersistenceManager: Optimizing memory usage by clearing caches")
         clearCueCache()
         clearFavoritesCache()
         clearSubscriptionsCache() 

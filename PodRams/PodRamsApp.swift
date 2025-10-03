@@ -1,4 +1,7 @@
 import SwiftUI
+import OSLog
+
+private let appLifecycleLogger = AppLogger.app
 
 @main
 @MainActor
@@ -7,7 +10,7 @@ struct PodRamsApp: App {
     @StateObject private var audioPlayer = {
         // Initialize the audio player with error handling
         let player = AudioPlayer()
-        print("AudioPlayer initialized successfully")
+        appLifecycleLogger.info("AudioPlayer initialized successfully")
         return player
     }()
     
@@ -21,7 +24,7 @@ struct PodRamsApp: App {
     
     init() {
         // Set up any app-wide configurations
-        print("PodRamsApp initializing...")
+        appLifecycleLogger.info("PodRamsApp initializing...")
         
         #if DEBUG
         // We'll let the user run tests manually from the Debug menu instead
@@ -39,7 +42,7 @@ struct PodRamsApp: App {
             .environmentObject(audioPlayer) // Provide the audio player as an environment object
             .onAppear {
                 // Log for debugging launch issues
-                print("App launched at \(Date())")
+                appLifecycleLogger.info("App launched at \(Date(), privacy: .public)")
                 setupLifecycleObserver()
             }
             .onDisappear {
@@ -80,7 +83,7 @@ struct PodRamsApp: App {
             object: nil,
             queue: .main
         ) { _ in
-            print("🔄 App will terminate - saving current state")
+            appLifecycleLogger.info("🔄 App will terminate - saving current state")
             Task { @MainActor in
                 saveCurrentState()
             }
@@ -92,7 +95,7 @@ struct PodRamsApp: App {
             object: nil,
             queue: .main
         ) { _ in
-            print("🔄 App resigned active - saving current state")
+            appLifecycleLogger.info("🔄 App resigned active - saving current state")
             Task { @MainActor in
                 saveCurrentState()
             }
@@ -112,7 +115,7 @@ struct PodRamsApp: App {
     private func saveCurrentState() {
         guard let index = currentEpisodeIndex, 
               index < episodes.count else {
-            print("⚠️ PodRamsApp: No valid current episode to save")
+            appLifecycleLogger.warning("⚠️ PodRamsApp: No valid current episode to save")
             return
         }
         
@@ -121,8 +124,10 @@ struct PodRamsApp: App {
         // Try to determine the feed URL from the episode or selected podcast
         let feedUrl = currentEpisode.feedUrl ?? selectedPodcast?.feedUrl
         
-        print("💾 PodRamsApp: Saving current state - Episode: \(currentEpisode.title), Feed: \(feedUrl ?? "unknown")")
-        
+        let episodeTitle = currentEpisode.title
+        let feedIdentifier = feedUrl ?? "unknown"
+        appLifecycleLogger.info("💾 PodRamsApp: Saving current state - Episode: \(episodeTitle, privacy: .private), Feed: \(feedIdentifier, privacy: .private)")
+
         PersistenceManager.saveLastPlayback(episode: currentEpisode, feedUrl: feedUrl)
     }
 }

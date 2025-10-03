@@ -1,5 +1,9 @@
+import OSLog
+
+private let minimalTestLogger = AppLogger.tests
+
 static func runAllTests() {
-    print("Running PodRams tests...")
+    minimalTestLogger.info("Running PodRams tests...")
     
     do {
         try testAudioPlayer()
@@ -10,8 +14,9 @@ static func runAllTests() {
         try testProgressBarTimeFormatting()
         try testFeedKitIntegration()
         
-        print("✅ All tests completed successfully!")
+        minimalTestLogger.info("✅ All tests completed successfully!")
     } catch {
-        print("❌ Tests failed with error: \(error)")
+        let errorDescription = String(describing: error)
+        minimalTestLogger.error("❌ Tests failed with error: \(errorDescription, privacy: .public)")
     }
 } 

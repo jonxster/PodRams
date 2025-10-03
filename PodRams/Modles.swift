@@ -7,6 +7,9 @@
 
 import Foundation
 import Combine
+import OSLog
+
+private let modelLogger = AppLogger.app
 
 @MainActor
 final class Podcast: Identifiable, Equatable, ObservableObject {
@@ -35,7 +38,7 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
         if episodes.count > maxEpisodes {
             // Keep only the most recent episodes (assuming they're ordered by date)
             episodes = Array(episodes.prefix(maxEpisodes))
-            print("Memory optimization: Limited \(title) to \(maxEpisodes) episodes")
+            modelLogger.info("Memory optimization: Limited \(self.title, privacy: .private) to \(maxEpisodes, privacy: .public) episodes")
         }
         
         // Optimize episode data

@@ -1,8 +1,11 @@
 import SwiftUI
 import Combine
+import OSLog
 #if os(macOS)
 import AppKit
 #endif
+
+private let contentLogger = AppLogger.app
 
 /// Main content view for the podcast app.
 /// Combines podcast fetching, audio playback, and various UI states.
@@ -273,7 +276,7 @@ struct ContentView: View {
         })
         // Task to load persisted data on view startup.
         .task {
-            print("🔄 ContentView: Starting app initialization...")
+            contentLogger.info("🔄 ContentView: Starting app initialization...")
             
             // Initialize memory optimization system
             PersistenceManager.setupMemoryOptimization()
@@ -284,7 +287,8 @@ struct ContentView: View {
             subscribedPodcasts = await PersistenceManager.loadSubscriptions()
             lastPlayedEpisode = await PersistenceManager.loadLastPlayback()
             
-            print("📱 ContentView: Loaded persisted data - Favorites: \(favoritePodcasts.count), Cue: \(cue.count), Subscriptions: \(subscribedPodcasts.count), Last episode: \(lastPlayedEpisode?.title ?? "none")")
+            let lastEpisodeTitle = lastPlayedEpisode?.title ?? "none"
+            contentLogger.info("📱 ContentView: Loaded persisted data - Favorites: \(favoritePodcasts.count, privacy: .public), Cue: \(cue.count, privacy: .public), Subscriptions: \(subscribedPodcasts.count, privacy: .public), Last episode: \(lastEpisodeTitle, privacy: .private)")
             
             // Optimize memory usage after loading data
             Task.detached(priority: .background) {
@@ -303,11 +307,11 @@ struct ContentView: View {
             if let lastEp = lastPlayedEpisode,
                let feedUrl = lastEp.feedUrl, !feedUrl.isEmpty {
                 
-                print("🎵 ContentView: Attempting to restore last played episode: \(lastEp.title)")
+                contentLogger.info("🎵 ContentView: Attempting to restore last played episode: \(lastEp.title, privacy: .private)")
                 
                 // Find the podcast in subscriptions first
                 if let subscribedPodcast = subscribedPodcasts.first(where: { $0.feedUrl == feedUrl }) {
-                    print("✅ ContentView: Found podcast in subscriptions: \(subscribedPodcast.title)")
+                    contentLogger.info("✅ ContentView: Found podcast in subscriptions: \(subscribedPodcast.title, privacy: .private)")
                     
                     // Use the subscribed podcast and fetch its episodes
                     selectedPodcast = subscribedPodcast
@@ -325,16 +329,16 @@ struct ContentView: View {
                         // Find and set the correct episode index
                         if let index = episodes.firstIndex(where: { $0.url == lastEp.url }) {
                             selectedEpisodeIndex = index
-                            print("🎯 ContentView: Restored episode index: \(index)")
+                            contentLogger.info("🎯 ContentView: Restored episode index: \(index, privacy: .public)")
                             
                             // Restore playback
                             audioPlayer.playEpisode(lastEp)
-                            print("▶️ ContentView: Started playback of restored episode")
+                            contentLogger.info("▶️ ContentView: Started playback of restored episode")
                         } else {
                             // Episode not found in current episodes, play first episode if available
                             if !episodes.isEmpty {
                                 selectedEpisodeIndex = 0
-                                print("⚠️ ContentView: Last episode not found, using first episode")
+                                contentLogger.warning("⚠️ ContentView: Last episode not found, using first episode")
                             }
                         }
                         
@@ -342,7 +346,7 @@ struct ContentView: View {
                     }
                 } else {
                     // Podcast not in subscriptions, create a temporary one
-                    print("⚠️ ContentView: Podcast not found in subscriptions, creating temporary podcast")
+                    contentLogger.warning("⚠️ ContentView: Podcast not found in subscriptions, creating temporary podcast")
                     let tmpPodcast = Podcast(title: lastEp.podcastName ?? "Unknown Podcast", feedUrl: feedUrl)
                     tmpPodcast.feedArtworkURL = lastEp.artworkURL
                     
@@ -365,14 +369,18 @@ struct ContentView: View {
                         }
                         
                         isPodcastLoading = false
-                    }
-                }
+            }
+        }
             } else {
-                print("ℹ️ ContentView: No last played episode to restore")
+                contentLogger.info("ℹ️ ContentView: No last played episode to restore")
             }
 
             // Mark initialization complete AFTER restoration is done
-            print("✅ ContentView: App initialization complete")
+            if selectedPodcast == nil {
+                await loadDefaultPodcastIfNeeded()
+            }
+
+            contentLogger.info("✅ ContentView: App initialization complete")
             isInitialized = true
             refreshShowNotes()
             
@@ -732,7 +740,7 @@ struct ContentView: View {
 
     /// Prefetches episodes for all subscribed podcasts in the background
     private func prefetchSubscribedPodcasts() async {
-        print("Starting optimized background prefetch of \(subscribedPodcasts.count) subscribed podcasts")
+        contentLogger.info("Starting optimized background prefetch of \(subscribedPodcasts.count, privacy: .public) subscribed podcasts")
 
         // Limit concurrent prefetches for better performance
         let maxConcurrentPrefetches = 3
@@ -770,14 +778,50 @@ struct ContentView: View {
                     audioPlayer.preloadAudio(url: firstEpisode.url)
                 }
                 
-                print("Prefetched \(episodes.count) episodes for \(podcast.title)")
+                contentLogger.info("Prefetched \(episodes.count, privacy: .public) episodes for \(podcast.title, privacy: .private)")
             }
             
             // Add a smaller delay between starting fetches
             try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
         }
         
-        print("Completed optimized background prefetch of subscribed podcasts")
+        contentLogger.info("Completed optimized background prefetch of subscribed podcasts")
+    }
+
+    private func loadDefaultPodcastIfNeeded() async {
+        if selectedPodcast != nil { return }
+
+        if let firstSubscription = subscribedPodcasts.first {
+            await selectPodcast(firstSubscription, autoSelectFirstEpisode: true)
+        } else if let firstFavorite = favoritePodcasts.first {
+            await selectPodcast(firstFavorite, autoSelectFirstEpisode: true)
+        }
+    }
+
+    private func selectPodcast(_ podcast: Podcast, autoSelectFirstEpisode: Bool) async {
+        if !podcast.episodes.isEmpty {
+            await MainActor.run {
+                selectedPodcast = podcast
+                if autoSelectFirstEpisode && selectedEpisodeIndex == nil {
+                    selectedEpisodeIndex = 0
+                }
+            }
+            return
+        }
+
+        await MainActor.run { isPodcastLoading = true }
+        let (episodes, artwork) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+        await MainActor.run {
+            podcast.episodes = episodes
+            if let artwork {
+                podcast.feedArtworkURL = artwork
+            }
+            selectedPodcast = podcast
+            if autoSelectFirstEpisode && !episodes.isEmpty {
+                selectedEpisodeIndex = 0
+            }
+            isPodcastLoading = false
+        }
     }
 }
 

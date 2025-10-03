@@ -1,13 +1,16 @@
 import Foundation
+import OSLog
 #if canImport(FeedKit)
 @preconcurrency import FeedKit
 #endif
+
+private let feedKitTestLogger = AppLogger.tests
 
 /// Test function to validate FeedKit integration
 /// Add this to the AppTests class to test FeedKit functionality
 extension AppTests {
     static func testFeedKitIntegration() throws {
-        print("Testing FeedKit Integration...")
+        feedKitTestLogger.info("Testing FeedKit Integration...")
         
         // Create a sample RSS feed
         let rssXML = """
@@ -37,7 +40,7 @@ extension AppTests {
         // Test the new FeedKitRSSParser
         #if canImport(FeedKit)
         do {
-            print("- Testing FeedKitRSSParser...")
+            feedKitTestLogger.info("- Testing FeedKitRSSParser...")
             let parser = FeedKitRSSParser(feedUrl: "https://example.com/feed")
             let (episodes, feedArtwork, channelTitle) = parser.parse(data: data)
             
@@ -52,17 +55,18 @@ extension AppTests {
             safeAssert(episodes[0].url.absoluteString == "https://example.com/episode1.mp3", 
                    "First episode URL should be correct")
             
-            print("- FeedKitRSSParser tests passed!")
+            feedKitTestLogger.info("- FeedKitRSSParser tests passed!")
         } catch {
-            print("- FeedKitRSSParser test failed with error: \(error)")
+            let errorDescription = String(describing: error)
+            feedKitTestLogger.error("- FeedKitRSSParser test failed with error: \(errorDescription, privacy: .public)")
         }
         #else
-        print("- FeedKit is not available, skipping FeedKitRSSParser test")
+        feedKitTestLogger.warning("- FeedKit is not available, skipping FeedKitRSSParser test")
         #endif
         
         // Test the legacy RSSParser for comparison
         do {
-            print("- Testing legacy RSSParser...")
+            feedKitTestLogger.info("- Testing legacy RSSParser...")
             let parser = RSSParser(feedUrl: "https://example.com/feed")
             let (episodes, feedArtwork, channelTitle) = parser.parse(data: data)
             
@@ -77,11 +81,12 @@ extension AppTests {
             safeAssert(episodes[0].url.absoluteString == "https://example.com/episode1.mp3", 
                    "First episode URL should be correct")
             
-            print("- Legacy RSSParser tests passed!")
+            feedKitTestLogger.info("- Legacy RSSParser tests passed!")
         } catch {
-            print("- Legacy RSSParser test failed with error: \(error)")
+            let errorDescription = String(describing: error)
+            feedKitTestLogger.error("- Legacy RSSParser test failed with error: \(errorDescription, privacy: .public)")
         }
         
-        print("FeedKit Integration tests completed!")
+        feedKitTestLogger.info("FeedKit Integration tests completed!")
     }
-} 
+}

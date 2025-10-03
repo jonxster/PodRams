@@ -7,6 +7,9 @@
 import SwiftUI
 import AVFoundation
 import AppKit  // Required for managing NSCursor during hover events
+import OSLog
+
+private let cueSheetLogger = AppLogger.ui
 
 /// A view that displays and manages the play queue (cue) of podcast episodes.
 /// Allows users to reorder episodes via drag-and-drop, tap to play, and view total play time.
@@ -243,13 +246,13 @@ struct CueSheetView: View {
             let duration = episode.duration ?? 0.0
             // Check for invalid values such as negative, NaN, or infinite durations.
             if duration < 0 || duration.isNaN || duration.isInfinite {
-                print("Invalid duration for episode '\(episode.title)': \(duration)")
+                cueSheetLogger.warning("Invalid duration for episode '\(episode.title, privacy: .private)': \(duration, privacy: .public)")
                 return result
             }
             return result + duration
         }
         if total == 0.0 && !cue.isEmpty {
-            print("Warning: Total duration is 0 despite \(cue.count) episodes in cue")
+            cueSheetLogger.warning("Total duration is 0 despite \(cue.count, privacy: .public) episodes in cue")
         }
         return total.isFinite ? total : 0.0
     }
@@ -273,9 +276,9 @@ struct CueSheetView: View {
     
     /// Prints debugging information about the durations of each episode in the cue.
     private func debugDurations() {
-        print("Cue contents:")
+        cueSheetLogger.debug("Cue contents:")
         for (index, episode) in cue.enumerated() {
-            print("Episode \(index): '\(episode.title)' - Duration: \(episode.duration ?? -1) seconds")
+            cueSheetLogger.debug("Episode \(index, privacy: .public): '\(episode.title, privacy: .private)' - Duration: \(episode.duration ?? -1, privacy: .public) seconds")
         }
     }
     
@@ -298,10 +301,11 @@ struct CueSheetView: View {
                         if duration > 0 && duration.isFinite {
                             updatedCue[index].duration = duration
                             hasUpdates = true
-                            print("Fetched duration for '\(updatedCue[index].title)': \(duration) seconds")
+                            cueSheetLogger.info("Fetched duration for '\(updatedCue[index].title, privacy: .private)': \(duration, privacy: .public) seconds")
                         }
                     } catch {
-                        print("Failed to fetch duration for '\(updatedCue[index].title)': \(error)")
+                        let errorDescription = String(describing: error)
+                        cueSheetLogger.error("Failed to fetch duration for '\(updatedCue[index].title, privacy: .private)': \(errorDescription, privacy: .public)")
                     }
                 }
             }
@@ -315,7 +319,7 @@ struct CueSheetView: View {
                     if let feedUrl = cue.first?.feedUrl {
                         PersistenceManager.saveCue(cue, feedUrl: feedUrl)
                         NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-                        print("Updated cue with new durations and saved to persistent storage")
+                        cueSheetLogger.info("Updated cue with new durations and saved to persistent storage")
                     }
                 }
             }
@@ -347,7 +351,7 @@ struct CueSheetView: View {
     
     /// Downloads all episodes in the cue
     private func downloadAllEpisodes() {
-        print("CueSheetView: Starting download of all episodes in cue")
+        cueSheetLogger.info("CueSheetView: Starting download of all episodes in cue")
         
         // Create a counter for successful downloads
         var successCount = 0
@@ -359,18 +363,18 @@ struct CueSheetView: View {
                 let currentState = DownloadManager.shared.downloadState(for: episode)
                 
                 if case .downloaded = currentState {
-                    print("CueSheetView: Episode already downloaded: \(episode.title)")
+                    cueSheetLogger.debug("CueSheetView: Episode already downloaded: \(episode.title, privacy: .private)")
                     successCount += 1
                     continue
                 }
-                
+
                 if case .downloading = currentState {
-                    print("CueSheetView: Episode already downloading: \(episode.title)")
+                    cueSheetLogger.debug("CueSheetView: Episode already downloading: \(episode.title, privacy: .private)")
                     continue
                 }
-                
+
                 // Start the download
-                print("CueSheetView: Starting download for episode: \(episode.title)")
+                cueSheetLogger.info("CueSheetView: Starting download for episode: \(episode.title, privacy: .private)")
                 DownloadManager.shared.downloadEpisode(episode)
             }
             
@@ -475,35 +479,35 @@ struct CueRowView: View {
                     switch downloadState {
                     case .none:
                         Button(action: {
-                            print("CueRowView: Starting download for \(episode.title)")
+                            cueSheetLogger.info("CueRowView: Starting download for \(episode.title, privacy: .private)")
                             downloadManager.downloadEpisode(episode)
                         }) {
                             Label("Download", systemImage: "arrow.down.circle")
                         }
                     case .downloaded:
                         Button(action: {
-                            print("CueRowView: Removing download for \(episode.title)")
+                            cueSheetLogger.info("CueRowView: Removing download for \(episode.title, privacy: .private)")
                             downloadManager.removeDownload(for: episode)
                         }) {
                             Label("Delete download", systemImage: "trash")
                         }
                     case .paused:
                         Button(action: {
-                            print("CueRowView: Resuming download for \(episode.title)")
+                            cueSheetLogger.info("CueRowView: Resuming download for \(episode.title, privacy: .private)")
                             downloadManager.resumeDownload(for: episode)
                         }) {
                             Label("Resume download", systemImage: "play.circle")
                         }
                     case .failed:
                         Button(action: {
-                            print("CueRowView: Retrying download for \(episode.title)")
+                            cueSheetLogger.info("CueRowView: Retrying download for \(episode.title, privacy: .private)")
                             downloadManager.downloadEpisode(episode)
                         }) {
                             Label("Retry download", systemImage: "arrow.clockwise")
                         }
                     case .downloading:
                         Button(action: {
-                            print("CueRowView: Pausing download for \(episode.title)")
+                            cueSheetLogger.info("CueRowView: Pausing download for \(episode.title, privacy: .private)")
                             downloadManager.pauseDownload(for: episode)
                         }) {
                             Label("Pause download", systemImage: "pause.circle")
@@ -523,7 +527,7 @@ struct CueRowView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("DownloadCompleted"))) { notification in
             if let episodeUrl = notification.userInfo?["episodeUrl"] as? String,
                episodeUrl == episode.url.absoluteString {
-                print("CueRowView: Received download completed notification for \(episode.title)")
+                cueSheetLogger.info("CueRowView: Received download completed notification for \(episode.title, privacy: .private)")
             }
         }
     }

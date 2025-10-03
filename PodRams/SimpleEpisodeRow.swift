@@ -1,4 +1,8 @@
 import SwiftUI
+import OSLog
+
+private let simpleEpisodeLogger = AppLogger.ui
+private let cueLogger = AppLogger.app
 
 /// A simplified version of EpisodeRow without hover animations or play/pause icons
 /// Used in the subscription view
@@ -21,12 +25,15 @@ struct SimpleEpisodeRow: View {
     /// Determines if this episode is in the cue
     private var isInCue: Bool {
         let result = cueState.cue.contains { $0.url.absoluteString == episode.url.absoluteString }
-        print("SimpleEpisodeRow: Checking if episode \(episode.title) is in cue: \(result)")
+        simpleEpisodeLogger.debug("SimpleEpisodeRow: Checking if episode \(episode.title, privacy: .public) is in cue: \(result, privacy: .public)")
         return result
     }
     
     var body: some View {
-        HStack(spacing: 8) {
+        let currentDownloadState = downloadState
+        logDownloadState(currentDownloadState)
+
+        return HStack(spacing: 8) {
             // Main content button (everything except the menu)
             Button(action: onSelect) {
                 HStack(spacing: 8) {
@@ -70,28 +77,13 @@ struct SimpleEpisodeRow: View {
             .contentShape(Rectangle())
             .frame(minWidth: 180) // Ensure minimum width for the entire button
             
-            // Debug print to check the download state (outside the view builder)
-            let _ = print("SimpleEpisodeRow: Episode \(episode.title) has state: \(String(describing: downloadState))")
-            
             // Show download progress indicator or ellipsis menu (outside the button)
-            if case .downloading(let progress) = downloadState {
+            if case .downloading(let progress) = currentDownloadState {
                 // Show hoverable download progress indicator when downloading
-                let _ = print("SimpleEpisodeRow: Showing hoverable progress indicator for \(episode.title): \(progress)")
-                HoverableDownloadIndicator(
-                    episode: episode,
-                    progress: progress,
-                    isPaused: false
-                )
-                .frame(width: 20, height: 20)
-            } else if case let .paused(progress, _) = downloadState {
+                progressIndicator(progress: progress, isPaused: false)
+            } else if case let .paused(progress, _) = currentDownloadState {
                 // Show hoverable download progress indicator when paused
-                let _ = print("SimpleEpisodeRow: Showing paused progress indicator for \(episode.title): \(progress)")
-                HoverableDownloadIndicator(
-                    episode: episode,
-                    progress: progress,
-                    isPaused: true
-                )
-                .frame(width: 20, height: 20)
+                progressIndicator(progress: progress, isPaused: true)
             } else {
                 // Show ellipsis menu
                 Menu {
@@ -117,38 +109,38 @@ struct SimpleEpisodeRow: View {
                     Divider()
                     
                     // Download option - show different options based on download state
-                    switch downloadState {
+                    switch currentDownloadState {
                     case .none:
                         Button(action: {
-                            print("SimpleEpisodeRow: Starting download for \(episode.title)")
+                            simpleEpisodeLogger.info("SimpleEpisodeRow: Starting download for \(episode.title, privacy: .public)")
                             downloadManager.downloadEpisode(episode)
                         }) {
                             Label("Download", systemImage: "arrow.down.circle")
                         }
                     case .downloaded:
                         Button(action: {
-                            print("SimpleEpisodeRow: Removing download for \(episode.title)")
+                            simpleEpisodeLogger.info("SimpleEpisodeRow: Removing download for \(episode.title, privacy: .public)")
                             downloadManager.removeDownload(for: episode)
                         }) {
                             Label("Delete download", systemImage: "trash")
                         }
                     case .paused:
                         Button(action: {
-                            print("SimpleEpisodeRow: Resuming download for \(episode.title)")
+                            simpleEpisodeLogger.info("SimpleEpisodeRow: Resuming download for \(episode.title, privacy: .public)")
                             downloadManager.resumeDownload(for: episode)
                         }) {
                             Label("Resume download", systemImage: "play.circle")
                         }
                     case .failed(_):
                         Button(action: {
-                            print("SimpleEpisodeRow: Retrying download for \(episode.title)")
+                            simpleEpisodeLogger.info("SimpleEpisodeRow: Retrying download for \(episode.title, privacy: .public)")
                             downloadManager.downloadEpisode(episode)
                         }) {
                             Label("Retry download", systemImage: "arrow.clockwise")
                         }
                     case .downloading(_):
                         Button(action: {
-                            print("SimpleEpisodeRow: Pausing download for \(episode.title)")
+                            simpleEpisodeLogger.info("SimpleEpisodeRow: Pausing download for \(episode.title, privacy: .public)")
                             downloadManager.pauseDownload(for: episode)
                         }) {
                             Label("Pause download", systemImage: "pause.circle")
@@ -185,7 +177,7 @@ struct SimpleEpisodeRow: View {
     
     /// Toggles whether this episode is in the cue
     private func toggleCue() {
-        print("SimpleEpisodeRow: Toggling cue for episode: \(episode.title)")
+        simpleEpisodeLogger.info("SimpleEpisodeRow: Toggling cue for episode: \(episode.title, privacy: .public)")
         cueState.toggleCue(for: episode)
     }
     
@@ -220,6 +212,28 @@ struct SimpleEpisodeRow: View {
 }
 
 private extension SimpleEpisodeRow {
+    func logDownloadState(_ state: DownloadManager.DownloadState) {
+        let description = String(describing: state)
+        simpleEpisodeLogger.debug("SimpleEpisodeRow: Episode \(episode.title, privacy: .public) has state: \(description, privacy: .public)")
+    }
+
+    func logDownloadProgress(_ progress: Double, isPaused: Bool) {
+        let status = isPaused ? "paused" : "active"
+        simpleEpisodeLogger.debug("SimpleEpisodeRow: Showing \(status, privacy: .public) progress indicator for \(episode.title, privacy: .public): \(progress, privacy: .public)")
+    }
+
+    func progressIndicator(progress: Double, isPaused: Bool) -> some View {
+        logDownloadProgress(progress, isPaused: isPaused)
+        return HoverableDownloadIndicator(
+            episode: episode,
+            progress: progress,
+            isPaused: isPaused
+        )
+        .frame(width: 20, height: 20)
+    }
+}
+
+private extension SimpleEpisodeRow {
     var rowBackground: Color {
         if isPlaying { return AppTheme.hoverSurface }
         return isHoveringRow ? AppTheme.hoverSurface : AppTheme.surface
@@ -236,24 +250,25 @@ final class CueState: ObservableObject {
     
     func loadCue() {
         guard !isLoading else { 
-            print("CueState: Already loading cue, skipping")
+            cueLogger.debug("CueState: Already loading cue, skipping")
             return 
         }
         isLoading = true
         
-        print("CueState: Starting to load cue")
+        cueLogger.info("CueState: Starting to load cue")
         
         Task {
             let loadedCue = await PersistenceManager.loadCue()
             await MainActor.run {
-                print("CueState: Loaded \(loadedCue.count) episodes from PersistenceManager")
+                cueLogger.info("CueState: Loaded \(loadedCue.count, privacy: .public) episodes from PersistenceManager")
                 if !loadedCue.isEmpty {
-                    print("CueState: First episode in cue: \(loadedCue[0].title), URL: \(loadedCue[0].url.absoluteString)")
+                    let firstEpisode = loadedCue[0]
+                    cueLogger.debug("CueState: First episode in cue: \(firstEpisode.title, privacy: .private), URL: \(firstEpisode.url.absoluteString, privacy: .private)")
                 }
                 
                 self.cue = loadedCue
                 self.isLoading = false
-                print("CueState: Finished loading cue with \(loadedCue.count) episodes")
+                cueLogger.info("CueState: Finished loading cue with \(loadedCue.count, privacy: .public) episodes")
             }
         }
     }
@@ -262,12 +277,12 @@ final class CueState: ObservableObject {
         guard !isLoading else { return }
         isLoading = true
         
-        print("CueState: Starting toggleCue for episode: \(episode.title)")
+        cueLogger.info("CueState: Starting toggleCue for episode: \(episode.title, privacy: .private)")
         
         Task {
             // Load the latest cue data
             let latestCue = await PersistenceManager.loadCue()
-            print("CueState: Loaded cue with \(latestCue.count) episodes")
+            cueLogger.info("CueState: Loaded cue with \(latestCue.count, privacy: .public) episodes")
             
             await MainActor.run {
                 // Update our local cue with the latest data
@@ -275,11 +290,11 @@ final class CueState: ObservableObject {
                 
                 // Check if the episode is in the cue
                 let isInCue = latestCue.contains { $0.url.absoluteString == episode.url.absoluteString }
-                print("CueState: Episode \(episode.title) is in cue: \(isInCue)")
+                cueLogger.debug("CueState: Episode \(episode.title, privacy: .private) is in cue: \(isInCue, privacy: .public)")
                 
                 // Now perform the toggle operation
                 if isInCue {
-                    print("CueState: Removing episode from cue: \(episode.title)")
+                    cueLogger.info("CueState: Removing episode from cue: \(episode.title, privacy: .private)")
                     // Remove from cue
                     if let idx = cue.firstIndex(where: { $0.url.absoluteString == episode.url.absoluteString }) {
                         var updatedCue = cue
@@ -294,27 +309,29 @@ final class CueState: ObservableObject {
                             effectiveFeedUrl = feedUrl
                         } else if let firstEpisode = updatedCue.first, let firstFeedUrl = firstEpisode.feedUrl, !firstFeedUrl.isEmpty {
                             effectiveFeedUrl = firstFeedUrl
-                            print("CueState: Using first episode's feedUrl for saving: \(effectiveFeedUrl)")
+                            cueLogger.debug("CueState: Using first episode's feedUrl for saving: \(effectiveFeedUrl, privacy: .private)")
                         } else {
                             effectiveFeedUrl = "unknown"
-                            print("CueState: Using default feedUrl for saving: \(effectiveFeedUrl)")
+                            cueLogger.debug("CueState: Using default feedUrl for saving: \(effectiveFeedUrl, privacy: .public)")
                         }
                         
                         PersistenceManager.saveCue(updatedCue, feedUrl: effectiveFeedUrl)
                         
-                        print("CueState: Successfully removed episode from cue: \(episode.title)")
+                        cueLogger.info("CueState: Successfully removed episode from cue: \(episode.title, privacy: .private)")
                     }
                 } else {
-                    print("CueState: Adding episode to cue: \(episode.title)")
+                    cueLogger.info("CueState: Adding episode to cue: \(episode.title, privacy: .private)")
                     // Add to cue
                     var newEpisode = episode
                     
                     // Ensure the episode has a podcast name
                     if newEpisode.podcastName == nil {
                         newEpisode.podcastName = "Unknown Podcast"
-                        print("CueState: Set podcast name to 'Unknown Podcast' for episode: \(episode.title)")
+                        cueLogger.debug("CueState: Set podcast name to 'Unknown Podcast' for episode: \(episode.title, privacy: .private)")
                     } else {
-                        print("CueState: Using existing podcast name: \(newEpisode.podcastName!) for episode: \(episode.title)")
+                        if let podcastName = newEpisode.podcastName {
+                            cueLogger.debug("CueState: Using existing podcast name: \(podcastName, privacy: .private) for episode: \(episode.title, privacy: .private)")
+                        }
                     }
                     
                     // Generate a unique ID for the cue version of the episode
@@ -343,15 +360,15 @@ final class CueState: ObservableObject {
                         effectiveFeedUrl = feedUrl
                     } else if let firstEpisode = updatedCue.first, let firstFeedUrl = firstEpisode.feedUrl, !firstFeedUrl.isEmpty {
                         effectiveFeedUrl = firstFeedUrl
-                        print("CueState: Using first episode's feedUrl for saving: \(effectiveFeedUrl)")
+                        cueLogger.debug("CueState: Using first episode's feedUrl for saving: \(effectiveFeedUrl, privacy: .private)")
                     } else {
                         effectiveFeedUrl = "unknown"
-                        print("CueState: Using default feedUrl for saving: \(effectiveFeedUrl)")
+                        cueLogger.debug("CueState: Using default feedUrl for saving: \(effectiveFeedUrl, privacy: .public)")
                     }
                     
                     PersistenceManager.saveCue(updatedCue, feedUrl: effectiveFeedUrl)
                     
-                    print("CueState: Successfully added episode to cue: \(episode.title)")
+                    cueLogger.info("CueState: Successfully added episode to cue: \(episode.title, privacy: .private)")
                 }
                 
                 // Clear the cache to ensure all views reload the latest data
@@ -361,8 +378,8 @@ final class CueState: ObservableObject {
                 NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
                 
                 self.isLoading = false
-                print("CueState: Completed toggleCue for episode: \(episode.title)")
+                cueLogger.info("CueState: Completed toggleCue for episode: \(episode.title, privacy: .private)")
             }
         }
     }
-} 
+}

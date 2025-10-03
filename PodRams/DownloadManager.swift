@@ -7,7 +7,7 @@
 import Foundation
 import Combine
 import CryptoKit
-import os.log
+import OSLog
 
 /// Manages downloading of podcast episodes.
 /// This singleton class uses URLSession to download episodes and tracks their download states.
@@ -53,7 +53,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     private let fileManager = FileManager.default
     
     /// Logger for download operations
-    private let logger = Logger(subsystem: "com.podrams", category: "DownloadManager")
+    private let logger = AppLogger.downloads
     
     /// Dedicated queue for file operations
     private let fileOperationQueue = DispatchQueue(label: "com.podrams.fileOperations", 
@@ -105,16 +105,17 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 // Create the Downloads directory if it doesn't exist.
                 if !fileManager.fileExists(atPath: downloadsURL.path) {
                     try fileManager.createDirectory(at: downloadsURL, withIntermediateDirectories: true)
-                    self.logger.info("Created Downloads directory at: \(downloadsURL.path)")
+                    self.logger.info("Created Downloads directory at: \(downloadsURL.path, privacy: .private)")
                 }
                 
                 // Create the temporary directory if it doesn't exist.
                 if !fileManager.fileExists(atPath: tmpURL.path) {
                     try fileManager.createDirectory(at: tmpURL, withIntermediateDirectories: true)
-                    self.logger.info("Created tmp directory at: \(tmpURL.path)")
+                    self.logger.info("Created tmp directory at: \(tmpURL.path, privacy: .private)")
                 }
             } catch {
-                self.logger.error("Error creating directories: \(error.localizedDescription)")
+                let errorDescription = error.localizedDescription
+                self.logger.error("Error creating directories: \(errorDescription, privacy: .public)")
             }
         }
     }
@@ -140,9 +141,10 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         if !fileManager.fileExists(atPath: downloadsDir.path) {
             do {
                 try fileManager.createDirectory(at: downloadsDir, withIntermediateDirectories: true, attributes: nil)
-                logger.info("Created Downloads directory at: \(downloadsDir.path)")
+                logger.info("Created Downloads directory at: \(downloadsDir.path, privacy: .private)")
             } catch {
-                logger.error("Error creating Downloads directory: \(error.localizedDescription)")
+                let errorDescription = error.localizedDescription
+                logger.error("Error creating Downloads directory: \(errorDescription, privacy: .public)")
             }
         }
         
@@ -224,7 +226,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 object: nil,
                 userInfo: ["episodeUrl": episode.url.absoluteString]
             )
-            print("DownloadManager: Posted DownloadCompleted notification for \(episode.title)")
+            self.logger.info("DownloadManager: Posted DownloadCompleted notification for \(episode.title, privacy: .private)")
         }
     }
     
@@ -238,17 +240,15 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         let key = episode.url.absoluteString
         // If a download is already in progress or completed, do nothing.
         guard downloadStates[key] == nil else {
-            logger.info("Episode is already being downloaded or has been downloaded: \(episode.title)")
-            print("DownloadManager: Episode is already being downloaded or has been downloaded: \(episode.title)")
+            logger.info("Episode is already being downloaded or has been downloaded: \(episode.title, privacy: .private)")
             return
         }
-        
-        logger.info("Starting download for episode: \(episode.title)")
-        print("DownloadManager: Starting download for episode: \(episode.title)")
-        
+
+        logger.info("Starting download for episode: \(episode.title, privacy: .private)")
+
         // Set the initial state to downloading with 0 progress
         downloadStates[key] = .downloading(progress: 0.0)
-        print("DownloadManager: Set initial state to downloading for \(episode.title)")
+        logger.debug("DownloadManager: Set initial state to downloading for \(episode.title, privacy: .private)")
         
         // Create a download task for the episode using the optimized session
         let task = downloadSession.downloadTask(with: episode.url) { [weak self] tempURL, response, error in
@@ -256,18 +256,18 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             
             // Handle error scenario.
             if let error = error {
-                downloadManager.logger.error("Download error for episode '\(episode.title)': \(error.localizedDescription)")
-                print("DownloadManager: Download error for episode '\(episode.title)': \(error.localizedDescription)")
+                let errorDescription = error.localizedDescription
+                downloadManager.logger.error("Download error for episode '\(episode.title, privacy: .private)': \(errorDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(error)
                     downloadManager.saveDownloadStates()
                 }
                 return
             }
-            
+
             // Ensure a temporary URL is provided.
             guard let tempURL = tempURL else {
-                downloadManager.logger.error("No temporary URL provided for downloaded file: \(episode.title)")
+                downloadManager.logger.error("No temporary URL provided for downloaded file: \(episode.title, privacy: .private)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
                     downloadManager.saveDownloadStates()
@@ -293,7 +293,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                     
                     // Move the downloaded file from the temporary location to the final destination.
                     try fileManager.moveItem(at: tempURL, to: destinationURL)
-                    downloadManager.logger.info("Successfully moved downloaded file to: \(destinationURL.path)")
+                    downloadManager.logger.info("Successfully moved downloaded file to: \(destinationURL.path, privacy: .private)")
                     
                     // Update the file existence cache
                     downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
@@ -304,7 +304,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                         downloadManager.postDownloadCompletedNotification(for: episode)
                     }
                 } catch {
-                    downloadManager.logger.error("Error moving file for episode '\(episode.title)': \(error.localizedDescription)")
+                    let errorDescription = error.localizedDescription
+                    downloadManager.logger.error("Error moving file for episode '\(episode.title, privacy: .private)': \(errorDescription, privacy: .public)")
                     
                     // Fallback: Try copying the file instead of moving.
                     do {
@@ -320,7 +321,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                             downloadManager.postDownloadCompletedNotification(for: episode)
                         }
                     } catch {
-                        downloadManager.logger.error("Fallback copy also failed: \(error.localizedDescription)")
+                        let fallbackErrorDescription = error.localizedDescription
+                        downloadManager.logger.error("Fallback copy also failed: \(fallbackErrorDescription, privacy: .public)")
                         DispatchQueue.main.async {
                             downloadManager.downloadStates[key] = .failed(error)
                             downloadManager.saveDownloadStates()
@@ -342,7 +344,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 return
             }
             
-            print("DownloadManager: Progress update for \(episode.title): \(newProgress)")
+            downloadManager.logger.debug("DownloadManager: Progress update for \(episode.title, privacy: .private): \(newProgress, privacy: .public)")
             
             DispatchQueue.main.async {
                 downloadManager.downloadStates[key] = .downloading(progress: newProgress)
@@ -351,7 +353,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         downloadTasks[key] = task
         task.resume()
-        print("DownloadManager: Download task started for \(episode.title)")
+        logger.info("DownloadManager: Download task started for \(episode.title, privacy: .private)")
     }
     
     /// Removes a downloaded episode from local storage and updates its download state.
@@ -370,7 +372,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             do {
                 if self.fileManager.fileExists(atPath: destinationURL.path) {
                     try self.fileManager.removeItem(at: destinationURL)
-                    self.logger.info("Removed downloaded file for episode '\(episode.title)' at: \(destinationURL.path)")
+                    self.logger.info("Removed downloaded file for episode '\(episode.title, privacy: .private)' at: \(destinationURL.path, privacy: .private)")
                     
                     // Update the file existence cache
                     self.updateFileExistenceCache(path: destinationURL.path, exists: false)
@@ -383,7 +385,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                     self.saveDownloadStates()
                 }
             } catch {
-                self.logger.error("Error removing downloaded episode '\(episode.title)': \(error.localizedDescription)")
+                let errorDescription = error.localizedDescription
+                self.logger.error("Error removing downloaded episode '\(episode.title, privacy: .private)': \(errorDescription, privacy: .public)")
             }
         }
     }
@@ -574,22 +577,22 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         // Check if there's an active download task for this episode
         guard let task = downloadTasks[key] else {
-            logger.warning("No active download task found for episode: \(episode.title)")
+            logger.warning("No active download task found for episode: \(episode.title, privacy: .private)")
             return
         }
         
         // Check if the episode is currently downloading
         guard case let .downloading(progress) = downloadStates[key] else {
-            logger.warning("Episode is not in downloading state: \(episode.title)")
+            logger.warning("Episode is not in downloading state: \(episode.title, privacy: .private)")
             return
         }
-        
-        logger.info("Pausing download for episode: \(episode.title)")
+
+        logger.info("Pausing download for episode: \(episode.title, privacy: .private)")
         
         // Cancel the task and get resume data
         task.cancel { resumeDataOrNil in
             guard let resumeData = resumeDataOrNil else {
-                self.logger.error("Failed to get resume data for episode: \(episode.title)")
+                self.logger.error("Failed to get resume data for episode: \(episode.title, privacy: .private)")
                 DispatchQueue.main.async {
                     self.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to pause download"]))
                 }
@@ -602,7 +605,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                 self.saveDownloadStates()
             }
             
-            self.logger.info("Successfully paused download for episode: \(episode.title)")
+            self.logger.info("Successfully paused download for episode: \(episode.title, privacy: .private)")
         }
         
         // Clean up the task and progress observer
@@ -618,11 +621,11 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         // Check if the episode is currently paused
         guard case let .paused(progress, resumeData) = downloadStates[key] else {
-            logger.warning("Episode is not in paused state: \(episode.title)")
+            logger.warning("Episode is not in paused state: \(episode.title, privacy: .private)")
             return
         }
-        
-        logger.info("Resuming download for episode: \(episode.title)")
+
+        logger.info("Resuming download for episode: \(episode.title, privacy: .private)")
         
         // Update state to downloading
         downloadStates[key] = .downloading(progress: progress)
@@ -633,7 +636,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             
             // Handle error scenario.
             if let error = error {
-                downloadManager.logger.error("Resume download error for episode '\(episode.title)': \(error.localizedDescription)")
+                let errorDescription = error.localizedDescription
+                downloadManager.logger.error("Resume download error for episode '\(episode.title, privacy: .private)': \(errorDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(error)
                     downloadManager.saveDownloadStates()
@@ -643,7 +647,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
             
             // Ensure a temporary URL is provided.
             guard let tempURL = tempURL else {
-                downloadManager.logger.error("No temporary URL provided for resumed download: \(episode.title)")
+                downloadManager.logger.error("No temporary URL provided for resumed download: \(episode.title, privacy: .private)")
                 DispatchQueue.main.async {
                     downloadManager.downloadStates[key] = .failed(NSError(domain: "DownloadManager", code: -1))
                     downloadManager.saveDownloadStates()
@@ -669,7 +673,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                     
                     // Move the downloaded file from the temporary location to the final destination.
                     try fileManager.moveItem(at: tempURL, to: destinationURL)
-                    downloadManager.logger.info("Successfully completed resumed download: \(destinationURL.path)")
+                    downloadManager.logger.info("Successfully completed resumed download: \(destinationURL.path, privacy: .private)")
                     
                     // Update the file existence cache
                     downloadManager.updateFileExistenceCache(path: destinationURL.path, exists: true)
@@ -681,7 +685,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                     }
                     
                 } catch {
-                    downloadManager.logger.error("Error moving resumed download file for episode '\(episode.title)': \(error.localizedDescription)")
+                    let errorDescription = error.localizedDescription
+                    downloadManager.logger.error("Error moving resumed download file for episode '\(episode.title, privacy: .private)': \(errorDescription, privacy: .public)")
                     
                     // Fallback: Try copying the file instead of moving.
                     do {
@@ -697,7 +702,8 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
                             downloadManager.postDownloadCompletedNotification(for: episode)
                         }
                     } catch {
-                        downloadManager.logger.error("Fallback copy also failed for resumed download: \(error.localizedDescription)")
+                        let fallbackErrorDescription = error.localizedDescription
+                        downloadManager.logger.error("Fallback copy also failed for resumed download: \(fallbackErrorDescription, privacy: .public)")
                         DispatchQueue.main.async {
                             downloadManager.downloadStates[key] = .failed(error)
                             downloadManager.saveDownloadStates()
@@ -726,7 +732,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
         
         downloadTasks[key] = task
         task.resume()
-        logger.info("Resume download task started for \(episode.title)")
+        logger.info("Resume download task started for \(episode.title, privacy: .private)")
     }
     
     deinit {

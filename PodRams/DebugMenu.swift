@@ -1,4 +1,7 @@
 import SwiftUI
+import OSLog
+
+private let debugLogger = AppLogger.debug
 
 /// Provides a set of debug commands accessible via the app's menu.
 /// Includes commands to run tests and create test data for rapid testing.
@@ -38,7 +41,10 @@ private extension DebugCommands {
 
     func runTest(_ name: String, _ block: () throws -> Void) {
         do { try block() }
-        catch { print("❌ \(name) failed: \(error)") }
+        catch {
+            let errorDescription = String(describing: error)
+            debugLogger.error("❌ \(name, privacy: .public) failed: \(errorDescription, privacy: .public)")
+        }
     }
 }
 
@@ -65,7 +71,7 @@ private extension DebugCommands {
             guard
                 let audioURL = URL(string: "\(artBase)/episode\(i).mp3")
             else {
-                print("❌ Invalid episode URL for index \(i)")
+                debugLogger.error("❌ Invalid episode URL for index \(i, privacy: .public)")
                 return
             }
 
@@ -87,7 +93,7 @@ private extension DebugCommands {
             userInfo: ["podcast": testPodcast]
         )
 
-        print("Created test podcast: \(testPodcast.title) with \(testPodcast.episodes.count) episodes")
+        debugLogger.info("Created test podcast: \(testPodcast.title, privacy: .public) with \(testPodcast.episodes.count, privacy: .public) episodes")
     }
 
     /// Creates a test podcast episode and posts a notification to add it to the queue.
@@ -97,7 +103,7 @@ private extension DebugCommands {
         guard
             let audioURL = URL(string: "https://example.com/test.mp3")
         else {
-            print("❌ Invalid test episode URL")
+            debugLogger.error("❌ Invalid test episode URL")
             return
         }
 
@@ -121,6 +127,6 @@ private extension DebugCommands {
             userInfo: ["episode": testEpisode]
         )
 
-        print("Created test episode: \(testEpisode.title)")
+        debugLogger.info("Created test episode: \(testEpisode.title, privacy: .public)")
     }
 }

@@ -1,6 +1,9 @@
 import SwiftUI
 import AppKit
 import CoreAudio
+import OSLog
+
+private let audioOutputLogger = AppLogger.audio
 
 struct AudioOutputSelectionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -116,14 +119,14 @@ extension AudioOutputSelectionView {
         var dataSize: UInt32 = 0
         let status = AudioObjectGetPropertyDataSize(systemObjectID, &propertyAddress, 0, nil, &dataSize)
         if status != noErr {
-            print("Error getting data size for audio devices: \(status)")
+            audioOutputLogger.error("Error getting data size for audio devices: \(status, privacy: .public)")
             return []
         }
         let deviceCount = Int(dataSize) / MemoryLayout<AudioDeviceID>.size
         var deviceIDs = [AudioDeviceID](repeating: 0, count: deviceCount)
         let status2 = AudioObjectGetPropertyData(systemObjectID, &propertyAddress, 0, nil, &dataSize, &deviceIDs)
         if status2 != noErr {
-            print("Error getting audio devices: \(status2)")
+            audioOutputLogger.error("Error getting audio devices: \(status2, privacy: .public)")
             return []
         }
         for id in deviceIDs {

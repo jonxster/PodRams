@@ -1,7 +1,10 @@
 import Foundation
+import OSLog
 #if canImport(FeedKit)
 import FeedKit
 #endif
+
+private let legacyFeedLogger = AppLogger.feed
 
 /// RSSParser implementation using FeedKit for improved podcast feed parsing
 class FeedKitRSSParser {
@@ -14,7 +17,7 @@ class FeedKitRSSParser {
     /// Parse RSS feed data and extract podcast episodes, artwork URL, and channel title
     func parse(data: Data) -> (episodes: [PodcastEpisode], feedArtwork: URL?, channelTitle: String?) {
         guard let parser = FeedParser(data: data) else {
-            print("Failed to create FeedKit parser")
+            legacyFeedLogger.error("Failed to create FeedKit parser")
             return ([], nil, nil)
         }
         
@@ -30,12 +33,13 @@ class FeedKitRSSParser {
             } else if let jsonFeed = feed.jsonFeed {
                 return parseJSONFeed(jsonFeed)
             } else {
-                print("Feed format not recognized")
+                legacyFeedLogger.error("Feed format not recognized")
                 return ([], nil, nil)
             }
             
         case .failure(let error):
-            print("FeedKit parsing error: \(error)")
+            let errorDescription = String(describing: error)
+            legacyFeedLogger.error("FeedKit parsing error: \(errorDescription, privacy: .public)")
             return ([], nil, nil)
         }
     }

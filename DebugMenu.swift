@@ -1,6 +1,9 @@
 // Add a new menu item for testing FeedKit, somewhere around line 76
 
 import SwiftUI
+import OSLog
+
+private let debugMenuLogger = AppLogger.debug
 
 /// Provides a set of debug commands accessible via the app's menu.
 /// Includes commands to run tests and create test data for rapid testing.
@@ -22,7 +25,8 @@ struct DebugCommands: Commands {
                 do {
                     try AppTests.testAudioPlayer()
                 } catch {
-                    print("❌ Audio Player test failed: \(error)")
+                    let errorDescription = String(describing: error)
+                    debugMenuLogger.error("❌ Audio Player test failed: \(errorDescription, privacy: .public)")
                 }
             }
             // Shortcut: Command + Option + 1.
@@ -33,7 +37,8 @@ struct DebugCommands: Commands {
                 do {
                     try AppTests.testPlayerView()
                 } catch {
-                    print("❌ Player View test failed: \(error)")
+                    let errorDescription = String(describing: error)
+                    debugMenuLogger.error("❌ Player View test failed: \(errorDescription, privacy: .public)")
                 }
             }
             // Shortcut: Command + Option + 2.
@@ -44,7 +49,8 @@ struct DebugCommands: Commands {
                 do {
                     try AppTests.testDownloadManager()
                 } catch {
-                    print("❌ Download Manager test failed: \(error)")
+                    let errorDescription = String(describing: error)
+                    debugMenuLogger.error("❌ Download Manager test failed: \(errorDescription, privacy: .public)")
                 }
             }
             // Shortcut: Command + Option + 3.
@@ -55,7 +61,8 @@ struct DebugCommands: Commands {
                 do {
                     try AppTests.testPodcastFetcher()
                 } catch {
-                    print("❌ Podcast Fetcher test failed: \(error)")
+                    let errorDescription = String(describing: error)
+                    debugMenuLogger.error("❌ Podcast Fetcher test failed: \(errorDescription, privacy: .public)")
                 }
             }
             // Shortcut: Command + Option + 4.
@@ -66,7 +73,8 @@ struct DebugCommands: Commands {
                 do {
                     try AppTests.testFeedKitIntegration()
                 } catch {
-                    print("❌ FeedKit test failed: \(error)")
+                    let errorDescription = String(describing: error)
+                    debugMenuLogger.error("❌ FeedKit test failed: \(errorDescription, privacy: .public)")
                 }
             }
             // Shortcut: Command + Option + F.
@@ -123,7 +131,7 @@ struct DebugCommands: Commands {
             userInfo: ["podcast": testPodcast]
         )
         
-        print("Created test podcast: \(testPodcast.title) with \(testPodcast.episodes.count) episodes")
+        debugMenuLogger.info("Created test podcast: \(testPodcast.title, privacy: .public) with \(testPodcast.episodes.count, privacy: .public) episodes")
     }
     
     /// Creates a test podcast episode and posts a notification to add it to the play queue.
@@ -145,6 +153,6 @@ struct DebugCommands: Commands {
             userInfo: ["episode": testEpisode]
         )
         
-        print("Created test episode: \(testEpisode.title)")
+        debugMenuLogger.info("Created test episode: \(testEpisode.title, privacy: .public)")
     }
-} 
+}

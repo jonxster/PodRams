@@ -10,10 +10,13 @@ import Combine
 import Accelerate // Added for optimized audio processing
 import AudioToolbox
 import CoreMedia
+import OSLog
 
 /// No-op tap used when we only want to register a tap to keep buffer lifetimes alive.
 /// Defined at file scope so it executes off the main actor and avoids runtime precondition traps.
 private func audioPassthroughTap(buffer: AVAudioPCMBuffer, time: AVAudioTime) {}
+
+private let audioLogger = AppLogger.audio
 
 /// Manages audio playback using AVPlayer and AVAudioEngine.
 /// Publishes playback state and allows control over play, pause, stop, seek, volume, and pan.
@@ -145,9 +148,6 @@ class AudioPlayer: ObservableObject {
         
         // Optimize audio threads before engine setup
         optimizeAudioThreads()
-        
-        // Safely setup audio engine
-        setupAudioEngine()
         
         // Restore saved pan value if available.
         if let savedPan = UserDefaults.standard.object(forKey: "audioPan") as? Double {
@@ -362,7 +362,7 @@ class AudioPlayer: ObservableObject {
                                               kMTAudioProcessingTapCreationFlag_PostEffects,
                                               &unmanagedTap)
         guard err == noErr, let uTap = unmanagedTap else {
-            print("Failed to create pan tap: \(err)")
+            audioLogger.error("Failed to create pan tap: \(err, privacy: .public)")
             return nil
         }
         // Consume the initial retain, audio mix will hold its own reference
@@ -406,9 +406,9 @@ class AudioPlayer: ObservableObject {
             // Start the engine
             try audioEngine.start()
             engineConfigured = true
-            print("Audio engine started successfully with CPU-optimized configuration")
+            audioLogger.info("Audio engine started successfully with CPU-optimized configuration")
         } catch {
-            print("Failed to start audio engine: \(error)")
+            audioLogger.error("Failed to start audio engine: \(error, privacy: .public)")
             // Don't set engineConfigured to true if we failed
         }
     }
@@ -417,7 +417,7 @@ class AudioPlayer: ObservableObject {
     private func updatePanImmediate() {
         // Validate that pan is finite and within the valid range
         guard pan.isFinite else { 
-            print("Warning: Pan value is not finite: \(pan)")
+            audioLogger.warning("Pan value is not finite: \(self.pan, privacy: .public)")
             return 
         }
         
@@ -466,7 +466,24 @@ class AudioPlayer: ObservableObject {
     private func updateVolume() async {
         updateVolumeImmediate()
     }
-    
+
+    private func ensureAudioEngineConfigured() {
+        if !engineConfigured {
+            setupAudioEngine()
+        } else if !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+                audioLogger.debug("Audio engine restarted for playback")
+            } catch {
+                audioLogger.error("Failed to restart audio engine: \(error, privacy: .public)")
+            }
+        }
+    }
+
+    private func normalizedPlaybackURL(from url: URL) -> URL {
+        MediaURLSanitizer.sanitize(url)
+    }
+
     /// Plays audio from the specified URL.
     /// Cleans up previous playback, sets up a new AVPlayerItem with observers, and starts playback.
     /// - Parameter url: URL of the audio asset (local file or HTTP/HTTPS).
@@ -483,14 +500,19 @@ class AudioPlayer: ObservableObject {
     }
 
     func playAudio(url: URL, resumeFrom resumePosition: Double?, episode: PodcastEpisode?) {
-        guard url.isFileURL || url.scheme == "http" || url.scheme == "https" else {
-            print("Invalid URL: \(url)")
+        let normalizedURL = normalizedPlaybackURL(from: url)
+
+        guard normalizedURL.isFileURL || normalizedURL.scheme == "http" || normalizedURL.scheme == "https" else {
+            audioLogger.error("Invalid URL: \(normalizedURL.absoluteString, privacy: .private)")
             return
         }
 
+        ensureAudioEngineConfigured()
+
         // If we're already playing this URL, just resume playback if paused
-        if currentURL == url && player != nil {
+        if currentURL == normalizedURL && player != nil {
             if !isPlaying {
+                ensureAudioEngineConfigured()
                 player?.play()
                 applyPlaybackRate()
                 playerNode.play()
@@ -517,19 +539,19 @@ class AudioPlayer: ObservableObject {
         isLoading = true // Indicate loading starts
         isPlaying = false
         
-        currentURL = url // Update current URL
+        currentURL = normalizedURL // Update current URL
         
         // Update cached state
         audioState.currentTime = 0
         audioState.duration = 0
-        audioState.url = url
+        audioState.url = normalizedURL
         audioState.isPlaying = false
         
         // *** Start Asynchronous Preparation ***
         Task(priority: .userInitiated) { 
             do {
                 // Create player item and asset
-                let asset = AVURLAsset(url: url)
+                let asset = AVURLAsset(url: normalizedURL)
                 let playerItem = AVPlayerItem(asset: asset)
                 
                 // Load asset duration asynchronously
@@ -591,7 +613,7 @@ class AudioPlayer: ObservableObject {
                 
             } catch {
                 // Handle errors during async loading
-                print("Error preparing audio item: \(error)")
+                audioLogger.error("Error preparing audio item: \(error, privacy: .public)")
                 await MainActor.run { 
                     self.isLoading = false
                     self.isPlaying = false
@@ -620,7 +642,11 @@ class AudioPlayer: ObservableObject {
             player.seek(to: CMTime.zero)
         }
         playerNode.stop()
-        
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioLogger.debug("Audio engine stopped")
+        }
+
         isPlaying = false
         currentTime = 0
         audioState.isPlaying = false
@@ -636,7 +662,7 @@ class AudioPlayer: ObservableObject {
     func seek(to time: Double) {
         // Validate time is finite and non-negative
         guard time.isFinite && time >= 0 else {
-            print("Warning: Attempted to seek to invalid time: \(time)")
+            audioLogger.warning("Attempted to seek to invalid time: \(time, privacy: .public)")
             return
         }
         
@@ -685,37 +711,38 @@ class AudioPlayer: ObservableObject {
     /// Preloads an audio asset to reduce latency on playback start.
     /// - Parameter url: URL of the audio asset; applicable only for local files.
     func preloadAudio(url: URL) {
+        let normalizedURL = normalizedPlaybackURL(from: url)
         // Use the audio processing queue for preloading
         audioProcessingQueue.async {
-            if url.isFileURL {
+            if normalizedURL.isFileURL {
                 do {
                     // For local files, create an AVAudioFile to preload it
-                    let _ = try AVAudioFile(forReading: url)
+                    let _ = try AVAudioFile(forReading: normalizedURL)
                     
                     // Also create an asset to preload metadata
-                    let asset = AVURLAsset(url: url)
+                    let asset = AVURLAsset(url: normalizedURL)
                     
                     // Use the load method instead of the deprecated duration property
                     Task {
                         do {
                             let _ = try await asset.load(.duration) // This triggers loading of the asset
                         } catch {
-                            print("Error preloading audio duration: \(error)")
+                            audioLogger.error("Error preloading audio duration: \(error, privacy: .public)")
                         }
                     }
                 } catch {
-                    print("Error preloading audio file: \(error)")
+                    audioLogger.error("Error preloading audio file: \(error, privacy: .public)")
                 }
             } else {
                 // For remote URLs, we can create an AVURLAsset with a preload hint
-                let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
+                let asset = AVURLAsset(url: normalizedURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
                 
                 // Use the load method instead of the deprecated duration property
                 Task {
                     do {
                         let _ = try await asset.load(.duration) // This triggers loading of the asset
                     } catch {
-                        print("Error preloading remote audio duration: \(error)")
+                        audioLogger.error("Error preloading remote audio duration: \(error, privacy: .public)")
                     }
                 }
             }
@@ -846,11 +873,11 @@ class AudioPlayer: ObservableObject {
     /// - Parameter notification: Notification containing a new pan value.
     @objc private func handlePanChange(_ notification: Notification) {
         if let panValue = notification.userInfo?["pan"] as? Double {
-            print("🎧 Received pan change notification: \(panValue)")
+            audioLogger.debug("Received pan change notification: \(panValue, privacy: .public)")
             
             // Validate that the pan value is finite and within the valid range
             guard panValue.isFinite else {
-                print("Warning: Received invalid pan value: \(panValue)")
+                audioLogger.warning("Received invalid pan value: \(panValue, privacy: .public)")
                 return
             }
             
@@ -865,14 +892,14 @@ class AudioPlayer: ObservableObject {
             if let tapRef = panTap {
                 let storageRaw = MTAudioProcessingTapGetStorage(tapRef)
                 storageRaw.assumingMemoryBound(to: Float.self).pointee = Float(safePan)
-                print("🎧 Updated audio tap storage with pan value: \(safePan)")
+                audioLogger.debug("Updated audio tap storage with pan value: \(safePan, privacy: .public)")
             } else {
-                print("🎧 No audio tap available for pan update")
+                audioLogger.debug("No audio tap available for pan update")
             }
             
-            print("🎧 Pan change complete: \(safePan)")
+            audioLogger.debug("Pan change complete: \(safePan, privacy: .public)")
         } else {
-            print("Warning: Pan change notification missing or invalid pan value")
+            audioLogger.warning("Pan change notification missing or invalid pan value")
         }
     }
     
@@ -898,7 +925,7 @@ class AudioPlayer: ObservableObject {
                 paramsListInBackground.append(params)
             }
         } catch {
-            print("Error loading tracks for audio mix: \(error)")
+            audioLogger.error("Error loading tracks for audio mix: \(error, privacy: .public)")
         }
         
         // Create and assign mix on the main actor
@@ -923,7 +950,8 @@ class AudioPlayer: ObservableObject {
                     }
                     self.isLoading = false // Ready, no longer loading
                 case .failed:
-                    print("Error: AVPlayerItem failed: \(playerItem.error?.localizedDescription ?? "Unknown error")")
+                    let failureDescription = playerItem.error?.localizedDescription ?? "Unknown error"
+                    audioLogger.error("AVPlayerItem failed: \(failureDescription, privacy: .public)")
                     self.isLoading = false
                     self.isPlaying = false
                 case .unknown:
@@ -979,7 +1007,7 @@ class AudioPlayer: ObservableObject {
                 do {
                     try audioEngine.start()
                 } catch {
-                    print("Failed to restart optimized audio engine: \(error)")
+                    audioLogger.error("Failed to restart optimized audio engine: \(error, privacy: .public)")
                 }
             }
         }

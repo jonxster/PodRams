@@ -72,6 +72,8 @@
 - 2025-03-10 — Playback progress is now persisted per episode so the player resumes where you left off; AudioPlayer clears progress on completion and updates PlayedEpisodesManager when shows finish.
 - 2025-09-26 — Help menu windows now persist via HelpWindowManager to prevent crashes, and show notes wrap long paragraphs with tappable links that open in the browser.
 - 2025-09-26 — PodcastFetcher and PersistenceManager now drop obviously invalid feed hosts so subscriptions stop spamming network errors and fetch artwork/episodes normally.
+- 2025-10-14 — Subscription popover play button now restarts the first episode from 0:00, closes the modal, and persists cue artwork so thumbnails survive subsequent launches.
+- 2025-10-16 — Replaced all `print` usage with structured OSLog `Logger` calls via `AppLogger`; added `NSAllowsArbitraryLoadsInMedia` and automatic HTTPS normalization for playback URLs so HTTP-hosted episodes continue to load.
 
 ## Project Rules
 - Always adhere to Liquid Glass design when writing code.
@@ -86,4 +88,3 @@
 - Always add testcases for new functionality.
 - Always make sure translation is always respected in all supported languages when adding new features.
 - Try to keep the corner radius of windows consistent at 10.
-

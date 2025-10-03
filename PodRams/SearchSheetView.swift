@@ -8,6 +8,9 @@
 import SwiftUI
 import Combine
 import AppKit
+import OSLog
+
+private let searchLogger = AppLogger.ui
 
 struct SearchSheetView: View {
     @ObservedObject var podcastFetcher: PodcastFetcher
@@ -197,7 +200,7 @@ struct SearchSheetView: View {
     
     private func toggleSubscription(_ podcast: Podcast) {
         guard let feedUrl = podcast.feedUrl else { 
-            print("Warning: Cannot subscribe to podcast without feed URL")
+            searchLogger.warning("Cannot subscribe to podcast without feed URL")
             return 
         }
         
@@ -206,17 +209,17 @@ struct SearchSheetView: View {
             var updatedSubscriptions = subscribedPodcasts
             updatedSubscriptions.remove(at: idx)
             subscribedPodcasts = updatedSubscriptions
-            print("Removed subscription for: \(podcast.title)")
+            searchLogger.info("Removed subscription for: \(podcast.title, privacy: .public)")
         } else {
             // Add to subscriptions
             var updatedSubscriptions = subscribedPodcasts
             updatedSubscriptions.append(podcast)
             subscribedPodcasts = updatedSubscriptions
-            print("Added subscription for: \(podcast.title)")
+            searchLogger.info("Added subscription for: \(podcast.title, privacy: .public)")
         }
         
         // Save updated subscriptions
         PersistenceManager.saveSubscriptions(subscribedPodcasts)
-        print("Subscriptions saved. Total: \(subscribedPodcasts.count)")
+        searchLogger.info("Subscriptions saved. Total: \(subscribedPodcasts.count, privacy: .public)")
     }
 }

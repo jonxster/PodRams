@@ -1,5 +1,8 @@
 import Foundation
 @preconcurrency import FeedKit
+import OSLog
+
+private let feedLogger = AppLogger.feed
 
 /// RSSParser implementation using FeedKit for improved podcast feed parsing
 class FeedKitRSSParser {
@@ -26,12 +29,12 @@ class FeedKitRSSParser {
             } else if let jsonFeed = feed.jsonFeed {
                 return parseJSONFeed(jsonFeed)
             } else {
-                print("Feed format not recognized")
+                feedLogger.error("Feed format not recognized")
                 return ([], nil, nil)
             }
             
         case .failure(let error):
-            print("FeedKit parsing error: \(error)")
+            feedLogger.error("FeedKit parsing error: \(error, privacy: .public)")
             return ([], nil, nil)
         }
     }
