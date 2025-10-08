@@ -1,0 +1,4 @@
+module PodRamsCorePackageTests {
+    header "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCorePackageTests.build/PodRamsCorePackageTests-Swift.h"
+    requires objc
+}

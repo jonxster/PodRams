@@ -25,9 +25,9 @@ final class PodcastFetcher: ObservableObject {
     private var episodeCache: [String: (episodes: [PodcastEpisode], feedArtwork: URL?)] = [:]
     
     // Memory optimization settings
-    private let maxSearchCacheSize = 20 // Reduced from 50
-    private let maxEpisodeCacheSize = 10 // Reduced from 20
-    private let maxEpisodesPerFeed = 10 // Limit episodes to save memory
+    private let maxSearchCacheSize = MemoryOptimizationManager.shared.maxSearchCacheSize
+    private let maxEpisodeCacheSize = 8 // Reduce cached feeds retained in memory
+    private let maxEpisodesPerFeed = MemoryOptimizationManager.shared.maxEpisodesPerPodcast
     
     init() {
         // Listen for memory optimization notifications

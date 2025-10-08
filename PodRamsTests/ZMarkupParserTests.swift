@@ -1,5 +1,9 @@
 import XCTest
+#if SWIFT_PACKAGE
+@testable import PodRamsCore
+#else
 @testable import PodRams
+#endif
 
 #if os(macOS)
 import AppKit

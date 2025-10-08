@@ -47,7 +47,7 @@ struct SearchSheetView: View {
             Spacer(minLength: 0)
         }
         .padding(24)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .compatGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .background(AppTheme.color(.background, in: currentMode))
         .frame(minWidth: 420, minHeight: 520)
         .onAppear {

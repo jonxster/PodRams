@@ -1,6 +1,10 @@
 import XCTest
 import SwiftUI
+#if SWIFT_PACKAGE
+@testable import PodRamsCore
+#else
 @testable import PodRams
+#endif
 
 final class HelpCommandsTests: XCTestCase {
     var helpCommands: HelpCommands!

@@ -69,7 +69,8 @@ final class ColorSchemeLoader {
     private func load() {
         colors = ColorSchemeLoader.defaultPalette
 
-        guard let url = Bundle.main.url(forResource: "ColorScheme", withExtension: "xml"),
+        let bundle = Bundle.main
+        guard let url = bundle.url(forResource: "ColorScheme", withExtension: "xml"),
               let data = try? Data(contentsOf: url),
               let document = try? XMLDocument(data: data, options: .nodePreserveAll),
               let root = document.rootElement() else {

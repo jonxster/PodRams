@@ -356,19 +356,18 @@ class AudioPlayer: ObservableObject {
                                                      unprepare: unprepareCb,
                                                      process: processCb)
         // Create tap
-        var unmanagedTap: Unmanaged<MTAudioProcessingTap>?
+        var tapRef: Unmanaged<MTAudioProcessingTap>?
         let err = MTAudioProcessingTapCreate(kCFAllocatorDefault,
                                               &callbacks,
                                               kMTAudioProcessingTapCreationFlag_PostEffects,
-                                              &unmanagedTap)
-        guard err == noErr, let uTap = unmanagedTap else {
+                                              &tapRef)
+        guard err == noErr, let tapRef else {
             audioLogger.error("Failed to create pan tap: \(err, privacy: .public)")
             return nil
         }
-        // Consume the initial retain, audio mix will hold its own reference
-        let tapRef = uTap.takeRetainedValue()
-        panTap = tapRef
-        return tapRef
+        let createdTap = tapRef.takeRetainedValue()
+        panTap = createdTap
+        return createdTap
     }
     
     /// Configures the audio engine by attaching and connecting the player node.
@@ -489,7 +488,13 @@ class AudioPlayer: ObservableObject {
     /// - Parameter url: URL of the audio asset (local file or HTTP/HTTPS).
     func playEpisode(_ episode: PodcastEpisode) {
         let playURL = DownloadManager.shared.playbackURL(for: episode)
-        let resumePosition = PersistenceManager.playbackProgress(for: episode)?.position
+        let resumeEntry = PersistenceManager.playbackProgress(for: episode)
+        let resumePosition = resumeEntry?.position
+        if let resumePosition {
+            audioLogger.info("🔁 Resuming episode \(episode.title, privacy: .private) at \(resumePosition, privacy: .public)s")
+        } else {
+            audioLogger.info("▶️ Starting episode \(episode.title, privacy: .private) from beginning")
+        }
         currentEpisode = episode
         lastPersistedPosition = resumePosition ?? 0
         playAudio(url: playURL, resumeFrom: resumePosition, episode: episode)
@@ -593,22 +598,24 @@ class AudioPlayer: ObservableObject {
                         }
                     }
                     
+                    // Seek before starting playback so resume positions take effect immediately
+                    if let resume = resumePosition, resume > 0.5 {
+                        self.seek(to: resume)
+                    }
+
                     // Start playback respecting current rate
                     self.player?.play()
                     self.applyPlaybackRate()
                     if self.engineConfigured {
                         self.playerNode.play()
                     }
-                    
+
                     // Update final state
                     self.isPlaying = true
                     self.isLoading = false
                     self.duration = safeDuration
                     if safeDuration > 0 {
                         self.currentEpisode?.duration = safeDuration
-                    }
-                    if let resume = resumePosition, resume > 0.5 {
-                        self.seek(to: resume)
                     }
                     
                     // Update cached state
@@ -789,6 +796,7 @@ class AudioPlayer: ObservableObject {
         if !force && abs(position - lastPersistedPosition) < 5 { return }
 
         PersistenceManager.updatePlaybackProgress(for: episode, position: position, duration: effectiveDuration)
+        audioLogger.debug("💾 Saved playback progress for \(episode.title, privacy: .private) at \(position, privacy: .public)s")
         lastPersistedPosition = position
     }
 

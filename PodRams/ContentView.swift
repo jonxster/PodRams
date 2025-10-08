@@ -38,6 +38,13 @@ struct ContentView: View {
     /// Namespace used for Liquid Glass morphing identifiers.
     @Namespace private var glassNamespace
     
+    private static let transcriptionDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+    
     // UI state flags controlling visibility and behavior.
     @State private var isCuePlaying = false
     @State private var isSearching = false
@@ -47,8 +54,15 @@ struct ContentView: View {
     @State private var isAudioOutputSelectionVisible = false
     @State private var isSubscribeVisible = false
     @State private var isSettingsVisible = false
+    @State private var isTranscribeVisible = false
     @State private var isShowNotesVisible = false
     @State private var isShowNotesLoading = false
+    @State private var isTranscribing = false
+    @State private var transcriptionText: String = ""
+    @State private var transcriptionErrorMessage: String?
+    @State private var transcribedEpisodeID: String?
+    @State private var transcriptionGeneratedAt: Date?
+    @State private var transcriptionTask: Task<Void, Never>?
     @State private var showNotesContent: AttributedString = AttributedString("Select an episode to view show notes.")
     @State private var showNotesEpisodeID: String?
     @State private var showNotesTitle: String = "Show Notes"
@@ -74,6 +88,11 @@ struct ContentView: View {
     
     private var showNotesAvailable: Bool {
         !isShowNotesLoading && currentShowNotesEpisode != nil
+    }
+    
+    private var transcriptionTimestamp: String? {
+        guard let date = transcriptionGeneratedAt else { return nil }
+        return ContentView.transcriptionDateFormatter.string(from: date)
     }
     
     // Add a binding for episodes to keep them in sync with the app state
@@ -131,17 +150,17 @@ struct ContentView: View {
                         .foregroundColor(AppTheme.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .glassEffectID("now-playing-title", in: glassNamespace)
+                        .compatGlassEffectID("now-playing-title", in: glassNamespace)
                 }
-                .buttonStyle(.glass(.regular.interactive()))
+                .buttonStyle(.compatGlass(.regular.interactive()))
             } else {
                 Text(podcastTitle)
                     .font(.headline)
                     .foregroundColor(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .glassEffectID("now-playing-title", in: glassNamespace)
+                    .compatGlassEffect(in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .compatGlassEffectID("now-playing-title", in: glassNamespace)
             }
         }
     }
@@ -158,6 +177,7 @@ struct ContentView: View {
                         currentEpisodeIndex: $selectedEpisodeIndex,
                         feedArtworkURL: isCuePlaying ? nil : selectedPodcast?.feedArtworkURL
                     )
+                    .padding(.top, 20)
                     .padding(.bottom, 24)
                     
                     // Episode list section with loading indicator overlay.
@@ -199,7 +219,7 @@ struct ContentView: View {
                 .toolbarBackground(AppTheme.toolbarBackground, for: .windowToolbar)
                 .toolbarBackground(.visible, for: .windowToolbar)
                 .toolbarColorScheme(colorScheme, for: .windowToolbar)
-                .glassBackgroundEffect(.window)
+                .compatGlassBackgroundEffect(.window)
             } else {
                 // Loading screen
                 VStack {
@@ -234,7 +254,7 @@ struct ContentView: View {
                 isSearching = false
             }
             .frame(minWidth: 400, minHeight: 500)
-            .glassBackgroundEffect(.window)
+            .compatGlassBackgroundEffect(.window)
         }
         // Popover for displaying the cue (play queue).
         .popover(isPresented: $isCueVisible) {
@@ -246,7 +266,7 @@ struct ContentView: View {
                 selectedPodcast: $selectedPodcast
             )
             .frame(minWidth: 400, minHeight: 500)
-            .glassBackgroundEffect(.sidebar)
+            .compatGlassBackgroundEffect(.sidebar)
         }
         // Popover for displaying favorites.
         .popover(isPresented: $isFavoritesVisible) {
@@ -262,7 +282,7 @@ struct ContentView: View {
                 PersistenceManager.saveFavorites(favoritePodcasts)
             }
             .frame(minWidth: 400, minHeight: 400)
-            .glassBackgroundEffect(.window)
+            .compatGlassBackgroundEffect(.window)
         }
         // Background view to capture keyboard shortcuts.
         .background(KeyboardShortcutView { key in
@@ -428,21 +448,26 @@ struct ContentView: View {
         .onChange(of: activeEpisodes) { _, newEpisodes in
             appEpisodes = newEpisodes
             refreshShowNotes()
+            handleEpisodeContextChange()
         }
         .onChange(of: selectedEpisodeIndex) { _, newIndex in
             appCurrentEpisodeIndex = newIndex
             refreshShowNotes()
+            handleEpisodeContextChange()
         }
         .onChange(of: selectedPodcast) { _, newPodcast in
             appSelectedPodcast = newPodcast
             selectedPodcastEpisodes = newPodcast?.episodes ?? []
             refreshShowNotes()
+            handleEpisodeContextChange()
         }
         .onChange(of: cue) { _, _ in
             refreshShowNotes()
+            handleEpisodeContextChange()
         }
         .onChange(of: isCuePlaying) { _, _ in
             refreshShowNotes()
+            handleEpisodeContextChange()
         }
     }
     
@@ -458,7 +483,7 @@ struct ContentView: View {
             .accessibilityIdentifier("AudioOutputButton")
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
-                    .glassBackgroundEffect(.sidebar)
+                .compatGlassBackgroundEffect(.sidebar)
             }
             .buttonStyle(.plain)
             .focusable(false)
@@ -479,7 +504,7 @@ struct ContentView: View {
                     onPodcastSelect: handlePodcastSelect,
                     onDismiss: { isSubscribeVisible = false }
                 )
-                .glassBackgroundEffect(.inspector)
+                .compatGlassBackgroundEffect(.inspector)
             }
             .buttonStyle(.plain)
             .focusable(false)
@@ -492,7 +517,7 @@ struct ContentView: View {
             }
             .popover(isPresented: $isSettingsVisible) {
                 SettingsView()
-                    .glassBackgroundEffect(.window)
+                    .compatGlassBackgroundEffect(.window)
             }
             .buttonStyle(.plain)
             .focusable(false)
@@ -541,7 +566,21 @@ struct ContentView: View {
                     isLoading: isShowNotesLoading,
                     notes: showNotesContent
                 )
-                .glassBackgroundEffect(.window)
+                .compatGlassBackgroundEffect(.window)
+            }
+            .buttonStyle(.plain)
+            .focusable(false)
+            
+            // Button to display transcription options.
+            Button {
+                handleTranscriptionButtonTap()
+            } label: {
+                let icon = resolveSymbolName(primary: "waveform.and.mic", fallbacks: ["waveform.circle", "waveform", "music.note.list"])
+                glassToolbarIcon(icon)
+            }
+            .help("Transcribe Episode")
+            .popover(isPresented: $isTranscribeVisible) {
+                transcriptionPopover
             }
             .buttonStyle(.plain)
             .focusable(false)
@@ -558,6 +597,72 @@ struct ContentView: View {
         }
     }
 
+    private var transcriptionPopover: some View {
+        VStack(spacing: 18) {
+            Image(systemName: resolveSymbolName(primary: "waveform.and.mic", fallbacks: ["waveform.circle", "waveform"]))
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(AppTheme.accent)
+
+            if isTranscribing {
+                VStack(spacing: 12) {
+                    ProgressView("Transcribing…")
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .tint(AppTheme.accent)
+                    Text("Hang tight while Tahoe converts this episode to text.")
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(AppTheme.secondaryText)
+                        .padding(.horizontal)
+                }
+            } else if let error = transcriptionErrorMessage {
+                VStack(spacing: 12) {
+                    Text("Unable to Transcribe")
+                        .font(.headline)
+                        .foregroundColor(AppTheme.primaryText)
+                    Text(error)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(AppTheme.secondaryText)
+                        .padding(.horizontal)
+                    if currentShowNotesEpisode != nil {
+                        Button("Try Again") {
+                            handleTranscriptionRetry()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(AppTheme.accent)
+                    }
+                }
+            } else if !transcriptionText.isEmpty {
+                ScrollView {
+                    Text(transcriptionText)
+                        .font(.body)
+                        .foregroundColor(AppTheme.primaryText)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 4)
+                }
+                .frame(maxHeight: 320)
+
+                if let timestamp = transcriptionTimestamp {
+                    Text("Generated \(timestamp)")
+                        .font(.footnote)
+                        .foregroundColor(AppTheme.secondaryText)
+                }
+            } else {
+                Text("Select an episode to transcribe.")
+                    .font(.callout)
+                    .foregroundColor(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
+        .frame(minWidth: 320, minHeight: 260)
+                .compatGlassBackgroundEffect(.window)
+    }
+
     /// Toggles play/pause on the audio player.
     /// If the audio is playing, it pauses; otherwise, it plays the currently selected episode.
     private func togglePlayPause() {
@@ -569,6 +674,110 @@ struct ContentView: View {
         }
     }
     
+    private func handleTranscriptionButtonTap() {
+        guard let episode = currentShowNotesEpisode else {
+            clearTranscriptionState()
+            transcriptionErrorMessage = "Select an episode to transcribe."
+            isTranscribeVisible = true
+            return
+        }
+
+        isTranscribeVisible = true
+
+        if transcribedEpisodeID == episode.id, !transcriptionText.isEmpty, !isTranscribing {
+            // Already have a transcript for this episode; show existing text.
+            return
+        }
+
+        beginTranscription(for: episode, useCache: true)
+    }
+
+    private func handleTranscriptionRetry() {
+        guard let episode = currentShowNotesEpisode else {
+            clearTranscriptionState()
+            transcriptionErrorMessage = "Select an episode to transcribe."
+            return
+        }
+        beginTranscription(for: episode, useCache: false)
+    }
+
+    private func beginTranscription(for episode: PodcastEpisode, useCache: Bool) {
+        transcriptionTask?.cancel()
+        transcriptionTask = nil
+        isTranscribing = true
+        transcriptionErrorMessage = nil
+        transcriptionText = ""
+        transcriptionGeneratedAt = nil
+        transcribedEpisodeID = episode.id
+
+        let taskEpisodeID = episode.id
+        let task = Task {
+            if useCache, let cached = await EpisodeTranscriptionManager.shared.cachedTranscript(for: episode) {
+                await MainActor.run {
+                    guard transcribedEpisodeID == taskEpisodeID else { return }
+                    transcriptionText = cached.text
+                    transcriptionGeneratedAt = cached.generatedAt
+                    transcriptionErrorMessage = nil
+                    isTranscribing = false
+                    transcriptionTask = nil
+                }
+                return
+            }
+
+            do {
+                let transcript = try await EpisodeTranscriptionManager.shared.transcript(for: episode)
+                await MainActor.run {
+                    guard transcribedEpisodeID == taskEpisodeID else { return }
+                    transcriptionText = transcript.text
+                    transcriptionGeneratedAt = transcript.generatedAt
+                    transcriptionErrorMessage = nil
+                    isTranscribing = false
+                    transcriptionTask = nil
+                }
+            } catch is CancellationError {
+                await MainActor.run {
+                    guard transcribedEpisodeID == taskEpisodeID else { return }
+                    isTranscribing = false
+                    transcriptionErrorMessage = EpisodeTranscriptionError.cancelled.errorDescription
+                    transcriptionTask = nil
+                }
+            } catch let error as EpisodeTranscriptionError {
+                await MainActor.run {
+                    guard transcribedEpisodeID == taskEpisodeID else { return }
+                    isTranscribing = false
+                    transcriptionErrorMessage = error.errorDescription
+                    transcriptionTask = nil
+                }
+            } catch {
+                await MainActor.run {
+                    guard transcribedEpisodeID == taskEpisodeID else { return }
+                    isTranscribing = false
+                    transcriptionErrorMessage = error.localizedDescription
+                    transcriptionTask = nil
+                }
+            }
+        }
+
+        transcriptionTask = task
+    }
+
+    private func clearTranscriptionState() {
+        transcriptionTask?.cancel()
+        transcriptionTask = nil
+        isTranscribing = false
+        transcriptionText = ""
+        transcriptionErrorMessage = nil
+        transcriptionGeneratedAt = nil
+        transcribedEpisodeID = nil
+    }
+
+    private func handleEpisodeContextChange() {
+        let currentID = currentShowNotesEpisode?.id
+        if currentID != transcribedEpisodeID {
+            clearTranscriptionState()
+        }
+    }
+
     private func refreshShowNotes() {
         prepareShowNotes(for: currentShowNotesEpisode)
     }

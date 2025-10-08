@@ -1,0 +1,287 @@
+{
+  "": {
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/master.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppLogger.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppLogger.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppLogger.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppLogger~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppLogger.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTests.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTests.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTests.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTests.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AppTheme.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTheme.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTheme.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTheme~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AppTheme.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioOutputManager.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputManager.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputManager.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputManager.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioOutputSelectionView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputSelectionView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputSelectionView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputSelectionView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioOutputSelectionView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioPlayer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayer.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/AudioPlayerOptimizations.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayerOptimizations.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayerOptimizations.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayerOptimizations~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/AudioPlayerOptimizations.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/CachedAsyncImage.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CachedAsyncImage.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CachedAsyncImage.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CachedAsyncImage~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CachedAsyncImage.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ConfiguredEpisodeRow.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ConfiguredEpisodeRow.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ConfiguredEpisodeRow.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ConfiguredEpisodeRow~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ConfiguredEpisodeRow.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ContentView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ContentView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ContentView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ContentView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/CueSheetView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CueSheetView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CueSheetView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CueSheetView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/CueSheetView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/DebugMenu.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DebugMenu.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DebugMenu.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DebugMenu~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DebugMenu.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/DownloadButton.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadButton.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadButton.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadButton~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadButton.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/DownloadManager.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadManager.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadManager.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DownloadManager.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeListView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeListView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeListView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeListView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeListView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRowBackground.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRowBackground.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRowBackground.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRowBackground~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRowBackground.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeRow_Previews.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRow_Previews.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRow_Previews.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRow_Previews~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeRow_Previews.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EpisodeTranscriptionManager.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeTranscriptionManager.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeTranscriptionManager.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeTranscriptionManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EpisodeTranscriptionManager.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/EqualizerBackdrop.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EqualizerBackdrop.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EqualizerBackdrop.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EqualizerBackdrop~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/EqualizerBackdrop.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FavoritesView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FavoritesView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FavoritesView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FavoritesView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FavoritesView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FeedKitRSSParser.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FeedKitRSSParser.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FeedKitRSSParser.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FeedKitRSSParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FeedKitRSSParser.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/FlowLayout.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FlowLayout.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FlowLayout.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FlowLayout~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/FlowLayout.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/GlassBadgeView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/GlassBadgeView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/GlassBadgeView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/GlassBadgeView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/GlassBadgeView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/HTMLStrippedString.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HTMLStrippedString.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HTMLStrippedString.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HTMLStrippedString~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HTMLStrippedString.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/HelpCommands.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HelpCommands.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HelpCommands.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HelpCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HelpCommands.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/HoverableDownloadIndicator.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HoverableDownloadIndicator.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HoverableDownloadIndicator.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HoverableDownloadIndicator~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/HoverableDownloadIndicator.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/KeyboardShortcutView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/KeyboardShortcutView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/KeyboardShortcutView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/KeyboardShortcutView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/KeyboardShortcutView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/LiquidGlassCompatibility.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LiquidGlassCompatibility.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LiquidGlassCompatibility.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LiquidGlassCompatibility~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LiquidGlassCompatibility.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/LoadingIndicator.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LoadingIndicator.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LoadingIndicator.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LoadingIndicator~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/LoadingIndicator.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MediaURLSanitizer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MediaURLSanitizer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MediaURLSanitizer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MediaURLSanitizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MediaURLSanitizer.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/MemoryOptimizations.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MemoryOptimizations.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MemoryOptimizations.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MemoryOptimizations~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/MemoryOptimizations.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/Modles.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/Modles.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/Modles.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/Modles~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/Modles.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PersistenceManager.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PersistenceManager.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PersistenceManager.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PersistenceManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PersistenceManager.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayCommands.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayCommands.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayCommands.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayCommands.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayedEpisodesManager.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayedEpisodesManager.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayedEpisodesManager.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayedEpisodesManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayedEpisodesManager.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PlayerView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayerView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayerView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayerView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PlayerView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PodRamsApp.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodRamsApp.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodRamsApp.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodRamsApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodRamsApp.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PodcastFetcher.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodcastFetcher.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodcastFetcher.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodcastFetcher~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PodcastFetcher.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/PreviewSupport.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PreviewSupport.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PreviewSupport.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PreviewSupport~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/PreviewSupport.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ProgressBarView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ProgressBarView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ProgressBarView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ProgressBarView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ProgressBarView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SearchSheetView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SearchSheetView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SearchSheetView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SearchSheetView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SearchSheetView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SettingsView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SettingsView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SettingsView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SettingsView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ShowNotesView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ShowNotesView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ShowNotesView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ShowNotesView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ShowNotesView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SimpleEpisodeRow.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SimpleEpisodeRow.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SimpleEpisodeRow.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SimpleEpisodeRow~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SimpleEpisodeRow.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/SubscribeView.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SubscribeView.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SubscribeView.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SubscribeView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/SubscribeView.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRams/ZMarkupParser.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ZMarkupParser.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ZMarkupParser.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ZMarkupParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/ZMarkupParser.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/DerivedSources/resource_bundle_accessor.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/resource_bundle_accessor.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/resource_bundle_accessor.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/resource_bundle_accessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore.build/resource_bundle_accessor.swiftdeps"
+  }
+}

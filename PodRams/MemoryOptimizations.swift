@@ -22,13 +22,13 @@ final class MemoryOptimizationManager: ObservableObject {
     private let criticalMemoryThreshold: UInt64 = 30 * 1024 * 1024 // 30MB
     
     // Memory optimization configuration
-    let maxEpisodesPerPodcast = 15 // Reduced from unlimited
-    let maxShowNotesLength = 2000
-    let maxSearchCacheSize = 20
-    let imageMemoryCacheLimit = 15 * 1024 * 1024 // 15MB instead of 50MB
+    let maxEpisodesPerPodcast = 10 // Keep most recent 10 episodes per podcast
+    let maxShowNotesLength = 1600
+    let maxSearchCacheSize = 16
+    let imageMemoryCacheLimit = 10 * 1024 * 1024 // Trim in-memory image cache
     
     // Episode data optimization
-    private let maxCachedEpisodes = 100 // Total cached episodes across all podcasts
+    private let maxCachedEpisodes = 60 // Total cached episodes across all podcasts
     
     // Cache management
     private var lastMemoryOptimization = Date.distantPast
@@ -159,7 +159,7 @@ final class MemoryOptimizationManager: ObservableObject {
     /// Optimizes the image cache
     private func optimizeImageCache() {
         // Configure optimized image cache limits
-        CachedAsyncImage.updateOptimizedCache(totalCostLimit: 25 * 1024 * 1024, countLimit: 150)
+        CachedAsyncImage.updateOptimizedCache(totalCostLimit: 18 * 1024 * 1024, countLimit: 100)
 
         // Remove half of the cached images, keeping most recently used
         let currentCount = max(1, CachedAsyncImage.optimizedCacheCountLimit())
@@ -167,7 +167,7 @@ final class MemoryOptimizationManager: ObservableObject {
 
         // Restore original limit after cleanup
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            CachedAsyncImage.updateOptimizedCache(countLimit: 150)
+            CachedAsyncImage.updateOptimizedCache(countLimit: 100)
         }
     }
     

@@ -6,54 +6,70 @@
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/DownloadManagerTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/HTMLStrippedStringTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HTMLStrippedStringTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/HelpCommandsTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/HelpCommandsTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/PersistenceManagerTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PersistenceManagerTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/PlayCommandsTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayCommandsTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/PlayedEpisodesManagerTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PlayedEpisodesManagerTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/PodRamsTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodRamsTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/PodcastModelsTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/PodcastModelsTests.dia"
   },
   "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/RSSParserTests.swift": {
     "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests.d",
     "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests.swift.o",
     "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests.swiftdeps"
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/RSSParserTests.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/PodRams/PodRamsTests/ZMarkupParserTests.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/ZMarkupParserTests.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/ZMarkupParserTests.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/ZMarkupParserTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/ZMarkupParserTests.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsTests.build/ZMarkupParserTests.dia"
   }
 }

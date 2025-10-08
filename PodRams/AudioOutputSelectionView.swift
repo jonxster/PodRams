@@ -40,7 +40,7 @@ struct AudioOutputSelectionView: View {
         .padding(24)
         .frame(minWidth: 360, minHeight: 420)
         .background(AppTheme.color(.background, in: mode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .compatGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onAppear {
             devices = getOutputDevices()
             selectedDeviceID = getDefaultOutputDeviceID()

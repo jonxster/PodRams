@@ -29,7 +29,7 @@ struct PlayerView: View {
         VStack(spacing: 16) {
             frontSide
                 .padding(.top, 24)
-                .glassEffectUnion(id: "player-artwork", namespace: playerGlassNamespace)
+                .compatGlassEffectUnion(id: "player-artwork", namespace: playerGlassNamespace)
 
             if let episode = currentEpisode {
                 Text(episode.title)
@@ -47,7 +47,7 @@ struct PlayerView: View {
             }
 
             controlButtons
-                .glassEffectUnion(id: "player-controls", namespace: playerGlassNamespace)
+                .compatGlassEffectUnion(id: "player-controls", namespace: playerGlassNamespace)
 
             ProgressBarView(
                 currentTime: audioPlayer.currentTime,
@@ -85,9 +85,9 @@ struct PlayerView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .frame(width: 216, height: 216)
-        .backgroundExtensionEffect()
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .glassEffectID("player-card", in: playerGlassNamespace)
+        .compatBackgroundExtensionEffect()
+        .compatGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .compatGlassEffectID("player-card", in: playerGlassNamespace)
     }
 
     private var controlButtons: some View {
@@ -121,7 +121,7 @@ struct PlayerView: View {
                 .shadow(color: bubbleShadow, radius: 10, x: 0, y: 6)
         )
         .contentShape(Capsule(style: .continuous))
-        .glassEffectUnion(id: "transport-cluster", namespace: playerGlassNamespace)
+        .compatGlassEffectUnion(id: "transport-cluster", namespace: playerGlassNamespace)
         .buttonStyle(.plain)
         .onHover { hovering in
             if !hovering && isVolumeExpanded {

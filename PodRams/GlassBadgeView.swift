@@ -27,7 +27,7 @@ struct GlassBadgeView: View {
             Image(systemName: symbolName)
                 .font(.system(size: 24, weight: .semibold))
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular.tint(tint).interactive(), in: Circle())
+                .compatGlassEffect(.regular.tint(tint).interactive(), in: Circle())
 
             VStack(spacing: 2) {
                 Text(title)
@@ -40,11 +40,11 @@ struct GlassBadgeView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .glassEffect(.regular.tint(tint.opacity(0.6)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .compatGlassEffect(.regular.tint(tint.opacity(0.6)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
-        .glassEffect(.regular.tint(tint.opacity(0.35)), in: Capsule())
+        .compatGlassEffect(.regular.tint(tint.opacity(0.35)), in: Capsule())
         .applyGlassIDIfNeeded(namespace: namespace, glassID: glassID)
     }
 }
@@ -53,7 +53,7 @@ private extension View {
     @ViewBuilder
     func applyGlassIDIfNeeded(namespace: Namespace.ID?, glassID: String?) -> some View {
         if let namespace, let glassID {
-            self.glassEffectID(glassID, in: namespace)
+            self.compatGlassEffectID(glassID, in: namespace)
         } else {
             self
         }

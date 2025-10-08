@@ -9,5 +9,7 @@
 		<key>NSAllowsArbitraryLoadsInMedia</key>
 		<true/>
 	</dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>PodRams uses speech recognition to transcribe podcast episodes for you.</string>
 </dict>
-</plist> 
+</plist>

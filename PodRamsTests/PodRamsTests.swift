@@ -6,7 +6,11 @@
 //
 
 import Testing
+#if SWIFT_PACKAGE
+@testable import PodRamsCore
+#else
 @testable import PodRams
+#endif
 
 struct PodRamsTests {
 

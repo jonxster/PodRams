@@ -1,5 +1,9 @@
 import XCTest
+#if SWIFT_PACKAGE
+@testable import PodRamsCore
+#else
 @testable import PodRams
+#endif
 
 final class DownloadManagerTests: XCTestCase {
     var downloadManager: DownloadManager!
@@ -103,13 +107,10 @@ final class DownloadManagerTests: XCTestCase {
     func testPauseDownload() {
         let episodeKey = testEpisode.url.absoluteString
         
-        // Start download first
-        downloadManager.downloadEpisode(testEpisode)
-        
         // Simulate downloading state with progress and create a mock task
         let testProgress = 0.5
         downloadManager.downloadStates[episodeKey] = .downloading(progress: testProgress)
-        
+
         // Create a mock download task to simulate the pause behavior
         let mockTask = URLSession.shared.downloadTask(with: testEpisode.url)
         downloadManager.downloadTasks[episodeKey] = mockTask

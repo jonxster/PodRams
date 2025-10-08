@@ -44,7 +44,7 @@ struct SubscribeView: View {
         .padding(24)
         .frame(minWidth: 440, minHeight: 520)
         .background(AppTheme.color(.background, in: currentMode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .compatGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var currentMode: AppTheme.Mode {
@@ -246,43 +246,33 @@ struct SubscribeView: View {
                         if let feedArt = feedArt {
                             subscribedPodcasts[index].feedArtworkURL = feedArt
                         }
-                        playFirstEpisodeFromStart(for: subscribedPodcasts[index])
+                        playFirstEpisode(for: subscribedPodcasts[index])
                     } else {
                         podcast.episodes = episodes
                         if let feedArt = feedArt {
                             podcast.feedArtworkURL = feedArt
                         }
-                        playFirstEpisodeFromStart(for: podcast)
+                        playFirstEpisode(for: podcast)
                     }
                     loadingPodcastId = nil
                 }
             }
         } else {
-            playFirstEpisodeFromStart(for: podcast)
+            playFirstEpisode(for: podcast)
         }
     }
 
-    private func playFirstEpisodeFromStart(for podcast: Podcast) {
+    private func playFirstEpisode(for podcast: Podcast) {
         guard !podcast.episodes.isEmpty else { return }
 
         let firstEpisode = podcast.episodes[0]
 
         Task {
-            PersistenceManager.clearPlaybackProgress(for: firstEpisode)
-            PersistenceManager.waitForPersistenceQueue()
-
             await MainActor.run {
                 selectedPodcast = podcast
                 selectedEpisodeIndex = 0
 
-                if audioPlayer.currentEpisode?.id == firstEpisode.id {
-                    audioPlayer.seek(to: 0)
-                    if !audioPlayer.isPlaying {
-                        audioPlayer.playEpisode(firstEpisode)
-                    }
-                } else {
-                    audioPlayer.playEpisode(firstEpisode)
-                }
+                audioPlayer.playEpisode(firstEpisode)
 
                 onDismiss?()
             }

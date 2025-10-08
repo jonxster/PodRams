@@ -13,12 +13,12 @@ private final class CachedImageState: @unchecked Sendable {
     var loadingTasks: [String: URLSessionDataTask] = [:]
     let primaryCache = NSCache<NSURL, NSImage>()
     let optimizedCache: NSCache<NSURL, NSImage>
-    var lastLoadedURLs: [String: Date] = [:]
+    var failedLoadTimestamps: [String: Date] = [:]
 
     init() {
         let cache = NSCache<NSURL, NSImage>()
-        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
-        cache.countLimit = 200
+        cache.totalCostLimit = 40 * 1024 * 1024 // allow a wider in-memory working set for bursts
+        cache.countLimit = 180
         optimizedCache = cache
     }
 }
@@ -36,6 +36,25 @@ public struct CachedAsyncImage: View {
     /// Shared cache/state container to keep global mutable state isolated behind a lock.
     nonisolated private static let cacheState = CachedImageState()
     nonisolated private static let failureCooldownPeriod: TimeInterval = 300 // 5 minutes
+    nonisolated private static let imageSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30.0
+        config.timeoutIntervalForResource = 60.0
+        config.waitsForConnectivity = true
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        config.httpMaximumConnectionsPerHost = 12
+        config.urlCache = URLCache(
+            memoryCapacity: 24 * 1024 * 1024,
+            diskCapacity: 96 * 1024 * 1024,
+            diskPath: "PodRamsImageCache"
+        )
+
+        let delegateQueue = OperationQueue()
+        delegateQueue.maxConcurrentOperationCount = 12
+        delegateQueue.qualityOfService = .userInitiated
+
+        return URLSession(configuration: config, delegate: nil, delegateQueue: delegateQueue)
+    }()
     
     /// The loaded image (if available) represented as an NSImage.
     @State private var loadedImage: NSImage?
@@ -150,40 +169,23 @@ public struct CachedAsyncImage: View {
                 return // Found in memory cache, exit background task
             }
 
-            // Check if already loading - requires lock
-            Self.cacheState.lock.lock()
-            if Self.cacheState.loadingTasks[urlKey] != nil {
-                // Task is already in progress, just let the existing one finish
-                Self.cacheState.lock.unlock()
-                return 
-            }
-            
-            // Check if we recently failed to load this URL with cooldown
-            if let lastAttempt = Self.cacheState.lastLoadedURLs[urlKey] {
-                let timeSinceLastAttempt = Date().timeIntervalSince(lastAttempt)
-                if timeSinceLastAttempt < Self.failureCooldownPeriod {
-                    Self.cacheState.lock.unlock()
-                     DispatchQueue.main.async {
-                        isLoading = false 
-                        loadError = true
-                    }
-                    return
-                }
-            }
-            
-            // Mark that we've attempted to load this URL
-            Self.cacheState.lastLoadedURLs[urlKey] = Date()
-            
-            // Capture fileURL before unlocking
             let fileURL = self.cachedFileURL(for: url)
-            
-            // --- End: Moved checks inside background queue --- 
-            
-            // Create a placeholder task using a valid initializer before unlocking
-            let dummyRequest = URLRequest(url: URL(string: "placeholder://task")!) // Dummy request
-            let placeholderTask = URLSession.shared.dataTask(with: dummyRequest) // Non-deprecated init
-            Self.cacheState.loadingTasks[urlKey] = placeholderTask 
-            Self.cacheState.lock.unlock() // Unlock *before* potentially slow disk I/O
+
+            Self.cacheState.lock.lock()
+            if let failureDate = Self.cacheState.failedLoadTimestamps[urlKey],
+               Date().timeIntervalSince(failureDate) < Self.failureCooldownPeriod {
+                Self.cacheState.lock.unlock()
+                DispatchQueue.main.async {
+                    isLoading = false
+                    loadError = true
+                }
+                return
+            }
+            if Self.cacheState.loadingTasks[urlKey] != nil {
+                Self.cacheState.lock.unlock()
+                return
+            }
+            Self.cacheState.lock.unlock()
             
             // Attempt to load from disk cache.
             if FileManager.default.fileExists(atPath: fileURL.path),
@@ -191,11 +193,8 @@ public struct CachedAsyncImage: View {
                let image = processImageData(data) {
                 
                 Self.cacheState.lock.lock()
+                Self.cacheState.failedLoadTimestamps.removeValue(forKey: urlKey)
                 Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL)
-                // Remove placeholder task if we loaded from disk
-                if Self.cacheState.loadingTasks[urlKey] === placeholderTask { 
-                    Self.cacheState.loadingTasks.removeValue(forKey: urlKey)
-                }
                 Self.cacheState.lock.unlock()
                 
                 DispatchQueue.main.async {
@@ -213,90 +212,94 @@ public struct CachedAsyncImage: View {
             // --- Network Loading --- 
             var request = URLRequest(url: url)
             request.timeoutInterval = 30
-            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15", 
-                            forHTTPHeaderField: "User-Agent")
+            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15",
+                             forHTTPHeaderField: "User-Agent")
             request.cachePolicy = .returnCacheDataElseLoad
-            
-            let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 30.0
-            config.timeoutIntervalForResource = 60.0
-            config.waitsForConnectivity = true
-            config.requestCachePolicy = .returnCacheDataElseLoad
-            
-            let session = URLSession(configuration: config)
-            
-            // Create the actual data task
-            let task = session.dataTask(with: request) { data, response, error in
-                // Task completion handler (already on background thread)
-                
-                // Always remove task from tracking inside lock
+
+            Self.cacheState.lock.lock()
+            if let failureDate = Self.cacheState.failedLoadTimestamps[urlKey],
+               Date().timeIntervalSince(failureDate) < Self.failureCooldownPeriod {
+                Self.cacheState.lock.unlock()
+                DispatchQueue.main.async {
+                    isLoading = false
+                    loadError = true
+                }
+                return
+            }
+            if Self.cacheState.loadingTasks[urlKey] != nil {
+                Self.cacheState.lock.unlock()
+                return
+            }
+
+            let task = Self.imageSession.dataTask(with: request) { data, _, error in
                 Self.cacheState.lock.lock()
                 Self.cacheState.loadingTasks.removeValue(forKey: urlKey)
+                let wasCancelled = (error as NSError?)?.code == NSURLErrorCancelled
+                if error != nil && !wasCancelled {
+                    Self.cacheState.failedLoadTimestamps[urlKey] = Date()
+                }
                 Self.cacheState.lock.unlock()
-                
-                if let _ = error {
-                    DispatchQueue.main.async { 
-                        isLoading = false 
-                        loadError = true
-                    }
-                    return
-                }
-                
-                guard let data = data, !data.isEmpty else {
-                    DispatchQueue.main.async { 
-                        isLoading = false 
-                        loadError = true
-                    }
-                    return
-                }
-                
-                guard let image = processImageData(data) else {
-                     // If processing fails, try the CGImageSource fallback
-                    if let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
-                       let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) {
-                        let fallbackImage = NSImage(cgImage: cgImage, size: .zero)
-                        
-                        // Store fallback image in memory cache
-                        Self.cacheState.lock.lock()
-                        Self.cacheState.primaryCache.setObject(fallbackImage, forKey: url as NSURL)
-                        Self.cacheState.lock.unlock()
-                        
-                        // Store image data to disk
-                        storeImage(data: data, for: url)
-                        
-                        DispatchQueue.main.async {
-                            loadedImage = fallbackImage
-                            isLoading = false
-                        }
-                        return // Successfully loaded via fallback
-                    }
-                    
-                    // Both processing attempts failed
-                    DispatchQueue.main.async { 
+
+                if error != nil {
+                    if wasCancelled { return }
+                    DispatchQueue.main.async {
                         isLoading = false
                         loadError = true
                     }
                     return
                 }
-                
-                // Successfully processed image data
-                storeImage(data: data, for: url) // Store to disk cache
-                
+
+                guard let data = data, !data.isEmpty else {
+                    Self.cacheState.lock.lock()
+                    Self.cacheState.failedLoadTimestamps[urlKey] = Date()
+                    Self.cacheState.lock.unlock()
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        loadError = true
+                    }
+                    return
+                }
+
+                if let image = processImageData(data) {
+                    storeImage(data: data, for: url)
+                    Self.cacheState.lock.lock()
+                    Self.cacheState.failedLoadTimestamps.removeValue(forKey: urlKey)
+                    Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL)
+                    Self.cacheState.lock.unlock()
+                    DispatchQueue.main.async {
+                        loadedImage = image
+                        isLoading = false
+                    }
+                    return
+                }
+
+                if let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
+                   let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) {
+                    let fallbackImage = NSImage(cgImage: cgImage, size: .zero)
+                    storeImage(data: data, for: url)
+                    Self.cacheState.lock.lock()
+                    Self.cacheState.failedLoadTimestamps.removeValue(forKey: urlKey)
+                    Self.cacheState.optimizedCache.setObject(fallbackImage, forKey: url as NSURL)
+                    Self.cacheState.lock.unlock()
+                    DispatchQueue.main.async {
+                        loadedImage = fallbackImage
+                        isLoading = false
+                    }
+                    return
+                }
+
                 Self.cacheState.lock.lock()
-                Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL) // Store to memory cache
+                Self.cacheState.failedLoadTimestamps[urlKey] = Date()
                 Self.cacheState.lock.unlock()
-                
                 DispatchQueue.main.async {
-                    loadedImage = image
                     isLoading = false
+                    loadError = true
                 }
             }
-            
-            // Store the *actual* task, replacing the placeholder, and start it
-            Self.cacheState.lock.lock()
+
             Self.cacheState.loadingTasks[urlKey] = task
             Self.cacheState.lock.unlock()
-            
+
             task.resume()
         }
     }
@@ -304,8 +307,8 @@ public struct CachedAsyncImage: View {
     /// Processes image data to create an optimized NSImage
     nonisolated private func processImageData(_ data: Data) -> NSImage? {
         // Try creating thumbnail directly if image might be large (heuristics based on data size)
-        let maxDimension: CGFloat = 1200
-        var potentiallyLarge = data.count > 500 * 1024 // Assume > 500KB might be large
+        let maxDimension: CGFloat = 600
+        var potentiallyLarge = data.count > 350 * 1024 // Anything above ~350KB gets downsized
         
         if !potentiallyLarge {
             // For smaller data, try NSImage first as it's often faster
@@ -452,7 +455,7 @@ public struct CachedAsyncImage: View {
         let state = cacheState
         state.lock.lock()
         defer { state.lock.unlock() }
-        state.lastLoadedURLs.removeAll()
+        state.failedLoadTimestamps.removeAll()
     }
     
     // Clear entire image cache
@@ -462,7 +465,7 @@ public struct CachedAsyncImage: View {
         defer { state.lock.unlock() }
         state.primaryCache.removeAllObjects()
         state.optimizedCache.removeAllObjects()
-        state.lastLoadedURLs.removeAll()
+        state.failedLoadTimestamps.removeAll()
         
         // Try to clear disk cache too
         do {

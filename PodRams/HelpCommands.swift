@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 #if os(macOS)
 import AppKit
 #endif
@@ -83,11 +84,11 @@ enum HelpSection: CaseIterable, Hashable {
     }
 
     var title: String {
-        NSLocalizedString("Help.\(identifier).Title", comment: "Help section title")
+        HelpLocalization.string("Help.\(identifier).Title")
     }
 
     var content: String {
-        NSLocalizedString("Help.\(identifier).Content", comment: "Detailed help content for the section")
+        HelpLocalization.string("Help.\(identifier).Content")
     }
 }
 
@@ -148,3 +149,122 @@ final class HelpWindowManager: NSObject, NSWindowDelegate {
     }
 }
 #endif
+
+private enum HelpLocalization {
+    static let bundle: Bundle = {
+        #if SWIFT_PACKAGE
+        Bundle.module
+        #else
+        Bundle.main
+        #endif
+    }()
+
+    static func string(_ key: String) -> String {
+        let localized = bundle.localizedString(forKey: key, value: key, table: nil)
+        if localized == key, let fallback = fallbackStrings[key] {
+            return fallback
+        }
+        return localized
+    }
+
+    private static let fallbackStrings: [String: String] = [
+        "Help.GettingStarted.Title": "Getting Started",
+        "Help.GettingStarted.Content": """
+Welcome to PodRams!
+
+To get started:
+1. Click the search icon (🔍) to find podcasts.
+2. Subscribe to shows you like using the subscribe button.
+3. Download episodes or stream them directly.
+4. Build a listening queue with the cue system.
+5. Mark favorite podcasts for quick access.
+
+Use the toolbar icons for quick access to common functions.
+""",
+        "Help.PlaybackControls.Title": "Playback Controls",
+        "Help.PlaybackControls.Content": """
+Playback controls:
+
+• Play/Pause (⌘P): Toggle playback of the current episode.
+• Stop (⌘S): Stop playback and reset position.
+• Previous/Next Episode (⌘←/→): Navigate between episodes.
+• Skip Back/Forward (⌥⌘←/→): Jump 30 seconds.
+• Volume Up/Down (⌘↑/↓): Adjust volume.
+• Mute/Unmute (⌘M): Toggle audio.
+
+You can access the same controls from the Play menu and the keyboard shortcuts listed above.
+""",
+        "Help.EpisodeManagement.Title": "Episode Management",
+        "Help.EpisodeManagement.Content": """
+Episode management:
+
+• Download episodes for offline listening.
+• Add episodes to your cue (playlist).
+• Reorder episodes.
+• View episode details.
+• Track download progress.
+• Delete downloaded episodes.
+
+Open the context menu (•••) on any episode to see these actions.
+""",
+        "Help.PodcastManagement.Title": "Podcast Management",
+        "Help.PodcastManagement.Content": """
+Podcast management:
+
+• Subscribe to podcasts to receive new episodes.
+• Add podcasts to favorites for quick access.
+• View podcast details.
+• Manage your subscriptions.
+• Search for new podcasts.
+• Import/Export subscription lists.
+
+Toolbar icons let you jump directly to these management screens.
+""",
+        "Help.KeyboardShortcuts.Title": "Keyboard Shortcuts",
+        "Help.KeyboardShortcuts.Content": """
+Keyboard shortcuts:
+
+Playback:
+• ⌘P — Play/Pause
+• ⌘S — Stop
+• ⌘← — Previous episode
+• ⌘→ — Next episode
+• ⌥⌘← — Skip back 30 s
+• ⌥⌘→ — Skip forward 30 s
+• ⌘↑ — Volume up
+• ⌘↓ — Volume down
+• ⌘M — Mute/Unmute
+
+Navigation:
+• ⌘F — Search
+• ⌘C — Toggle cue
+• Space — Play/Pause
+
+Help:
+• ⇧⌘1 — Getting Started
+• ⇧⌘2 — Playback Controls
+• ⇧⌘3 — Episode Management
+• ⇧⌘4 — Podcast Management
+• ⇧⌘5 — Keyboard Shortcuts
+• ⇧⌘6 — About
+""",
+        "Help.About.Title": "About PodRams",
+        "Help.About.Content": """
+PodRams — A modern macOS podcast player.
+
+Highlights:
+• Smart Playback
+• Download Management
+• Cue System
+• Search Integration
+• Favorites
+• Subscriptions
+• Audio Controls
+• Persistence
+• Artwork Support
+• Audio Output Selection
+
+Built with SwiftUI for macOS 11.0 and later.
+"""
+    ]
+}

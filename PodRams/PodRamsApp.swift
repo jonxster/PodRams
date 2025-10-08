@@ -1,3 +1,4 @@
+#if !SWIFT_PACKAGE
 import SwiftUI
 import OSLog
 
@@ -131,3 +132,4 @@ struct PodRamsApp: App {
         PersistenceManager.saveLastPlayback(episode: currentEpisode, feedUrl: feedUrl)
     }
 }
+#endif

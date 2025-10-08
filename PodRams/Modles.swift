@@ -34,7 +34,8 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
     /// Reduces memory footprint for podcast collections
     func optimizeMemoryUsage() {
         // Memory optimization: Limit episodes to most recent 50 to reduce memory usage
-        let maxEpisodes = 50
+        let manager = MemoryOptimizationManager.shared
+        let maxEpisodes = max(manager.maxEpisodesPerPodcast * 3, 20)
         if episodes.count > maxEpisodes {
             // Keep only the most recent episodes (assuming they're ordered by date)
             episodes = Array(episodes.prefix(maxEpisodes))
@@ -51,9 +52,11 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
     private func optimizeEpisode(_ episode: PodcastEpisode) -> PodcastEpisode {
         // Truncate overly long show notes to reduce memory usage
         var optimizedShowNotes = episode.showNotes
-        if let notes = episode.showNotes, notes.count > 2000 {
-            // Keep first 2000 characters with ellipsis
-            let truncated = String(notes.prefix(2000)) + "..."
+        if let notes = episode.showNotes,
+           notes.count > MemoryOptimizationManager.shared.maxShowNotesLength {
+            // Keep first N characters with ellipsis
+            let limit = MemoryOptimizationManager.shared.maxShowNotesLength
+            let truncated = String(notes.prefix(limit)) + "..."
             optimizedShowNotes = truncated
         }
         

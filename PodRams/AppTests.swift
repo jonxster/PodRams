@@ -474,19 +474,19 @@ class AppTests {
         testLogger.debug("Estimated memory usage after: \(afterMemory, privacy: .public) bytes")
         
         // Verify optimizations
-        safeAssert(testPodcast.episodes.count <= 50, "Episode count should be limited to 50 or less")
+        safeAssert(testPodcast.episodes.count <= 30, "Episode count should be limited to 30 or less")
         safeAssert(afterMemory < beforeMemory, "Memory usage should be reduced after optimization")
         
         // Check that show notes were truncated
         for episode in testPodcast.episodes {
             if let notes = episode.showNotes {
-                safeAssert(notes.count <= 2003, "Show notes should be truncated to 2000 characters + ellipsis")
+                safeAssert(notes.count <= 1603, "Show notes should be truncated to 1600 characters + ellipsis")
             }
         }
         
         // Test memory optimization manager exists
         let memoryManager = MemoryOptimizationManager.shared
-        safeAssert(memoryManager.maxEpisodesPerPodcast == 15, "Memory optimization should limit episodes to 15")
+        safeAssert(memoryManager.maxEpisodesPerPodcast == 10, "Memory optimization should limit episodes to 10")
         
         testLogger.info("✅ Memory optimization tests passed!")
     }

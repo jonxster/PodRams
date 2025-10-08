@@ -1,6 +1,10 @@
 import XCTest
 import SwiftUI
+#if SWIFT_PACKAGE
+@testable import PodRamsCore
+#else
 @testable import PodRams
+#endif
 
 // Mock AudioPlayer for testing
 @MainActor

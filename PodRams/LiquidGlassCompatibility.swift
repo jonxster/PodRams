@@ -1,7 +1,7 @@
 import SwiftUI
 
-#if !swift(>=6.2)
-/// Lightweight stand-ins for the upcoming Liquid Glass APIs so we can adopt the guidelines today.
+/// Lightweight stand-ins for the upcoming Liquid Glass APIs so we can adopt the new styling
+/// model while remaining compatible with macOS releases prior to Tahoe.
 struct Glass {
     var tintColor: Color?
     var isInteractive = false
@@ -26,40 +26,91 @@ struct DefaultGlassEffectShape: InsettableShape {
     func inset(by amount: CGFloat) -> DefaultGlassEffectShape { self }
 }
 
-/// Lightweight representation of the system’s glass background styles.
-enum GlassBackgroundArea {
-    case window
-    case sidebar
-    case inspector
-}
-
+/// Compatibility helpers that mimic the system glass effect on older OS versions and defer to
+/// the native APIs on Tahoe.
 private struct GlassEffectModifier<S: InsettableShape>: ViewModifier {
     let configuration: Glass
     let shape: S
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        let base = content
-            .background(AppTheme.surface, in: shape)
-            .overlay(shape.stroke(AppTheme.secondaryText.opacity(configuration.isInteractive ? 0.25 : 0.12)))
-        if let tint = configuration.tintColor {
-            base.tint(tint)
+        #if compiler(>=6.2)
+        if #available(macOS 15.0, *) {
+            content
+                .glassEffect(configuration.isInteractive ? .regular.interactive() : .regular, in: shape)
         } else {
-            base
+            fallback(content: content)
         }
+        #else
+        fallback(content: content)
+        #endif
+    }
+
+    @ViewBuilder
+    private func fallback(content: Content) -> some View {
+        content
+            .background(
+                AppTheme.surface.opacity(0.92),
+                in: shape
+            )
+            .overlay(
+                shape
+                    .stroke(AppTheme.secondaryText.opacity(configuration.isInteractive ? 0.35 : 0.18))
+            )
+            .overlay {
+                if let tint = configuration.tintColor {
+                    shape.fill(tint.opacity(0.25))
+                }
+            }
     }
 }
 
 extension View {
-    func glassEffect(_ glass: Glass = .regular) -> some View {
-        glassEffect(glass, in: DefaultGlassEffectShape())
+    @ViewBuilder
+    func compatGlassEffect(_ glass: Glass = .regular) -> some View {
+        compatGlassEffect(glass, in: DefaultGlassEffectShape())
     }
 
-    func glassEffect<S: InsettableShape>(_ glass: Glass = .regular, in shape: S) -> some View {
+    @ViewBuilder
+    func compatGlassEffect<S: InsettableShape>(_ glass: Glass = .regular, in shape: S) -> some View {
         modifier(GlassEffectModifier(configuration: glass, shape: shape))
+    }
+
+    func compatGlassEffectID<ID: Hashable>(_ id: ID, in namespace: Namespace.ID) -> some View {
+        self
+    }
+
+    func compatGlassEffectUnion<ID: Hashable & Sendable>(id: ID, namespace: Namespace.ID) -> some View {
+        self
+    }
+
+    func compatBackgroundExtensionEffect(_ edges: Edge.Set = [.leading, .trailing]) -> some View {
+        self
+            .padding(.leading, edges.contains(.leading) ? -48 : 0)
+            .padding(.trailing, edges.contains(.trailing) ? -48 : 0)
+            .padding(.top, edges.contains(.top) ? -32 : 0)
+            .padding(.bottom, edges.contains(.bottom) ? -32 : 0)
+            .clipped()
+    }
+
+    func compatGlassBackgroundEffect(_ area: GlassBackgroundArea = .window) -> some View {
+        let radius: CGFloat = {
+            switch area {
+            case .window:
+                return 20
+            case .sidebar, .inspector:
+                return 28
+            }
+        }()
+
+        return self.background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+        )
     }
 }
 
+/// Convenience container used in a few places to stack glass areas.
 struct GlassEffectContainer<Content: View>: View {
     let spacing: CGFloat
     @ViewBuilder private var content: () -> Content
@@ -87,7 +138,7 @@ struct GlassButtonStyle: PrimitiveButtonStyle {
 
         var body: some View {
             configuration.label
-                .glassEffect(glass, in: Capsule())
+                .compatGlassEffect(glass, in: Capsule())
                 .scaleEffect(isPressed && glass.isInteractive ? 0.96 : 1.0)
                 .animation(.easeOut(duration: 0.12), value: isPressed)
                 .contentShape(Capsule())
@@ -111,52 +162,12 @@ struct GlassButtonStyle: PrimitiveButtonStyle {
 }
 
 extension PrimitiveButtonStyle where Self == GlassButtonStyle {
-    static var glass: GlassButtonStyle { GlassButtonStyle(glass: .regular) }
-    static func glass(_ glass: Glass) -> GlassButtonStyle { GlassButtonStyle(glass: glass) }
+    static var compatGlass: GlassButtonStyle { GlassButtonStyle(glass: .regular) }
+    static func compatGlass(_ glass: Glass) -> GlassButtonStyle { GlassButtonStyle(glass: glass) }
 }
 
-// MARK: - Glass identifiers & unions
-
-extension View {
-    func glassEffectID<ID: Hashable>(_ id: ID, in namespace: Namespace.ID) -> some View {
-        self
-    }
-
-    func glassEffectNamespace(_ namespace: Namespace.ID) -> some View { self }
-
-    func glassEffectUnion<ID: Hashable>(id: ID, namespace: Namespace.ID) -> some View {
-        self
-    }
+enum GlassBackgroundArea {
+    case window
+    case sidebar
+    case inspector
 }
-
-// MARK: - Background extension effect
-
-private struct BackgroundExtensionEffectModifier: ViewModifier {
-    let edges: Edge.Set
-
-    func body(content: Content) -> some View {
-        content
-            .padding(.leading, edges.contains(.leading) ? -48 : 0)
-            .padding(.trailing, edges.contains(.trailing) ? -48 : 0)
-            .padding(.top, edges.contains(.top) ? -32 : 0)
-            .padding(.bottom, edges.contains(.bottom) ? -32 : 0)
-            .clipped()
-    }
-}
-
-extension View {
-    func backgroundExtensionEffect(_ edges: Edge.Set = [.leading, .trailing]) -> some View {
-        modifier(BackgroundExtensionEffectModifier(edges: edges))
-    }
-
-    func glassBackgroundEffect(_ area: GlassBackgroundArea = .window) -> some View {
-        let radius: CGFloat
-        switch area {
-        case .window: radius = 20
-        case .sidebar, .inspector: radius = 28
-        }
-        return background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-    }
-}
-
-#endif

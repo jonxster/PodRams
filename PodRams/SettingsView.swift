@@ -31,7 +31,7 @@ struct SettingsView: View {
         .padding(24)
         .frame(width: 340)
         .background(AppTheme.color(.background, in: currentMode))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .compatGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onAppear {
             audioPlayer.setPlaybackRate(doubleSpeedEnabled ? 2.0 : 1.0)
         }
@@ -130,7 +130,7 @@ private extension SettingsView {
         .padding(.horizontal, 22)
         .background(sectionBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .glassEffect(.regular.tint(AppTheme.accent.opacity(0.25)), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .compatGlassEffect(.regular.tint(AppTheme.accent.opacity(0.25)), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

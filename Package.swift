@@ -1,33 +1,83 @@
 // swift-tools-version: 6.0
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
-    name: "PodRams",
+    name: "PodRamsCore",
+    defaultLocalization: "en",
     platforms: [.macOS(.v15)],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "PodRams",
-            targets: ["PodRams"]),
+            name: "PodRamsCore",
+            targets: ["PodRamsCore"]
+        )
     ],
     dependencies: [
-        .package(url: "https://github.com/nmdias/FeedKit.git", from: "9.1.2"),
+        .package(path: "LocalDeps/FeedKit")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "PodRams",
-            dependencies: ["FeedKit"],
-            path: ".",
-            exclude: ["PodRamsTests", "PodRamsUITests", "Package.swift"],
-            sources: ["."],
-            resources: [.copy("Resources")]),
+            name: "PodRamsCore",
+            dependencies: [
+                .product(name: "FeedKit", package: "FeedKit")
+            ],
+            path: "PodRams",
+            exclude: [
+                "Assets.xcassets",
+                "Preview Content",
+                "Info.plist",
+                "PodRams.entitlements",
+                "ar.lproj",
+                "bg.lproj",
+                "ca.lproj",
+                "cs.lproj",
+                "da.lproj",
+                "de.lproj",
+                "el.lproj",
+                "es.lproj",
+                "eu.lproj",
+                "fi.lproj",
+                "fr.lproj",
+                "he.lproj",
+                "hi.lproj",
+                "hr.lproj",
+                "hu.lproj",
+                "id.lproj",
+                "it.lproj",
+                "ja.lproj",
+                "ko.lproj",
+                "ms.lproj",
+                "nb.lproj",
+                "nl.lproj",
+                "pl.lproj",
+                "pt.lproj",
+                "pt-BR.lproj",
+                "ro.lproj",
+                "ru.lproj",
+                "sk.lproj",
+                "sl.lproj",
+                "sr.lproj",
+                "sv.lproj",
+                "th.lproj",
+                "tr.lproj",
+                "uk.lproj",
+                "vi.lproj",
+                "zh-Hans.lproj",
+                "zh-Hant.lproj",
+                "ColorScheme.xml",
+                "PerformanceOptimizations.md",
+                "ThreadOptimizationSummary.md",
+                "SubscriptionFix.md",
+                "PersistenceFix.md"
+            ],
+            resources: [
+                .process("Base.lproj"),
+                .process("en.lproj")
+            ]
+        ),
         .testTarget(
-            name: "PodRamsTests",
-            dependencies: ["PodRams"],
-            path: "PodRamsTests"),
+            name: "PodRamsCoreTests",
+            dependencies: ["PodRamsCore"],
+            path: "PodRamsTests"
+        )
     ]
 )
