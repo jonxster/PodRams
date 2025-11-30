@@ -75,6 +75,14 @@
 - 2025-10-14 — Subscription popover play button now restarts the first episode from 0:00, closes the modal, and persists cue artwork so thumbnails survive subsequent launches.
 - 2025-10-16 — Replaced all `print` usage with structured OSLog `Logger` calls via `AppLogger`; added `NSAllowsArbitraryLoadsInMedia` and automatic HTTPS normalization for playback URLs so HTTP-hosted episodes continue to load.
 - 2025-10-16 — Search sheet now autofocuses the field, clears results when empty, and sanitises search-provided feed/audio URLs so playback and episode lists stay populated after selecting a result.
+- 2025-11-27 — Optimized PodcastFetcher caches with LRU-style eviction, EpisodeListView cue membership with a precomputed URL set, and CachedAsyncImage disk path reuse to trim unnecessary filesystem work.
+- 2025-11-27 — EpisodeListView now reuses a cached episode index map and limits timer-driven invalidations to the playing row to reduce recomposition overhead with large lists.
+- 2025-11-28 — Rebuilt transcription pipeline: downloads or converts audio to 16 kHz PCM, streams it through segmented Speech recognizer chunks to handle long episodes, persists transcripts to disk, caches per-episode results across app launches, and surfaces UI affordances (toolbar spinner + badge) for in-progress/new transcripts.
+- 2025-11-29 — Transcription popover now lists past transcripts in the subscription-style expanded layout with default-open rows, delete controls, and text-file export actions for each podcast episode.
+- 2025-11-30 — SpeechAnalyzer transcriptions now reserve locales, install assets, timeout if the analyzer stalls, and fall back cleanly so macOS 26+ prefers the modern on-device path instead of reverting to legacy recognition.
+- 2025-11-30 — Transcription history popover no longer expands every past transcript by default and truncates display text to keep long podcast transcripts from beachballing the UI; export still provides the full text.
+- 2025-11-30 — Transcription popover adds in-bubble search and selectable transcript text; content is flattened to sentences (line breaks inserted after punctuation) while preserving paragraph breaks and avoiding mid-sentence newlines. SpeechAnalyzer final-only results are collected to prevent partial-line repetition.
+- 2025-12-01 — Added Apple Shortcuts (App Intents) for toggling playback or resuming the last episode using the shared AudioPlayer and persistence-backed resume logic.
 
 ## Project Rules
 - Always adhere to Liquid Glass design when writing code.

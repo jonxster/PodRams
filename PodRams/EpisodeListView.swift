@@ -74,6 +74,7 @@ struct EpisodeListView: View {
     @State private var lastRefreshTime: Date = Date()
     @State private var sortedEpisodesCache: [PodcastEpisode] = []
     @State private var cachedEpisodeIDs: [String] = []
+    @State private var episodeIndexMap: [String: Int] = [:]
     
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
@@ -134,22 +135,20 @@ struct EpisodeListView: View {
     var body: some View {
         // Use the computed property instead of function call
         let sortedEpisodesList = sortedEpisodes
+        let cueMembership = Set(cue.map { $0.url.absoluteString })
+        let refreshToken = Int(lastRefreshTime.timeIntervalSince1970)
         
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                // Pre-compute episode indices to avoid repeated firstIndex calls
-                let episodeIndices = Dictionary(uniqueKeysWithValues: 
-                    episodes.enumerated().map { ($0.element.id, $0.offset) })
-                
                 // Iterate over the sorted episodes
                 ForEach(sortedEpisodesList) { episode in
                     // Use pre-computed index lookup
-                    let originalIndex = episodeIndices[episode.id]
+                    let originalIndex = episodeIndexMap[episode.id]
                     
                     let isPlaying = selectedIndex == originalIndex
                     
                     // Pre-compute expensive checks outside the view
-                    let isInCue = cue.contains { $0.url.absoluteString == episode.url.absoluteString }
+                    let isInCue = cueMembership.contains(episode.url.absoluteString)
                     
                     let config = EpisodeRowConfiguration(
                         episode: episode,
@@ -168,8 +167,10 @@ struct EpisodeListView: View {
                     )
                     
                     // Render the episode row using the configured settings.
+                    let rowIDBase = "\(episode.id)-\(isPlaying)-\(isInCue)"
+                    let rowID = isPlaying ? "\(rowIDBase)-\(refreshToken)" : rowIDBase
                     ConfiguredEpisodeRow(config: config)
-                        .id("\(episode.id)-\(isPlaying)-\(isInCue)-\(Int(lastRefreshTime.timeIntervalSince1970))") // Include refresh time for countdown updates
+                        .id(rowID) // Only the playing row gets the refresh token to limit invalidations
                 }
             }
             .padding(.top, 10)
@@ -177,11 +178,8 @@ struct EpisodeListView: View {
         }
         // Force refresh the view periodically to update the time display
         .onReceive(refreshTimer) { _ in
-            // Update the refresh time to trigger view updates
+            guard selectedIndex != nil else { return }
             lastRefreshTime = Date()
-            
-            // Force update the sorted cache if needed
-            updateSortedCache()
         }
         .onAppear {
             updateSortedCache()
@@ -225,6 +223,7 @@ private extension EpisodeListView {
         if newIds != cachedEpisodeIDs || sortedEpisodesCache.count != episodes.count {
             sortedEpisodesCache = episodes
             cachedEpisodeIDs = newIds
+            episodeIndexMap = Dictionary(uniqueKeysWithValues: episodes.enumerated().map { ($0.element.id, $0.offset) })
         }
     }
 }

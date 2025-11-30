@@ -1,0 +1,159 @@
+{
+  "": {
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/master.swiftdeps"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/Extensions/String + escapeCharacters.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/String + escapeCharacters.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/String + escapeCharacters.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/String + escapeCharacters~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/String + escapeCharacters.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/String + escapeCharacters.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLDateDecodingStrategy.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateDecodingStrategy.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateDecodingStrategy.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateDecodingStrategy~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateDecodingStrategy.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateDecodingStrategy.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLDecoder.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDecoder.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDecoder.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDecoder~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDecoder.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDecoder.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLKeyedDecodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedDecodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedDecodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedDecodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedDecodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedDecodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLSingleValueDecodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueDecodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueDecodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueDecodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueDecodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueDecodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLUnkeyedDecodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedDecodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedDecodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedDecodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedDecodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedDecodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDocument.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocument.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocument.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocument~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocument.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocument.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDocumentConvertible.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocumentConvertible.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocumentConvertible.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocumentConvertible~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocumentConvertible.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDocumentConvertible.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLElement.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLElement.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLElement.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLElement~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLElement.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLElement.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLCodingKey.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLCodingKey.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLCodingKey.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLCodingKey~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLCodingKey.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLCodingKey.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLDateEncodingStrategy.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateEncodingStrategy.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateEncodingStrategy.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateEncodingStrategy~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateEncodingStrategy.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLDateEncodingStrategy.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLEncoder.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLEncoder.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLEncoder.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLEncoder~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLEncoder.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLEncoder.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLKeyedEncodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedEncodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedEncodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedEncodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedEncodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLKeyedEncodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLSingleValueEncodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueEncodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueEncodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueEncodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueEncodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLSingleValueEncodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLUnkeyedEncodingContainer.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedEncodingContainer.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedEncodingContainer.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedEncodingContainer~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedEncodingContainer.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLUnkeyedEncodingContainer.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLError.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLError.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLError.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLError~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLError.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLError.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLHeader.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLHeader.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLHeader.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLHeader~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLHeader.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLHeader.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLNamespaceCodable.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNamespaceCodable.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNamespaceCodable.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNamespaceCodable~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNamespaceCodable.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNamespaceCodable.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLNode.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNode.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNode.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNode~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNode.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLNode.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLReader.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLReader.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLReader.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLReader~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLReader.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLReader.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLStack.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStack.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStack.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStack~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStack.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStack.dia"
+  },
+  "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLStringConvertible.swift": {
+    "dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStringConvertible.d",
+    "object": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStringConvertible.swift.o",
+    "swiftmodule": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStringConvertible~partial.swiftmodule",
+    "swift-dependencies": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStringConvertible.swiftdeps",
+    "diagnostics": "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/XMLKit.build/XMLStringConvertible.dia"
+  }
+}

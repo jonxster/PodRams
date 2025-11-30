@@ -9,12 +9,12 @@
         "packageRef" : {
           "identity" : "feedkit",
           "kind" : "fileSystem",
-          "location" : "/Users/tombjornebark/Desktop/PodRams/PodRams/LocalDeps/FeedKit",
+          "location" : "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit",
           "name" : "FeedKit"
         },
         "state" : {
           "name" : "fileSystem",
-          "path" : "/Users/tombjornebark/Desktop/PodRams/PodRams/LocalDeps/FeedKit"
+          "path" : "/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit"
         },
         "subpath" : "feedkit"
       }

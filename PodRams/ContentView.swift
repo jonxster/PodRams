@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import OSLog
+import UniformTypeIdentifiers
 #if os(macOS)
 import AppKit
 #endif
@@ -63,6 +64,12 @@ struct ContentView: View {
     @State private var transcribedEpisodeID: String?
     @State private var transcriptionGeneratedAt: Date?
     @State private var transcriptionTask: Task<Void, Never>?
+    @State private var hasNewTranscriptionBadge = false
+    @State private var transcriptionHistory: [TranscriptionHistoryItem] = []
+    @State private var expandedTranscriptionIDs: Set<String> = []
+    @State private var exportCandidate: TranscriptionHistoryItem?
+    @State private var isExportingTranscript = false
+    @State private var previousVolume: Double = 1.0
     @State private var showNotesContent: AttributedString = AttributedString("Select an episode to view show notes.")
     @State private var showNotesEpisodeID: String?
     @State private var showNotesTitle: String = "Show Notes"
@@ -285,16 +292,14 @@ struct ContentView: View {
             .compatGlassBackgroundEffect(.window)
         }
         // Background view to capture keyboard shortcuts.
-        .background(KeyboardShortcutView { key in
-            switch key {
-            case .space:
-                togglePlayPause()
-            case .commandF:
-                isSearching.toggle()
-            case .commandC:
-                if !cue.isEmpty { isCueVisible.toggle() }
-            }
-        })
+        .background(
+            KeyboardShortcutView(
+                onKeyPress: { key in
+                    handleKeyboardShortcut(key)
+                },
+                shouldHandleKey: { !isTextInputFocused() }
+            )
+        )
         // Task to load persisted data on view startup.
         .task {
             contentLogger.info("🔄 ContentView: Starting app initialization...")
@@ -307,6 +312,11 @@ struct ContentView: View {
             cue = await PersistenceManager.loadCue()
             subscribedPodcasts = await PersistenceManager.loadSubscriptions()
             lastPlayedEpisode = await PersistenceManager.loadLastPlayback()
+            transcriptionHistory = await TranscriptionHistoryStore.shared.loadHistory()
+            if let latest = transcriptionHistory.first {
+                // Only expand the most recent transcript to avoid rendering extremely large histories by default.
+                expandedTranscriptionIDs.insert(latest.id)
+            }
             
             let lastEpisodeTitle = lastPlayedEpisode?.title ?? "none"
             contentLogger.info("📱 ContentView: Loaded persisted data - Favorites: \(favoritePodcasts.count, privacy: .public), Cue: \(cue.count, privacy: .public), Subscriptions: \(subscribedPodcasts.count, privacy: .public), Last episode: \(lastEpisodeTitle, privacy: .private)")
@@ -410,7 +420,7 @@ struct ContentView: View {
             refreshShowNotes()
             
             // Prefetch episodes for subscribed podcasts in the background
-            Task(priority: .background) {
+            Task(name: "prefetch-subscribed-podcasts", priority: .background) {
                 await prefetchSubscribedPodcasts()
             }
         }
@@ -576,8 +586,9 @@ struct ContentView: View {
                 handleTranscriptionButtonTap()
             } label: {
                 let icon = resolveSymbolName(primary: "waveform.and.mic", fallbacks: ["waveform.circle", "waveform", "music.note.list"])
-                glassToolbarIcon(icon)
+                glassToolbarIcon(icon, isLoading: isTranscribing, showBadge: hasNewTranscriptionBadge && !isTranscribing)
             }
+            .disabled(isTranscribing)
             .help("Transcribe Episode")
             .popover(isPresented: $isTranscribeVisible) {
                 transcriptionPopover
@@ -598,69 +609,30 @@ struct ContentView: View {
     }
 
     private var transcriptionPopover: some View {
-        VStack(spacing: 18) {
-            Image(systemName: resolveSymbolName(primary: "waveform.and.mic", fallbacks: ["waveform.circle", "waveform"]))
-                .symbolRenderingMode(.hierarchical)
-                .font(.system(size: 42, weight: .semibold))
-                .foregroundStyle(AppTheme.accent)
-
-            if isTranscribing {
-                VStack(spacing: 12) {
-                    ProgressView("Transcribing…")
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .tint(AppTheme.accent)
-                    Text("Hang tight while Tahoe converts this episode to text.")
-                        .font(.callout)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(AppTheme.secondaryText)
-                        .padding(.horizontal)
-                }
-            } else if let error = transcriptionErrorMessage {
-                VStack(spacing: 12) {
-                    Text("Unable to Transcribe")
-                        .font(.headline)
-                        .foregroundColor(AppTheme.primaryText)
-                    Text(error)
-                        .font(.callout)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(AppTheme.secondaryText)
-                        .padding(.horizontal)
-                    if currentShowNotesEpisode != nil {
-                        Button("Try Again") {
-                            handleTranscriptionRetry()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(AppTheme.accent)
-                    }
-                }
-            } else if !transcriptionText.isEmpty {
-                ScrollView {
-                    Text(transcriptionText)
-                        .font(.body)
-                        .foregroundColor(AppTheme.primaryText)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 4)
-                }
-                .frame(maxHeight: 320)
-
-                if let timestamp = transcriptionTimestamp {
-                    Text("Generated \(timestamp)")
-                        .font(.footnote)
-                        .foregroundColor(AppTheme.secondaryText)
-                }
-            } else {
-                Text("Select an episode to transcribe.")
-                    .font(.callout)
-                    .foregroundColor(AppTheme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+        TranscriptionHistoryView(
+            items: $transcriptionHistory,
+            expandedIDs: $expandedTranscriptionIDs,
+            isTranscribing: isTranscribing,
+            inProgressTitle: currentShowNotesEpisode?.title,
+            errorMessage: transcriptionErrorMessage,
+            timestampFormatter: ContentView.transcriptionDateFormatter,
+            onRetry: currentShowNotesEpisode != nil ? { handleTranscriptionRetry() } : nil,
+            onDownload: { downloadTranscription($0) },
+            onDelete: { deleteTranscription($0) }
+        )
+        .frame(minWidth: 480, minHeight: 520)
+        .fileExporter(
+            isPresented: $isExportingTranscript,
+            document: TranscriptTextDocument(text: exportCandidate?.transcriptText ?? ""),
+            contentType: .plainText,
+            defaultFilename: exportFilename(for: exportCandidate)
+        ) { result in
+            if case .failure(let error) = result {
+                transcriptionErrorMessage = "Failed to export transcript: \(error.localizedDescription)"
             }
+            exportCandidate = nil
         }
-        .padding(.vertical, 24)
-        .padding(.horizontal, 20)
-        .frame(minWidth: 320, minHeight: 260)
-                .compatGlassBackgroundEffect(.window)
+        .compatGlassBackgroundEffect(.window)
     }
 
     /// Toggles play/pause on the audio player.
@@ -689,6 +661,7 @@ struct ContentView: View {
             return
         }
 
+        hasNewTranscriptionBadge = false
         beginTranscription(for: episode, useCache: true)
     }
 
@@ -698,6 +671,7 @@ struct ContentView: View {
             transcriptionErrorMessage = "Select an episode to transcribe."
             return
         }
+        hasNewTranscriptionBadge = false
         beginTranscription(for: episode, useCache: false)
     }
 
@@ -709,9 +683,10 @@ struct ContentView: View {
         transcriptionText = ""
         transcriptionGeneratedAt = nil
         transcribedEpisodeID = episode.id
+        hasNewTranscriptionBadge = false
 
         let taskEpisodeID = episode.id
-        let task = Task {
+        let task = Task(name: "transcription-\(episode.id)") {
             if useCache, let cached = await EpisodeTranscriptionManager.shared.cachedTranscript(for: episode) {
                 await MainActor.run {
                     guard transcribedEpisodeID == taskEpisodeID else { return }
@@ -720,6 +695,8 @@ struct ContentView: View {
                     transcriptionErrorMessage = nil
                     isTranscribing = false
                     transcriptionTask = nil
+                    hasNewTranscriptionBadge = false
+                    trackTranscript(cached, for: episode)
                 }
                 return
             }
@@ -733,6 +710,8 @@ struct ContentView: View {
                     transcriptionErrorMessage = nil
                     isTranscribing = false
                     transcriptionTask = nil
+                    hasNewTranscriptionBadge = true
+                    trackTranscript(transcript, for: episode)
                 }
             } catch is CancellationError {
                 await MainActor.run {
@@ -740,6 +719,7 @@ struct ContentView: View {
                     isTranscribing = false
                     transcriptionErrorMessage = EpisodeTranscriptionError.cancelled.errorDescription
                     transcriptionTask = nil
+                    hasNewTranscriptionBadge = false
                 }
             } catch let error as EpisodeTranscriptionError {
                 await MainActor.run {
@@ -747,6 +727,7 @@ struct ContentView: View {
                     isTranscribing = false
                     transcriptionErrorMessage = error.errorDescription
                     transcriptionTask = nil
+                    hasNewTranscriptionBadge = false
                 }
             } catch {
                 await MainActor.run {
@@ -754,6 +735,7 @@ struct ContentView: View {
                     isTranscribing = false
                     transcriptionErrorMessage = error.localizedDescription
                     transcriptionTask = nil
+                    hasNewTranscriptionBadge = false
                 }
             }
         }
@@ -769,6 +751,98 @@ struct ContentView: View {
         transcriptionErrorMessage = nil
         transcriptionGeneratedAt = nil
         transcribedEpisodeID = nil
+        hasNewTranscriptionBadge = false
+    }
+
+    private func downloadTranscription(_ item: TranscriptionHistoryItem) {
+        exportCandidate = item
+        isExportingTranscript = true
+    }
+
+    private func deleteTranscription(_ item: TranscriptionHistoryItem) {
+        Task(name: "transcription-delete-\(item.episodeID)") {
+            let updated = await TranscriptionHistoryStore.shared.remove(id: item.id)
+            await EpisodeTranscriptionManager.shared.removeCachedTranscript(for: item.episodeID)
+            await MainActor.run {
+                transcriptionHistory = updated
+                expandedTranscriptionIDs.remove(item.id)
+                if transcribedEpisodeID == item.episodeID {
+                    clearTranscriptionState()
+                }
+            }
+        }
+    }
+
+    private func trackTranscript(_ transcript: EpisodeTranscriptionManager.Transcript, for episode: PodcastEpisode) {
+        let entry = TranscriptionHistoryItem(
+            episodeID: episode.id,
+            podcastTitle: episode.podcastName ?? selectedPodcast?.title ?? (episode.feedUrl ?? "Podcast"),
+            episodeTitle: episode.title,
+            artworkURL: episode.artworkURL ?? selectedPodcast?.feedArtworkURL,
+            transcriptText: transcript.text,
+            generatedAt: transcript.generatedAt,
+            feedUrl: episode.feedUrl
+        )
+
+        Task(name: "transcription-track-\(episode.id)") {
+            let updated = await TranscriptionHistoryStore.shared.upsert(entry)
+            await MainActor.run {
+                transcriptionHistory = updated
+                expandedTranscriptionIDs.insert(entry.id)
+            }
+        }
+    }
+
+    private func exportFilename(for item: TranscriptionHistoryItem?) -> String {
+        guard let item else { return "transcription.txt" }
+        let base = "\(item.podcastTitle) - \(item.episodeTitle) transcript"
+        let sanitized = sanitizeFilename(base)
+        return sanitized.isEmpty ? "transcription" : sanitized
+    }
+
+    private func sanitizeFilename(_ value: String) -> String {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            return sanitizeFilenameSpan(value)
+        } else {
+            // Fallback: strip disallowed characters with simple String operations.
+            let invalid = CharacterSet(charactersIn: "\\/:*?\"<>|")
+            let components = value.components(separatedBy: invalid)
+            let condensed = components.joined(separator: " ")
+                .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return String(condensed.prefix(80))
+        }
+    }
+
+    @available(macOS 26.0, iOS 26.0, *)
+    private func sanitizeFilenameSpan(_ value: String) -> String {
+        // Use UTF8Span + UnicodeScalarIterator to filter invalid characters without extra copies.
+        var utf8Span = value.utf8Span
+        _ = utf8Span.checkForASCII() // Hint fast path for all-ASCII names.
+
+        let invalid: Set<UnicodeScalar> = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|"]
+        var buffer: [UInt8] = []
+        buffer.reserveCapacity(utf8Span.count)
+
+        var previousWasSpace = false
+        var scalarIterator = utf8Span.makeUnicodeScalarIterator()
+        while let scalar = scalarIterator.next() {
+            if invalid.contains(scalar) { continue }
+            if scalar.value < 0x20 || scalar.value == 0x7F { continue } // control chars
+
+            if scalar.properties.isWhitespace {
+                if previousWasSpace { continue }
+                previousWasSpace = true
+                buffer.append(32) // space
+                continue
+            }
+
+            previousWasSpace = false
+            buffer.append(contentsOf: scalar.utf8)
+        }
+
+        while buffer.last == 32 { buffer.removeLast() }
+        return String(decoding: buffer.prefix(80), as: UTF8.self)
     }
 
     private func handleEpisodeContextChange() {
@@ -776,6 +850,91 @@ struct ContentView: View {
         if currentID != transcribedEpisodeID {
             clearTranscriptionState()
         }
+    }
+
+    private func handleKeyboardShortcut(_ key: KeyType) {
+        switch key {
+        case .space, .commandP:
+            togglePlayPause()
+        case .commandS:
+            audioPlayer.stopAudio()
+        case .commandLeft:
+            playPreviousEpisodeShortcut()
+        case .commandRight:
+            playNextEpisodeShortcut()
+        case .optionCommandLeft:
+            seek(by: -30)
+        case .optionCommandRight:
+            seek(by: 30)
+        case .commandUp:
+            adjustVolume(by: 0.1)
+        case .commandDown:
+            adjustVolume(by: -0.1)
+        case .commandPlus:
+            adjustVolume(by: 0.1)
+        case .commandMinus:
+            adjustVolume(by: -0.1)
+        case .plainPlus:
+            guard !isTextInputFocused() else { return }
+            adjustVolume(by: 0.1)
+        case .plainMinus:
+            guard !isTextInputFocused() else { return }
+            adjustVolume(by: -0.1)
+        case .commandM:
+            toggleMuteShortcut()
+        case .plainM:
+            guard !isTextInputFocused() else { return }
+            toggleMuteShortcut()
+        case .commandF:
+            isSearching.toggle()
+        case .commandC:
+            if !cue.isEmpty { isCueVisible.toggle() }
+        }
+    }
+
+    private func playPreviousEpisodeShortcut() {
+        guard let index = selectedEpisodeIndex, index > 0 else { return }
+        let newIndex = index - 1
+        selectedEpisodeIndex = newIndex
+        let episode = activeEpisodes[newIndex]
+        audioPlayer.playEpisode(episode)
+    }
+
+    private func playNextEpisodeShortcut() {
+        guard let index = selectedEpisodeIndex, index < activeEpisodes.count - 1 else { return }
+        let newIndex = index + 1
+        selectedEpisodeIndex = newIndex
+        let episode = activeEpisodes[newIndex]
+        audioPlayer.playEpisode(episode)
+    }
+
+    private func seek(by delta: Double) {
+        guard selectedEpisodeIndex != nil else { return }
+        let newTime = max(0, min(audioPlayer.duration, audioPlayer.currentTime + delta))
+        audioPlayer.seek(to: newTime)
+    }
+
+    private func adjustVolume(by delta: Double) {
+        audioPlayer.volume = min(1.0, max(0.0, audioPlayer.volume + delta))
+    }
+
+    private func toggleMuteShortcut() {
+        let current = audioPlayer.volume
+        if current > 0 {
+            previousVolume = max(current, 0.5)
+            audioPlayer.volume = 0
+        } else {
+            audioPlayer.volume = previousVolume
+        }
+    }
+
+    private func isTextInputFocused() -> Bool {
+        #if os(macOS)
+        if let responder = NSApp.keyWindow?.firstResponder, responder is NSTextView {
+            return true
+        }
+        #endif
+        return false
     }
 
     private func refreshShowNotes() {
@@ -840,7 +999,7 @@ struct ContentView: View {
             selectedPodcast = podcast
             selectedPodcastEpisodes = podcast.episodes
             if autoPlay {
-                Task {
+                Task(name: "autoplay-\(podcast.id.uuidString.prefix(8))") {
                     await startFirstEpisodeFromBeginning(for: podcast, episodes: podcast.episodes)
                 }
             }
@@ -851,7 +1010,7 @@ struct ContentView: View {
         isPodcastLoading = true
         selectedEpisodeIndex = nil
 
-        Task {
+        Task(name: "select-podcast-\(podcast.id.uuidString.prefix(8))") {
             let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
 
             await MainActor.run {
@@ -895,34 +1054,64 @@ struct ContentView: View {
         }
     }
 
-    private func glassToolbarIcon(_ systemName: String, isEnabled: Bool = true) -> some View {
-        ToolbarIcon(systemName: resolveSymbolName(primary: systemName), isEnabled: isEnabled)
+    private func glassToolbarIcon(_ systemName: String, isEnabled: Bool = true, isLoading: Bool = false, showBadge: Bool = false) -> some View {
+        ToolbarIcon(
+            systemName: resolveSymbolName(primary: systemName),
+            isEnabled: isEnabled,
+            isLoading: isLoading,
+            showBadge: showBadge
+        )
     }
 
     private struct ToolbarIcon: View {
         let systemName: String
         let isEnabled: Bool
+        let isLoading: Bool
+        let showBadge: Bool
         @State private var isHovering = false
         @Environment(\.colorScheme) private var colorScheme
 
+        init(systemName: String, isEnabled: Bool = true, isLoading: Bool = false, showBadge: Bool = false) {
+            self.systemName = systemName
+            self.isEnabled = isEnabled
+            self.isLoading = isLoading
+            self.showBadge = showBadge
+        }
+
         var body: some View {
-            RoundedRectangle(cornerRadius: 50, style: .circular)
-                .fill(isHovering ? hoverFill : baseFill)
-                .overlay(
-                    Image(systemName: systemName)
-                        .symbolRenderingMode(.hierarchical)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .circular)
-                        .stroke(strokeColor, lineWidth: 0.0)
-                )
-                .frame(width: 35, height: 35)
-                .animation(.easeOut(duration: 0.15), value: isHovering)
-                .onHover { hovering in
-                    isHovering = hovering
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: 50, style: .circular)
+                    .fill(isHovering ? hoverFill : baseFill)
+                    .overlay(
+                        Group {
+                            if isLoading {
+                                loadingOverlay
+                            } else {
+                                Image(systemName: systemName)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(iconColor)
+                            }
+                        }
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .circular)
+                            .stroke(strokeColor, lineWidth: 0.0)
+                    )
+                    .frame(width: 35, height: 35)
+                    .animation(.easeOut(duration: 0.15), value: isHovering)
+                    .onHover { hovering in
+                        isHovering = hovering
+                    }
+
+                if showBadge {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 10, height: 10)
+                        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 0)
+                        .offset(x: 6, y: -6)
                 }
+            }
         }
 
         private var baseFill: Color {
@@ -947,6 +1136,29 @@ struct ContentView: View {
         private var mode: AppTheme.Mode {
             colorScheme == .dark ? .dark : .light
         }
+
+        private var loaderBaseColor: Color {
+            AppTheme.color(.secondaryText, in: mode).opacity(0.35)
+        }
+
+        private var loaderAccent: Color {
+            AppTheme.accent
+        }
+
+        private var loadingOverlay: some View {
+            ZStack {
+                ToolbarTranscribeLoader(
+                    baseColor: loaderBaseColor,
+                    accentColor: loaderAccent,
+                    size: 18,
+                    lineWidth: 2
+                )
+                Image(systemName: systemName)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(loaderAccent.opacity(0.85))
+            }
+        }
     }
 
     private func resolveSymbolName(primary: String, fallbacks: [String] = []) -> String {
@@ -962,6 +1174,36 @@ struct ContentView: View {
         #else
         return primary
         #endif
+    }
+
+    private struct ToolbarTranscribeLoader: View {
+        let baseColor: Color
+        let accentColor: Color
+        let size: CGFloat
+        let lineWidth: CGFloat
+        @State private var isAnimating = false
+
+        var body: some View {
+            ZStack {
+                Circle()
+                    .stroke(baseColor, lineWidth: lineWidth)
+                    .frame(width: size, height: size)
+
+                Circle()
+                    .trim(from: 0, to: 0.82)
+                    .stroke(
+                        accentColor,
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(-90))
+                    .rotationEffect(.degrees(isAnimating ? 360 : 0))
+                    .animation(.linear(duration: 1.25).repeatForever(autoreverses: false), value: isAnimating)
+            }
+            .onAppear {
+                isAnimating = true
+            }
+        }
     }
 
     /// Prefetches episodes for all subscribed podcasts in the background
@@ -985,7 +1227,7 @@ struct ContentView: View {
             
             currentPrefetches += 1
             
-            Task {
+            Task(name: "prefetch-\(podcast.id.uuidString.prefix(8))") {
                 defer { currentPrefetches -= 1 }
                 
                 // Fetch episodes for this podcast

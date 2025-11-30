@@ -10,6 +10,7 @@ fileprivate enum PersistenceKeys: String {
     case subscriptions = "subscriptions.json" // New key for subscriptions
     case downloads = "downloads.json" // New key for downloads
     case playbackProgress = "playbackProgress.json"
+    case subscriptionEpisodes = "subscription_episodes.json"
 }
 
 struct PersistedEpisode: Codable, Equatable, Sendable {
@@ -301,6 +302,7 @@ struct PersistenceManager {
     static func loadSubscriptions() async -> [Podcast] {
         if let cached = state.subscriptionsCache { return cached }
         let persisted: [PersistedPodcast]? = await loadData(from: .subscriptions)
+        let episodeSnapshot = await loadSubscriptionEpisodesSnapshot()
         let filtered = (persisted ?? []).filter { candidate in
             guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
                 persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl, privacy: .private)")
@@ -321,6 +323,9 @@ struct PersistenceManager {
             let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
             if let artStr = p.feedArtworkURL, let artURL = URL(string: artStr) {
                 podcast.feedArtworkURL = artURL
+            }
+            if let cachedEpisodes = episodeSnapshot[p.feedUrl] {
+                podcast.episodes = cachedEpisodes
             }
             return podcast
         }
@@ -346,6 +351,15 @@ struct PersistenceManager {
         guard state.fileManager.fileExists(atPath: url.path) else {
             return []
         }
+
+        let episodeSnapshot: [String: [PodcastEpisode]] = {
+            do {
+                let data = try Data(contentsOf: fileURL(for: .subscriptionEpisodes))
+                return try JSONDecoder().decode([String: [PodcastEpisode]].self, from: data)
+            } catch {
+                return [:]
+            }
+        }()
         
         do {
             let data = try Data(contentsOf: url)
@@ -373,6 +387,9 @@ struct PersistenceManager {
                 if let artStr = p.feedArtworkURL, let artURL = URL(string: artStr) {
                     podcast.feedArtworkURL = artURL
                 }
+                if let cachedEpisodes = episodeSnapshot[p.feedUrl] {
+                    podcast.episodes = cachedEpisodes
+                }
                 return podcast
             }
             
@@ -381,12 +398,34 @@ struct PersistenceManager {
             if persisted.count != filtered.count {
                 Task { @MainActor in saveSubscriptions(result) }
             }
-
+            
             return result
         } catch {
             let errorDescription = String(describing: error)
             persistenceLogger.error("Error loading subscriptions synchronously: \(errorDescription, privacy: .public)")
             return []
+        }
+    }
+
+    // Subscription episodes snapshot
+    static func saveSubscriptionEpisodesSnapshot(_ map: [String: [PodcastEpisode]]) {
+        state.queue.async {
+            do {
+                let data = try JSONEncoder().encode(map)
+                try data.write(to: fileURL(for: .subscriptionEpisodes), options: .atomic)
+            } catch {
+                persistenceLogger.error("Failed to save subscription episodes snapshot: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    static func loadSubscriptionEpisodesSnapshot() async -> [String: [PodcastEpisode]] {
+        do {
+            let data = try Data(contentsOf: fileURL(for: .subscriptionEpisodes))
+            let decoded = try JSONDecoder().decode([String: [PodcastEpisode]].self, from: data)
+            return decoded
+        } catch {
+            return [:]
         }
     }
 
@@ -534,6 +573,10 @@ struct PersistenceManager {
     static func clearPlaybackProgressCache() {
         state.playbackProgressCache = nil
     }
+    
+    static func clearSubscriptionEpisodesSnapshot() {
+        try? state.fileManager.removeItem(at: fileURL(for: .subscriptionEpisodes))
+    }
 
     /// Waits for pending persistence operations to complete. Used primarily in tests.
     static func waitForPersistenceQueue() {
@@ -588,7 +631,7 @@ struct PersistenceManager {
     
     /// Clears all persisted data, synchronously removing files and resetting caches.
     static func clearAll() {
-        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback, .subscriptions, .downloads, .playbackProgress]
+        let keys: [PersistenceKeys] = [.favorites, .cue, .lastPlayback, .subscriptions, .downloads, .playbackProgress, .subscriptionEpisodes]
         // Perform removal synchronously to ensure files are deleted before returning
         state.queue.sync {
             for key in keys {

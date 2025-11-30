@@ -75,3 +75,14 @@
 "Volume Up" = "Lisää ääntä";
 "Volume Down" = "Vähennä ääntä";
 "Mute/Unmute" = "Mykistä/Poista mykistys";
+/* Apple Shortcuts */
+"Shortcuts.AppShortcutsTitle" = "Playback Shortcuts";
+"Shortcuts.TogglePlayback.Title" = "Toggle Playback";
+"Shortcuts.TogglePlayback.Description" = "Play or pause the current episode, resuming the last session if nothing is playing.";
+"Shortcuts.PlayLast.Title" = "Play Last Episode";
+"Shortcuts.PlayLast.Description" = "Start playing the last episode you listened to.";
+"Shortcuts.PlayingEpisode.Format" = "Playing \"%@\"";
+"Shortcuts.ResumingEpisode.Format" = "Resumed \"%@\"";
+"Shortcuts.Paused" = "Paused playback.";
+"Shortcuts.NothingToPlay" = "No saved episode to play yet.";
+

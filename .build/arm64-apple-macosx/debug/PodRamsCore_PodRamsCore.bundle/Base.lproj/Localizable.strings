@@ -11,7 +11,7 @@
 "Help.PodcastManagement.Title" = "Podcast Management";
 "Help.PodcastManagement.Content" = "Podcast management:\n\n• Subscribe to podcasts to receive new episodes.\n• Add podcasts to favorites for quick access.\n• Review show details and episode lists.\n• Manage your subscriptions.\n• Search for new podcasts.\n• Import or export subscription lists.\n\nToolbar icons let you jump directly to these management screens.";
 "Help.KeyboardShortcuts.Title" = "Keyboard Shortcuts";
-"Help.KeyboardShortcuts.Content" = "Keyboard shortcuts:\n\nPlayback:\n• ⌘P — Play/Pause\n• ⌘S — Stop\n• ⌘← — Previous episode\n• ⌘→ — Next episode\n• ⌥⌘← — Skip back 30 s\n• ⌥⌘→ — Skip forward 30 s\n• ⌘↑ — Volume up\n• ⌘↓ — Volume down\n• ⌘M — Mute/Unmute\n\nNavigation:\n• ⌘F — Search\n• ⌘C — Toggle cue\n• Space — Play/Pause\n\nHelp:\n• ⇧⌘1 — Getting Started\n• ⇧⌘2 — Playback Controls\n• ⇧⌘3 — Episode Management\n• ⇧⌘4 — Podcast Management\n• ⇧⌘5 — Keyboard Shortcuts\n• ⇧⌘6 — About";
+"Help.KeyboardShortcuts.Content" = "Keyboard shortcuts:\n\nPlayback:\n• ⌘P — Play/Pause\n• ⌘S — Stop\n• ⌘← — Previous episode\n• ⌘→ — Next episode\n• ⌥⌘← — Skip back 30 s\n• ⌥⌘→ — Skip forward 30 s\n• ⌘↑ / ⌘+ / + — Volume up\n• ⌘↓ / ⌘- / - — Volume down\n• ⌘M or M — Mute/Unmute\n\nNavigation:\n• ⌘F — Search\n• ⌘C — Toggle cue\n• Space — Play/Pause\n\nHelp:\n• ⇧⌘1 — Getting Started\n• ⇧⌘2 — Playback Controls\n• ⇧⌘3 — Episode Management\n• ⇧⌘4 — Podcast Management\n• ⇧⌘5 — Keyboard Shortcuts\n• ⇧⌘6 — About";
 "Help.About.Title" = "About PodRams";
 "Help.About.Content" = "PodRams — A modern macOS podcast player.\n\nHighlights:\n• Smart playback controls\n• Download management\n• Cue system\n• Rich search integration\n• Favorites and subscriptions\n• Advanced audio controls\n• Persistent progress tracking\n• Artwork support\n• Flexible audio output selection\n\nBuilt with SwiftUI for macOS 11.0 and later.";
 
@@ -26,3 +26,14 @@
 "Volume Up" = "Volume Up";
 "Volume Down" = "Volume Down";
 "Mute/Unmute" = "Mute/Unmute";
+/* Apple Shortcuts */
+"Shortcuts.AppShortcutsTitle" = "Playback Shortcuts";
+"Shortcuts.TogglePlayback.Title" = "Toggle Playback";
+"Shortcuts.TogglePlayback.Description" = "Play or pause the current episode, resuming the last session if nothing is playing.";
+"Shortcuts.PlayLast.Title" = "Play Last Episode";
+"Shortcuts.PlayLast.Description" = "Start playing the last episode you listened to.";
+"Shortcuts.PlayingEpisode.Format" = "Playing \"%@\"";
+"Shortcuts.ResumingEpisode.Format" = "Resumed \"%@\"";
+"Shortcuts.Paused" = "Paused playback.";
+"Shortcuts.NothingToPlay" = "No saved episode to play yet.";
+

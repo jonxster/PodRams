@@ -3,7 +3,7 @@ import Foundation
 extension Foundation.Bundle {
     static let module: Bundle = {
         let mainPath = Bundle.main.bundleURL.appendingPathComponent("PodRamsCore_PodRamsCore.bundle").path
-        let buildPath = "/Users/tombjornebark/Desktop/PodRams/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore_PodRamsCore.bundle"
+        let buildPath = "/Users/tombjornebark/Desktop/PodRams/.build/arm64-apple-macosx/debug/PodRamsCore_PodRamsCore.bundle"
 
         let preferredBundle = Bundle(path: mainPath)
 

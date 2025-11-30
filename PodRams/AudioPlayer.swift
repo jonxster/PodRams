@@ -23,6 +23,9 @@ private let audioLogger = AppLogger.audio
 /// Optimized for reduced CPU usage while maintaining full functionality.
 @MainActor // Ensure all methods and properties are accessed on the main actor
 class AudioPlayer: ObservableObject {
+    /// Shared instance so app and Apple Shortcuts use the same playback engine.
+    @MainActor static let shared = AudioPlayer()
+    
     /// Indicates whether audio is currently playing.
     @Published var isPlaying = false
     /// Indicates if audio is in the process of loading.
@@ -137,6 +140,7 @@ class AudioPlayer: ObservableObject {
     /// CPU Optimization: Batch property updates to reduce UI refresh frequency
     private var pendingPropertyUpdates: Set<String> = []
     private var propertyUpdateTask: Task<Void, Never>?
+    private var isFlushingPendingUpdates = false
     
     /// Initializes the AudioPlayer by setting up throttling, configuring the audio engine, and restoring pan.
     init() {
@@ -239,11 +243,9 @@ class AudioPlayer: ObservableObject {
     
     /// Flushes all pending property updates in a single batch
     private func flushPendingPropertyUpdates() {
-        guard !pendingPropertyUpdates.isEmpty else { return }
-        
-        // Update all pending properties in one UI transaction
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
+        guard !pendingPropertyUpdates.isEmpty, !isFlushingPendingUpdates else { return }
+        isFlushingPendingUpdates = true
+        defer { isFlushingPendingUpdates = false }
         
         for property in pendingPropertyUpdates {
             switch property {
@@ -257,9 +259,8 @@ class AudioPlayer: ObservableObject {
                 break
             }
         }
-        
-        CATransaction.commit()
         pendingPropertyUpdates.removeAll()
+        propertyUpdateTask = nil
     }
     
     /// Sets up batch property updates system
@@ -356,7 +357,7 @@ class AudioPlayer: ObservableObject {
                                                      unprepare: unprepareCb,
                                                      process: processCb)
         // Create tap
-        var tapRef: Unmanaged<MTAudioProcessingTap>?
+        var tapRef: MTAudioProcessingTap?
         let err = MTAudioProcessingTapCreate(kCFAllocatorDefault,
                                               &callbacks,
                                               kMTAudioProcessingTapCreationFlag_PostEffects,
@@ -365,9 +366,8 @@ class AudioPlayer: ObservableObject {
             audioLogger.error("Failed to create pan tap: \(err, privacy: .public)")
             return nil
         }
-        let createdTap = tapRef.takeRetainedValue()
-        panTap = createdTap
-        return createdTap
+        panTap = tapRef
+        return tapRef
     }
     
     /// Configures the audio engine by attaching and connecting the player node.

@@ -16,6 +16,8 @@ final class MemoryOptimizationManager: ObservableObject {
     
     private let logger = Logger(subsystem: "com.podrams", category: "MemoryOptimization")
     private var memoryPressureSource: DispatchSourceMemoryPressure?
+    private var cleanupTimer: DispatchSourceTimer?
+    @MainActor private var isCleanupInProgress = false
     
     // Memory thresholds for optimization
     private let highMemoryThreshold: UInt64 = 40 * 1024 * 1024 // 40MB
@@ -41,19 +43,18 @@ final class MemoryOptimizationManager: ObservableObject {
     
     deinit {
         memoryPressureSource?.cancel()
+        cleanupTimer?.cancel()
     }
     
     /// Sets up memory pressure monitoring to automatically optimize when needed
     private func setupMemoryPressureMonitoring() {
         memoryPressureSource = DispatchSource.makeMemoryPressureSource(
             eventMask: [.warning, .critical],
-            queue: DispatchQueue.global(qos: .utility)
+            queue: DispatchQueue.main
         )
         
         memoryPressureSource?.setEventHandler { [weak self] in
-            DispatchQueue.main.async {
-                self?.handleMemoryPressure()
-            }
+            self?.handleMemoryPressure()
         }
         
         memoryPressureSource?.resume()
@@ -61,11 +62,13 @@ final class MemoryOptimizationManager: ObservableObject {
     
     /// Sets up periodic memory cleanup every 5 minutes
     private func setupPeriodicCleanup() {
-        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.performPeriodicCleanup()
-            }
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+        timer.schedule(deadline: .now() + 300, repeating: 300, leeway: .seconds(5))
+        timer.setEventHandler { [weak self] in
+            self?.performPeriodicCleanup()
         }
+        timer.resume()
+        cleanupTimer = timer
     }
     
     /// Handles memory pressure events
@@ -104,44 +107,51 @@ final class MemoryOptimizationManager: ObservableObject {
     
     /// Performs comprehensive memory optimization
     func performMemoryOptimization() {
-        lastMemoryOptimization = Date()
-        
-        // 1. Optimize episode collections
-        optimizeEpisodeCollections()
-        
-        // 2. Clean image cache
-        optimizeImageCache()
-        
-        // 3. Clean RSS feed cache
-        cleanRSSFeedCache()
-        
-        // 4. Optimize persistent cache
-        optimizePersistentCache()
-        
-        // 5. Force garbage collection
-        autoreleasepool {
-            // Create and release a large object to trigger GC
-            let _ = Array(repeating: Data(count: 1024), count: 1000)
+        Task { @MainActor in
+            guard !isCleanupInProgress else { return }
+            isCleanupInProgress = true
+            _ = await runCleanup(aggressive: false)
+            isCleanupInProgress = false
         }
-        
-        logger.info("Memory optimization completed")
     }
     
     /// Performs aggressive cleanup during memory pressure
     private func performAggressiveCleanup() {
-        // Clear all non-essential caches
+        Task { @MainActor in
+            guard !isCleanupInProgress else { return }
+            isCleanupInProgress = true
+            _ = await runCleanup(aggressive: true)
+            isCleanupInProgress = false
+        }
+    }
+    
+    /// Executes cleanup work.
+    private func runCleanup(aggressive: Bool) async -> Bool {
+        // Avoid clearing caches while transcription is running to keep speech jobs stable.
+        if await EpisodeTranscriptionManager.shared.hasInFlightTranscriptions() {
+            logger.info("Skipping \(aggressive ? "aggressive" : "standard") cleanup while transcription is running")
+            return false
+        }
+
+        lastMemoryOptimization = Date()
+
         CachedAsyncImage.clearCache()
-        
-        // Limit episodes more aggressively
-        optimizeEpisodeCollections(aggressive: true)
-        
-        // Clear URL request cache
         URLCache.shared.removeAllCachedResponses()
-        
+        optimizeEpisodeCollections(aggressive: aggressive)
+        optimizeImageCache()
+        cleanRSSFeedCache()
+        optimizePersistentCache()
+
         // Force immediate memory reclaim
         malloc_zone_pressure_relief(nil, 0)
         
-        logger.warning("Aggressive memory cleanup completed")
+        // Force a small autorelease pool drain
+        autoreleasepool {
+            let _ = Array(repeating: Data(count: 1024), count: 256)
+        }
+        
+        logger.info("\(aggressive ? "Aggressive" : "Standard") memory optimization completed")
+        return true
     }
     
     /// Optimizes episode collections to reduce memory usage

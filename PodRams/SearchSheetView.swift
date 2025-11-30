@@ -36,13 +36,7 @@ struct SearchSheetView: View {
 
             searchField
 
-            if podcastFetcher.podcasts.isEmpty {
-                Text("No results yet.")
-                    .foregroundColor(secondaryText)
-                    .padding(.top, 32)
-            } else {
-                resultsList
-            }
+            resultsSection
 
             Spacer(minLength: 0)
         }
@@ -124,6 +118,26 @@ struct SearchSheetView: View {
         }
         .scrollContentBackground(.hidden)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var resultsSection: some View {
+        if podcastFetcher.isSearching {
+            VStack(spacing: 12) {
+                ProgressView("Searching…")
+                    .progressViewStyle(.circular)
+                    .tint(AppTheme.accent)
+                Text("Looking for podcasts…")
+                    .foregroundColor(secondaryText)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        } else if podcastFetcher.podcasts.isEmpty {
+            Text("No results.")
+                .foregroundColor(secondaryText)
+                .padding(.top, 32)
+        } else {
+            resultsList
+        }
     }
 
     private var rowBackground: some View {

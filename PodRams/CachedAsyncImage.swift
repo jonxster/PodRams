@@ -14,6 +14,7 @@ private final class CachedImageState: @unchecked Sendable {
     let primaryCache = NSCache<NSURL, NSImage>()
     let optimizedCache: NSCache<NSURL, NSImage>
     var failedLoadTimestamps: [String: Date] = [:]
+    var cachedDirectoryURL: URL?
 
     init() {
         let cache = NSCache<NSURL, NSImage>()
@@ -169,7 +170,7 @@ public struct CachedAsyncImage: View {
                 return // Found in memory cache, exit background task
             }
 
-            let fileURL = self.cachedFileURL(for: url)
+            let fileURL = Self.cachedFileURL(for: url)
 
             Self.cacheState.lock.lock()
             if let failureDate = Self.cacheState.failedLoadTimestamps[urlKey],
@@ -261,7 +262,7 @@ public struct CachedAsyncImage: View {
                 }
 
                 if let image = processImageData(data) {
-                    storeImage(data: data, for: url)
+                    Self.storeImage(data: data, for: url)
                     Self.cacheState.lock.lock()
                     Self.cacheState.failedLoadTimestamps.removeValue(forKey: urlKey)
                     Self.cacheState.optimizedCache.setObject(image, forKey: url as NSURL)
@@ -276,7 +277,7 @@ public struct CachedAsyncImage: View {
                 if let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
                    let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) {
                     let fallbackImage = NSImage(cgImage: cgImage, size: .zero)
-                    storeImage(data: data, for: url)
+                    Self.storeImage(data: data, for: url)
                     Self.cacheState.lock.lock()
                     Self.cacheState.failedLoadTimestamps.removeValue(forKey: urlKey)
                     Self.cacheState.optimizedCache.setObject(fallbackImage, forKey: url as NSURL)
@@ -364,7 +365,7 @@ public struct CachedAsyncImage: View {
     /// Generates a unique cache file name by computing a SHA256 hash of the URL's absolute string.
     /// - Parameter url: The URL to hash.
     /// - Returns: A fixed-length file name derived from the URL hash, including the file extension if available.
-    nonisolated private func cacheFileName(for url: URL) -> String {
+    nonisolated private static func cacheFileName(for url: URL) -> String {
         // Convert the URL's absolute string to data.
         let inputData = Data(url.absoluteString.utf8)
         // Compute the SHA256 hash.
@@ -375,49 +376,50 @@ public struct CachedAsyncImage: View {
         let ext = url.pathExtension
         return ext.isEmpty ? hashString : "\(hashString).\(ext)"
     }
+    
+    /// Returns the cache directory URL, creating and caching it on first access.
+    nonisolated private static func cacheDirectoryURL() -> URL? {
+        if let cached = withLock({ cacheState.cachedDirectoryURL }) {
+            return cached
+        }
 
-    /// Constructs the full file URL in the temporary directory where the cached image is stored.
-    /// - Parameter url: The original image URL.
-    /// - Returns: A file URL pointing to the cached image.
-    nonisolated private func cachedFileURL(for url: URL) -> URL {
-        // Use the application support directory instead of temporary directory
-        // for better persistence and proper sandbox permissions
         let fileManager = FileManager.default
-        
-        // Get the app's cache directory
-        let cacheDir: URL
-        
         do {
-            // Get the app support directory specific to this app
-            cacheDir = try fileManager.url(
+            let base = try fileManager.url(
                 for: .cachesDirectory,
                 in: .userDomainMask,
                 appropriateFor: nil,
                 create: true
             ).appendingPathComponent("PodRamsImageCache", isDirectory: true)
             
-            // Create the ImageCache directory if it doesn't exist
-            if !fileManager.fileExists(atPath: cacheDir.path) {
-                try fileManager.createDirectory(
-                    at: cacheDir,
-                    withIntermediateDirectories: true,
-                    attributes: nil
-                )
+            if !fileManager.fileExists(atPath: base.path) {
+                try fileManager.createDirectory(at: base, withIntermediateDirectories: true, attributes: nil)
             }
+
+            withLock {
+                cacheState.cachedDirectoryURL = base
+            }
+            return base
         } catch {
-            // Fall back to temporary directory if we can't access app support
-            return fileManager.temporaryDirectory.appendingPathComponent(cacheFileName(for: url))
+            return nil
         }
-        
-        let fileName = cacheFileName(for: url)
-        return cacheDir.appendingPathComponent(fileName)
+    }
+
+    /// Constructs the full file URL in the temporary directory where the cached image is stored.
+    /// - Parameter url: The original image URL.
+    /// - Returns: A file URL pointing to the cached image.
+    nonisolated private static func cachedFileURL(for url: URL) -> URL {
+        if let cacheDir = cacheDirectoryURL() {
+            return cacheDir.appendingPathComponent(cacheFileName(for: url))
+        }
+        return FileManager.default.temporaryDirectory.appendingPathComponent(cacheFileName(for: url))
     }
 
     /// Stores the downloaded image data in the cache.
     /// - Parameters:
     ///   - data: The image data to be stored.
     ///   - url: The original URL of the image, used to generate the cache file name.
-    nonisolated private func storeImage(data: Data, for url: URL) {
+    nonisolated private static func storeImage(data: Data, for url: URL) {
         let fileURL = cachedFileURL(for: url)
         do {
             // Make sure the directory exists (in case it was deleted between cache directory creation and image download)
@@ -435,7 +437,7 @@ public struct CachedAsyncImage: View {
 
     // MARK: - Cache Helpers
 
-    static func updateOptimizedCache(totalCostLimit: Int? = nil, countLimit: Int? = nil) {
+    nonisolated static func updateOptimizedCache(totalCostLimit: Int? = nil, countLimit: Int? = nil) {
         let state = cacheState
         state.lock.lock()
         defer { state.lock.unlock() }
@@ -443,7 +445,7 @@ public struct CachedAsyncImage: View {
         if let countLimit { state.optimizedCache.countLimit = countLimit }
     }
 
-    static func optimizedCacheCountLimit() -> Int {
+    nonisolated static func optimizedCacheCountLimit() -> Int {
         let state = cacheState
         state.lock.lock()
         defer { state.lock.unlock() }
@@ -451,7 +453,7 @@ public struct CachedAsyncImage: View {
     }
     
     // Clear the loaded URL tracking cache to allow retry of previously failed URLs
-    public static func clearURLCache() {
+    public nonisolated static func clearURLCache() {
         let state = cacheState
         state.lock.lock()
         defer { state.lock.unlock() }
@@ -459,29 +461,34 @@ public struct CachedAsyncImage: View {
     }
     
     // Clear entire image cache
-    public static func clearCache() {
+    public nonisolated static func clearCache() {
+        // Cancel in-flight loads to release locks quickly
+        withLock {
+            cacheState.loadingTasks.values.forEach { $0.cancel() }
+            cacheState.loadingTasks.removeAll()
+            cacheState.primaryCache.removeAllObjects()
+            cacheState.optimizedCache.removeAllObjects()
+            cacheState.failedLoadTimestamps.removeAll()
+            cacheState.cachedDirectoryURL = nil
+        }
+        
+        // Clear disk cache off the main queue to avoid blocking UI/thread asserts.
+        DispatchQueue.global(qos: .utility).async {
+            guard let cacheDir = CachedAsyncImage.cacheDirectoryURL() else { return }
+            do {
+                if FileManager.default.fileExists(atPath: cacheDir.path) {
+                    try FileManager.default.removeItem(at: cacheDir)
+                }
+            } catch {
+                // Ignore errors when clearing cache
+            }
+        }
+    }
+    /// Helper to perform a thread-safe read/write on cache state.
+    private nonisolated static func withLock<T>(_ work: () -> T) -> T {
         let state = cacheState
         state.lock.lock()
         defer { state.lock.unlock() }
-        state.primaryCache.removeAllObjects()
-        state.optimizedCache.removeAllObjects()
-        state.failedLoadTimestamps.removeAll()
-        
-        // Try to clear disk cache too
-        do {
-            let fileManager = FileManager.default
-            let cacheDir = try fileManager.url(
-                for: .cachesDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: false
-            ).appendingPathComponent("PodRamsImageCache", isDirectory: true)
-            
-            if fileManager.fileExists(atPath: cacheDir.path) {
-                try fileManager.removeItem(at: cacheDir)
-            }
-        } catch { // Ignore error, variable not needed - CHANGED
-            // Ignore errors when clearing cache
-        }
+        return work()
     }
 }

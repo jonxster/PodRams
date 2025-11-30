@@ -494,8 +494,12 @@ final class ZMarkupParser {
 
     private func normalizedAttributedString(fromHTML html: String) -> NSAttributedString? {
         guard let data = html.data(using: .utf8) else { return nil }
+        if data.count > maxProcessLength {
+            // Avoid parsing extremely large blobs on the main thread; fall back to simplified strip.
+            return NSAttributedString(string: simplifiedStrip(html))
+        }
 
-        let make: () -> NSAttributedString? = {
+        return autoreleasepool {
             do {
                 let rendered = try NSMutableAttributedString(
                     data: data,
@@ -519,12 +523,6 @@ final class ZMarkupParser {
             } catch {
                 return nil
             }
-        }
-
-        if Thread.isMainThread {
-            return make()
-        } else {
-            return DispatchQueue.main.sync(execute: make)
         }
     }
 

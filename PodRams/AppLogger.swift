@@ -13,6 +13,7 @@ enum AppLogger {
     static let transcription = Logger(subsystem: subsystem, category: "Transcription")
     static let tests = Logger(subsystem: subsystem, category: "Tests")
     static let feed = Logger(subsystem: subsystem, category: "Feed")
+    static let shortcuts = Logger(subsystem: subsystem, category: "Shortcuts")
 
     static func makeLogger(category: String) -> Logger {
         Logger(subsystem: subsystem, category: category)

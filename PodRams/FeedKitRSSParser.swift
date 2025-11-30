@@ -14,26 +14,17 @@ class FeedKitRSSParser {
     
     /// Parse RSS feed data and extract podcast episodes, artwork URL, and channel title
     func parse(data: Data) -> (episodes: [PodcastEpisode], feedArtwork: URL?, channelTitle: String?) {
-        // FeedParser initializer doesn't return optional, so use it directly
-        let parser = FeedParser(data: data)
-        
-        // Attempt to parse as RSS with improved error handling
-        let result = parser.parse()
-        
-        switch result {
-        case .success(let feed):
-            if let rssFeed = feed.rssFeed {
+        do {
+            let feed = try Feed(data: data)
+            switch feed {
+            case .rss(let rssFeed):
                 return parseRSSFeed(rssFeed)
-            } else if let atomFeed = feed.atomFeed {
+            case .atom(let atomFeed):
                 return parseAtomFeed(atomFeed)
-            } else if let jsonFeed = feed.jsonFeed {
+            case .json(let jsonFeed):
                 return parseJSONFeed(jsonFeed)
-            } else {
-                feedLogger.error("Feed format not recognized")
-                return ([], nil, nil)
             }
-            
-        case .failure(let error):
+        } catch {
             feedLogger.error("FeedKit parsing error: \(error, privacy: .public)")
             return ([], nil, nil)
         }
@@ -43,28 +34,32 @@ class FeedKitRSSParser {
     
     /// Parse RSS feed
     private func parseRSSFeed(_ feed: RSSFeed) -> (episodes: [PodcastEpisode], feedArtwork: URL?, channelTitle: String?) {
+        guard let channel = feed.channel else {
+            feedLogger.error("RSS feed missing channel")
+            return ([], nil, nil)
+        }
+        
         var episodes: [PodcastEpisode] = []
         var feedArtworkURL: URL? = nil
-        let channelTitle = feed.title
+        let channelTitle = channel.title
         
         // Get feed artwork from iTunes image
-        if let imageUrl = feed.iTunes?.iTunesImage?.attributes?.href {
+        if let imageUrl = channel.iTunes?.image?.attributes?.href {
             feedArtworkURL = URL(string: imageUrl)
-        } else if let imageUrl = feed.image?.url {
+        } else if let imageUrl = channel.image?.url {
             feedArtworkURL = URL(string: imageUrl)
         }
         
         // Parse episodes from the first 15 items for better performance
-        if let items = feed.items {
-            let limitedItems = items.prefix(15) // Increase from 10 to 15 but still limit
-            for item in limitedItems {
-                if let episode = createEpisodeFromRSSItem(item) {
-                    episodes.append(episode)
-                }
-                // Early break if we have enough episodes
-                if episodes.count >= 10 {
-                    break
-                }
+        let items = channel.items ?? []
+        let limitedItems = items.prefix(15) // Increase from 10 to 15 but still limit
+        for item in limitedItems {
+            if let episode = createEpisodeFromRSSItem(item, podcastTitle: channelTitle) {
+                episodes.append(episode)
+            }
+            // Early break if we have enough episodes
+            if episodes.count >= 10 {
+                break
             }
         }
         
@@ -74,7 +69,7 @@ class FeedKitRSSParser {
     /// Parse Atom feed
     private func parseAtomFeed(_ feed: AtomFeed) -> (episodes: [PodcastEpisode], feedArtwork: URL?, channelTitle: String?) {
         var episodes: [PodcastEpisode] = []
-        let channelTitle = feed.title
+        let channelTitle = feed.title?.text
         var feedArtworkURL: URL? = nil
         
         // Find feed artwork from icon or logo
@@ -85,16 +80,15 @@ class FeedKitRSSParser {
         }
         
         // Parse episodes from the first 15 entries for better performance
-        if let entries = feed.entries {
-            let limitedEntries = entries.prefix(15)
-            for entry in limitedEntries {
-                if let episode = createEpisodeFromAtomEntry(entry) {
-                    episodes.append(episode)
-                }
-                // Early break if we have enough episodes
-                if episodes.count >= 10 {
-                    break
-                }
+        let entries = feed.entries ?? []
+        let limitedEntries = entries.prefix(15)
+        for entry in limitedEntries {
+            if let episode = createEpisodeFromAtomEntry(entry, podcastTitle: channelTitle) {
+                episodes.append(episode)
+            }
+            // Early break if we have enough episodes
+            if episodes.count >= 10 {
+                break
             }
         }
         
@@ -118,7 +112,7 @@ class FeedKitRSSParser {
         if let items = feed.items {
             let limitedItems = items.prefix(15)
             for item in limitedItems {
-                if let episode = createEpisodeFromJSONItem(item) {
+                if let episode = createEpisodeFromJSONItem(item, podcastTitle: channelTitle) {
                     episodes.append(episode)
                 }
                 // Early break if we have enough episodes
@@ -132,7 +126,7 @@ class FeedKitRSSParser {
     }
     
     /// Create a PodcastEpisode from an RSS item
-    private func createEpisodeFromRSSItem(_ item: RSSFeedItem) -> PodcastEpisode? {
+    private func createEpisodeFromRSSItem(_ item: RSSFeedItem, podcastTitle: String?) -> PodcastEpisode? {
         guard let title = item.title else {
             return nil
         }
@@ -146,22 +140,26 @@ class FeedKitRSSParser {
         
         // Get artwork URL from iTunes image or media content
         var artworkURL: URL? = nil
-        if let itunesImage = item.iTunes?.iTunesImage?.attributes?.href {
+        if let itunesImage = item.iTunes?.image?.attributes?.href {
             artworkURL = URL(string: itunesImage)
-        } else if let mediaContent = item.media?.mediaContents?.first,
-                  let mediaUrl = mediaContent.attributes?.url,
-                  mediaContent.attributes?.medium == "image" {
-            artworkURL = URL(string: mediaUrl)
+        } else if let thumbnailUrl = item.media?.thumbnails?.first?.attributes?.url {
+            artworkURL = URL(string: thumbnailUrl)
+        } else if let mediaContent = item.media?.contents?.first(where: { content in
+            let medium = content.attributes?.medium?.lowercased()
+            let type = content.attributes?.type?.lowercased()
+            return medium == "image" || (type?.hasPrefix("image/") ?? false)
+        })?.attributes?.url {
+            artworkURL = URL(string: mediaContent)
         }
         
         // Get duration directly from iTunes duration (it's already a Double/TimeInterval)
-        let duration = item.iTunes?.iTunesDuration
+        let duration = item.iTunes?.duration ?? item.media?.contents?.first?.attributes?.duration.map(Double.init)
         
         // Get show notes from description or content
         var showNotes: String? = nil
         if let description = item.description {
             showNotes = description.htmlStripped
-        } else if let content = item.content?.contentEncoded {
+        } else if let content = item.content?.encoded {
             showNotes = content.htmlStripped
         }
         
@@ -171,19 +169,30 @@ class FeedKitRSSParser {
             artworkURL: artworkURL,
             duration: duration, // Assign directly
             showNotes: showNotes,
-            feedUrl: feedUrl
+            feedUrl: feedUrl,
+            podcastName: podcastTitle
         )
     }
     
     /// Create a PodcastEpisode from an Atom entry
-    private func createEpisodeFromAtomEntry(_ entry: AtomFeedEntry) -> PodcastEpisode? {
+    private func createEpisodeFromAtomEntry(_ entry: AtomFeedEntry, podcastTitle: String?) -> PodcastEpisode? {
         guard let title = entry.title else {
             return nil
         }
         
         // Find audio URL from link with audio type
         guard let links = entry.links,
-              let audioLink = links.first(where: { $0.attributes?.type?.starts(with: "audio/") ?? false }),
+              let audioLink = links.first(where: { link in
+                  guard let attributes = link.attributes else { return false }
+                  let type = attributes.type?.lowercased() ?? ""
+                  if type.hasPrefix("audio/") {
+                      return true
+                  }
+                  if let rel = attributes.rel?.lowercased(), rel == "enclosure" {
+                      return true
+                  }
+                  return false
+              }),
               let urlString = audioLink.attributes?.href,
               let audioURL = URL(string: urlString) else {
             return nil
@@ -194,13 +203,17 @@ class FeedKitRSSParser {
         if let imageLink = entry.links?.first(where: { $0.attributes?.type?.starts(with: "image/") ?? false }),
            let imageUrlString = imageLink.attributes?.href {
             artworkURL = URL(string: imageUrlString)
+        } else if let mediaThumbnail = entry.media?.thumbnails?.first?.attributes?.url {
+            artworkURL = URL(string: mediaThumbnail)
         }
+        
+        let duration = entry.media?.contents?.first(where: { $0.attributes?.type?.starts(with: "audio/") ?? false })?.attributes?.duration.map(Double.init)
         
         // Get show notes from content
         var showNotes: String? = nil
-        if let content = entry.content?.value {
+        if let content = entry.content?.text {
             showNotes = content.htmlStripped
-        } else if let summary = entry.summary?.value {
+        } else if let summary = entry.summary?.text {
             showNotes = summary.htmlStripped
         }
         
@@ -208,14 +221,15 @@ class FeedKitRSSParser {
             title: title,
             url: audioURL,
             artworkURL: artworkURL,
-            duration: nil, // Atom feeds typically don't include duration
+            duration: duration,
             showNotes: showNotes,
-            feedUrl: feedUrl
+            feedUrl: feedUrl,
+            podcastName: podcastTitle
         )
     }
     
     /// Create a PodcastEpisode from a JSON Feed item
-    private func createEpisodeFromJSONItem(_ item: JSONFeedItem) -> PodcastEpisode? {
+    private func createEpisodeFromJSONItem(_ item: JSONFeedItem, podcastTitle: String?) -> PodcastEpisode? {
         guard let title = item.title else {
             return nil
         }
@@ -230,7 +244,7 @@ class FeedKitRSSParser {
         
         // Get artwork URL from image
         var artworkURL: URL? = nil
-        if let imageUrlString = item.image {
+        if let imageUrlString = item.image ?? item.bannerImage {
             artworkURL = URL(string: imageUrlString)
         }
         
@@ -245,12 +259,7 @@ class FeedKitRSSParser {
         }
         
         // Get duration from attachment duration if available
-        var duration: Double? = nil
-        if let attachments = item.attachments,
-           let audioAttachment = attachments.first(where: { $0.mimeType?.starts(with: "audio/") ?? false }),
-           let durationSeconds = audioAttachment.durationInSeconds {
-            duration = Double(durationSeconds)
-        }
+        let duration = audioAttachment.durationInSeconds
         
         return PodcastEpisode(
             title: title,
@@ -258,7 +267,8 @@ class FeedKitRSSParser {
             artworkURL: artworkURL,
             duration: duration,
             showNotes: showNotes,
-            feedUrl: feedUrl
+            feedUrl: feedUrl,
+            podcastName: podcastTitle
         )
     }
     

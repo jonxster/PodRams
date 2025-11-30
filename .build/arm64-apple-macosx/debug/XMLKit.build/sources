@@ -1,0 +1,22 @@
+'/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/Extensions/String + escapeCharacters.swift'
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLDateDecodingStrategy.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLDecoder.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLKeyedDecodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLSingleValueDecodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDecoder/XMLUnkeyedDecodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDocument.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLDocumentConvertible.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLElement.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLCodingKey.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLDateEncodingStrategy.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLEncoder.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLKeyedEncodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLSingleValueEncodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLEncoder/XMLUnkeyedEncodingContainer.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLError.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLHeader.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLNamespaceCodable.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLNode.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLReader.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLStack.swift
+/Users/tombjornebark/Desktop/PodRams/LocalDeps/FeedKit/Sources/XMLKit/XMLStringConvertible.swift

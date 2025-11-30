@@ -35,7 +35,7 @@ private struct GlassEffectModifier<S: InsettableShape>: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(macOS 15.0, *) {
+        if #available(macOS 26.0, *) {
             content
                 .glassEffect(configuration.isInteractive ? .regular.interactive() : .regular, in: shape)
         } else {

@@ -19,10 +19,13 @@ private let podcastFetcherLogger = AppLogger.networking
 final class PodcastFetcher: ObservableObject {
     @Published var searchQuery = ""
     @Published var podcasts: [Podcast] = []
+    @Published var isSearching = false
     
     // Optimized cache sizes to reduce memory usage
     private var searchCache: [String: [Podcast]] = [:]
     private var episodeCache: [String: (episodes: [PodcastEpisode], feedArtwork: URL?)] = [:]
+    private var searchCacheOrder: [String] = []
+    private var episodeCacheOrder: [String] = []
     
     // Memory optimization settings
     private let maxSearchCacheSize = MemoryOptimizationManager.shared.maxSearchCacheSize
@@ -49,9 +52,12 @@ final class PodcastFetcher: ObservableObject {
     func searchPodcasts() async {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
+        isSearching = true
 
         if let cached = searchCache[query] {
+            touchSearchCache(key: query)
             podcasts = cached
+            isSearching = false
             return
         }
 
@@ -75,18 +81,15 @@ final class PodcastFetcher: ObservableObject {
             }
 
             searchCache[query] = results
-            if searchCache.count > maxSearchCacheSize {
-                let overflow = searchCache.count - maxSearchCacheSize
-                let keysToRemove = Array(searchCache.keys.prefix(overflow))
-                for key in keysToRemove {
-                    searchCache.removeValue(forKey: key)
-                }
-            }
+            touchSearchCache(key: query)
+            pruneSearchCache()
 
             podcasts = results
         } catch {
             podcastFetcherLogger.error("Error fetching podcasts: \(error, privacy: .public)")
         }
+
+        isSearching = false
     }
     
     func fetchEpisodes(for podcast: Podcast) async {
@@ -103,7 +106,8 @@ final class PodcastFetcher: ObservableObject {
             return
         }
 
-        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
+        if let cachedEntry = cachedEpisode(for: [cacheKey, feedUrlString]) {
+            let cached = cachedEntry.value
             podcast.episodes = Array(cached.episodes.prefix(maxEpisodesPerFeed))
             if let feedArt = cached.feedArtwork {
                 podcast.feedArtworkURL = feedArt
@@ -120,13 +124,8 @@ final class PodcastFetcher: ObservableObject {
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
 
             episodeCache[cacheKey] = (limitedEpisodes, feedArt)
-            if episodeCache.count > maxEpisodeCacheSize {
-                let overflow = episodeCache.count - maxEpisodeCacheSize
-                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
-                for key in keysToRemove {
-                    episodeCache.removeValue(forKey: key)
-                }
-            }
+            touchEpisodeCache(key: cacheKey)
+            pruneEpisodeCache()
 
             podcast.episodes = limitedEpisodes
             if let feedArt = feedArt {
@@ -153,7 +152,8 @@ final class PodcastFetcher: ObservableObject {
             return ([], nil)
         }
 
-        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
+        if let cachedEntry = cachedEpisode(for: [cacheKey, feedUrlString]) {
+            let cached = cachedEntry.value
             return (Array(cached.episodes.prefix(maxEpisodesPerFeed)), cached.feedArtwork)
         }
 
@@ -170,13 +170,8 @@ final class PodcastFetcher: ObservableObject {
             }
 
             episodeCache[cacheKey] = (limitedEpisodes, feedArt)
-            if episodeCache.count > maxEpisodeCacheSize {
-                let overflow = episodeCache.count - maxEpisodeCacheSize
-                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
-                for key in keysToRemove {
-                    episodeCache.removeValue(forKey: key)
-                }
-            }
+            touchEpisodeCache(key: cacheKey)
+            pruneEpisodeCache()
 
             return (limitedEpisodes, feedArt)
         } catch {
@@ -198,7 +193,8 @@ final class PodcastFetcher: ObservableObject {
             return (nil, nil)
         }
 
-        if let cached = episodeCache[cacheKey] ?? episodeCache[feedUrlString] {
+        if let cachedEntry = cachedEpisode(for: [cacheKey, feedUrlString]) {
+            let cached = cachedEntry.value
             return (podcast.title, cached.feedArtwork)
         }
 
@@ -209,13 +205,8 @@ final class PodcastFetcher: ObservableObject {
             let (_, feedArt, channelTitle) = parser.parse(data: data)
 
             episodeCache[cacheKey] = ([], feedArt)
-            if episodeCache.count > maxEpisodeCacheSize {
-                let overflow = episodeCache.count - maxEpisodeCacheSize
-                let keysToRemove = Array(episodeCache.keys.prefix(overflow))
-                for key in keysToRemove {
-                    episodeCache.removeValue(forKey: key)
-                }
-            }
+            touchEpisodeCache(key: cacheKey)
+            pruneEpisodeCache()
 
             return (channelTitle, feedArt)
         } catch {
@@ -228,6 +219,8 @@ final class PodcastFetcher: ObservableObject {
     func clearCaches() {
         searchCache.removeAll()
         episodeCache.removeAll()
+        searchCacheOrder.removeAll()
+        episodeCacheOrder.removeAll()
         podcastFetcherLogger.info("PodcastFetcher caches cleared for memory optimization")
     }
 
@@ -249,6 +242,44 @@ final class PodcastFetcher: ObservableObject {
         }
 
         return false
+    }
+}
+
+// MARK: - Cache helpers
+
+private extension PodcastFetcher {
+    func touchSearchCache(key: String) {
+        searchCacheOrder.removeAll { $0 == key }
+        searchCacheOrder.append(key)
+    }
+    
+    func pruneSearchCache() {
+        while searchCacheOrder.count > maxSearchCacheSize, let key = searchCacheOrder.first {
+            searchCacheOrder.removeFirst()
+            searchCache.removeValue(forKey: key)
+        }
+    }
+    
+    func cachedEpisode(for keys: [String]) -> (key: String, value: (episodes: [PodcastEpisode], feedArtwork: URL?))? {
+        for key in keys {
+            if let cached = episodeCache[key] {
+                touchEpisodeCache(key: key)
+                return (key, cached)
+            }
+        }
+        return nil
+    }
+    
+    func touchEpisodeCache(key: String) {
+        episodeCacheOrder.removeAll { $0 == key }
+        episodeCacheOrder.append(key)
+    }
+    
+    func pruneEpisodeCache() {
+        while episodeCacheOrder.count > maxEpisodeCacheSize, let key = episodeCacheOrder.first {
+            episodeCacheOrder.removeFirst()
+            episodeCache.removeValue(forKey: key)
+        }
     }
 }
 

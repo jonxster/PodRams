@@ -19,6 +19,7 @@ struct SubscribeView: View {
 
     @State private var expandedPodcasts: Set<UUID> = []
     @State private var loadingPodcastId: UUID?
+    @State private var prefetchTask: Task<Void, Never>?
 
     var body: some View {
         GlassEffectContainer(spacing: 20) {
@@ -45,6 +46,15 @@ struct SubscribeView: View {
         .frame(minWidth: 440, minHeight: 520)
         .background(AppTheme.color(.background, in: currentMode))
         .compatGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .onAppear {
+            if prefetchTask == nil {
+                prefetchTask = Task(name: "subscribe-prefetch-missing") { await prefetchMissingEpisodes() }
+            }
+        }
+        .onDisappear {
+            prefetchTask?.cancel()
+            prefetchTask = nil
+        }
     }
 
     private var currentMode: AppTheme.Mode {
@@ -132,6 +142,27 @@ struct SubscribeView: View {
             .buttonStyle(.plain)
         }
     }
+    
+    /// Prefetch episodes for subscriptions that have not been loaded yet to keep expansion instant.
+    private func prefetchMissingEpisodes() async {
+        let targets = await MainActor.run { subscribedPodcasts.filter { $0.episodes.isEmpty } }
+        guard !targets.isEmpty else { return }
+        
+        await withTaskGroup(of: Void.self) { group in
+            for podcast in targets.prefix(4) { // limit upfront work to keep UI snappy
+                group.addTask(name: "prefetch-missing-\(podcast.id.uuidString.prefix(8))") {
+                    let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
+                    await MainActor.run {
+                        guard let idx = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) else { return }
+                        subscribedPodcasts[idx].episodes = episodes
+                        if let feedArt {
+                            subscribedPodcasts[idx].feedArtworkURL = feedArt
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @ViewBuilder
     private func episodesStack(for podcast: Podcast) -> some View {
@@ -202,7 +233,7 @@ struct SubscribeView: View {
         if !podcast.episodes.isEmpty { return }
 
         loadingPodcastId = podcast.id
-        Task {
+        Task(name: "load-episodes-\(podcast.id.uuidString.prefix(8))") {
             let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
 
             await MainActor.run {
@@ -211,11 +242,13 @@ struct SubscribeView: View {
                     if let feedArt = feedArt {
                         subscribedPodcasts[index].feedArtworkURL = feedArt
                     }
+                    persistSubscriptionSnapshot()
                 } else {
                     podcast.episodes = episodes
                     if let feedArt = feedArt {
                         podcast.feedArtworkURL = feedArt
                     }
+                    persistSubscriptionSnapshot()
                 }
                 loadingPodcastId = nil
             }
@@ -238,7 +271,7 @@ struct SubscribeView: View {
 
         if podcast.episodes.isEmpty {
             loadingPodcastId = podcast.id
-            Task {
+            Task(name: "select-play-\(podcast.id.uuidString.prefix(8))") {
                 let (episodes, feedArt) = await podcastFetcher.fetchEpisodesDirect(for: podcast)
                 await MainActor.run {
                     if let index = subscribedPodcasts.firstIndex(where: { $0.id == podcast.id }) {
@@ -246,12 +279,14 @@ struct SubscribeView: View {
                         if let feedArt = feedArt {
                             subscribedPodcasts[index].feedArtworkURL = feedArt
                         }
+                        persistSubscriptionSnapshot()
                         playFirstEpisode(for: subscribedPodcasts[index])
                     } else {
                         podcast.episodes = episodes
                         if let feedArt = feedArt {
                             podcast.feedArtworkURL = feedArt
                         }
+                        persistSubscriptionSnapshot()
                         playFirstEpisode(for: podcast)
                     }
                     loadingPodcastId = nil
@@ -267,7 +302,7 @@ struct SubscribeView: View {
 
         let firstEpisode = podcast.episodes[0]
 
-        Task {
+        Task(name: "play-first-\(podcast.id.uuidString.prefix(8))") {
             await MainActor.run {
                 selectedPodcast = podcast
                 selectedEpisodeIndex = 0
@@ -277,5 +312,15 @@ struct SubscribeView: View {
                 onDismiss?()
             }
         }
+    }
+
+    private func persistSubscriptionSnapshot() {
+        let maxEpisodes = MemoryOptimizationManager.shared.maxEpisodesPerPodcast
+        let snapshot = subscribedPodcasts.reduce(into: [String: [PodcastEpisode]]()) { acc, podcast in
+            if let feed = podcast.feedUrl, !feed.isEmpty, !podcast.episodes.isEmpty {
+                acc[feed] = Array(podcast.episodes.prefix(maxEpisodes))
+            }
+        }
+        PersistenceManager.saveSubscriptionEpisodesSnapshot(snapshot)
     }
 }

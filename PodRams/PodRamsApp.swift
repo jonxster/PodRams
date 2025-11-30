@@ -1,6 +1,9 @@
 #if !SWIFT_PACKAGE
 import SwiftUI
 import OSLog
+#if canImport(UserNotifications)
+@preconcurrency import UserNotifications
+#endif
 
 private let appLifecycleLogger = AppLogger.app
 
@@ -8,12 +11,7 @@ private let appLifecycleLogger = AppLogger.app
 @MainActor
 struct PodRamsApp: App {
     // Create a shared AudioPlayer instance at the app level with lazy initialization
-    @StateObject private var audioPlayer = {
-        // Initialize the audio player with error handling
-        let player = AudioPlayer()
-        appLifecycleLogger.info("AudioPlayer initialized successfully")
-        return player
-    }()
+    @StateObject private var audioPlayer: AudioPlayer
     
     // State for managing episodes and current episode index
     @State private var episodes: [PodcastEpisode] = []
@@ -26,6 +24,8 @@ struct PodRamsApp: App {
     init() {
         // Set up any app-wide configurations
         appLifecycleLogger.info("PodRamsApp initializing...")
+        _audioPlayer = StateObject(wrappedValue: AudioPlayer.shared)
+        appLifecycleLogger.info("AudioPlayer initialized successfully")
         
         #if DEBUG
         // We'll let the user run tests manually from the Debug menu instead
@@ -45,6 +45,8 @@ struct PodRamsApp: App {
                 // Log for debugging launch issues
                 appLifecycleLogger.info("App launched at \(Date(), privacy: .public)")
                 setupLifecycleObserver()
+                removeDefaultMenuImages()
+                requestNotificationAuthorization()
             }
             .onDisappear {
                 cleanupLifecycleObserver()
@@ -101,6 +103,46 @@ struct PodRamsApp: App {
                 saveCurrentState()
             }
         }
+    }
+
+    /// Removes system-provided menu item images to avoid macOS menu rep warnings.
+    @MainActor
+    private func removeDefaultMenuImages() {
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else { return }
+        let selectors: [Selector] = [
+            #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+            #selector(NSApplication.hide(_:)),
+            #selector(NSApplication.hideOtherApplications(_:)),
+            #selector(NSApplication.unhideAllApplications(_:)),
+            #selector(NSApplication.terminate(_:))
+        ]
+
+        for item in appMenu.items {
+            if let action = item.action, selectors.contains(action) {
+                item.image = nil
+            }
+        }
+
+        if let servicesItem = appMenu.items.first(where: { $0.submenu?.title == "Services" }) {
+            servicesItem.image = nil
+        }
+    }
+
+    /// Requests user notification permission for transcription completion alerts.
+    @MainActor
+    private func requestNotificationAuthorization() {
+        #if canImport(UserNotifications)
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .notDetermined else { return }
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+                if let error {
+                    appLifecycleLogger.debug("Notification permission request failed: \(error.localizedDescription, privacy: .public)")
+                } else {
+                    appLifecycleLogger.debug("Notification permission granted: \(granted, privacy: .public)")
+                }
+            }
+        }
+        #endif
     }
     
     /// Removes lifecycle observers
