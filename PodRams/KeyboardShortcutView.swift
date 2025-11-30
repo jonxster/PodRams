@@ -41,6 +41,7 @@ struct KeyboardShortcutView: NSViewRepresentable {
     }
 
     /// View that owns the NSEvent monitor so it can cleanly remove it when detached.
+    @MainActor
     final class MonitorHostView: NSView {
         private var eventMonitor: Any?
 
@@ -60,8 +61,10 @@ struct KeyboardShortcutView: NSViewRepresentable {
             tearDownMonitor()
         }
 
-        private func tearDownMonitor() {
-            if let monitor = eventMonitor {
+        /// Schedules teardown on the main actor; safe to call from nonisolated contexts like deinit.
+        nonisolated private func tearDownMonitor() {
+            Task { @MainActor in
+                guard let monitor = eventMonitor else { return }
                 NSEvent.removeMonitor(monitor)
                 eventMonitor = nil
             }

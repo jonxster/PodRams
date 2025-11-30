@@ -82,7 +82,12 @@
 - 2025-11-30 — SpeechAnalyzer transcriptions now reserve locales, install assets, timeout if the analyzer stalls, and fall back cleanly so macOS 26+ prefers the modern on-device path instead of reverting to legacy recognition.
 - 2025-11-30 — Transcription history popover no longer expands every past transcript by default and truncates display text to keep long podcast transcripts from beachballing the UI; export still provides the full text.
 - 2025-11-30 — Transcription popover adds in-bubble search and selectable transcript text; content is flattened to sentences (line breaks inserted after punctuation) while preserving paragraph breaks and avoiding mid-sentence newlines. SpeechAnalyzer final-only results are collected to prevent partial-line repetition.
+- 2025-11-30 — PlayerView artwork card widened ~20% (260x260) to give the cover more breathing room without changing the glass treatment.
+- 2025-11-30 — PodcastFetcher switched to a dedicated GCD serial queue for feed parsing to standardise on Grand Central Dispatch as the foundation for background processing.
 - 2025-12-01 — Added Apple Shortcuts (App Intents) for toggling playback or resuming the last episode using the shared AudioPlayer and persistence-backed resume logic.
+- 2025-12-03 — ZMarkupParser now prewarms the HTML importer off the main thread on-demand when show notes start loading, so first HTML parse doesn’t stall the UI at launch.
+- 2025-12-03 — DownloadManager defers loading persisted download metadata until after the player is ready (background warm-up), reducing startup stalls.
+- 2025-12-03 — PodcastFetcher now parses feeds off the main actor to avoid UI hangs during FeedKit/NSXML class initialization.
 
 ## Project Rules
 - Always adhere to Liquid Glass design when writing code.

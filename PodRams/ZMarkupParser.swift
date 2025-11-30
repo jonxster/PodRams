@@ -130,6 +130,8 @@ final class ZMarkupParser {
     private let attributedCache = NSCache<NSString, NSAttributedString>()
     private let lock = NSLock()
     private let maxProcessLength = 50_000
+    private let prewarmQueue = DispatchQueue(label: "com.podrams.zmarkup.prewarm", qos: .utility)
+    private var didPrewarm = false
 
     private init() {
         plainCache.countLimit = 400
@@ -523,6 +525,16 @@ final class ZMarkupParser {
             } catch {
                 return nil
             }
+        }
+    }
+
+    /// Pre-warm the HTML importer off the main thread on demand so first-use runtime setup doesn't block UI.
+    func warmHTMLImporterIfNeeded() {
+        prewarmQueue.async { [weak self] in
+            guard let self else { return }
+            if didPrewarm { return }
+            didPrewarm = true
+            _ = self.normalizedAttributedString(fromHTML: "<p>init</p>")
         }
     }
 

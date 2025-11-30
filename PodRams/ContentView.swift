@@ -20,6 +20,11 @@ struct ContentView: View {
     /// Memory optimization manager to reduce app memory footprint
     @StateObject private var memoryOptimizer = MemoryOptimizationManager.shared
     
+    /// Observes played episodes to update UI when episodes are marked as played
+    @ObservedObject private var playedEpisodesManager = PlayedEpisodesManager.shared
+    /// Setting to hide played episodes
+    @AppStorage("hidePlayedEpisodes") private var hidePlayedEpisodes: Bool = false
+    
     /// User's list of favorite podcasts.
     @State private var favoritePodcasts: [Podcast] = []
     /// List of episodes in the cue (play queue).
@@ -80,10 +85,17 @@ struct ContentView: View {
     /// Computes the list of episodes to display.
     /// If the cue is playing, returns the cue episodes; otherwise, returns episodes from the selected podcast.
     private var activeEpisodes: [PodcastEpisode] {
+        let episodes: [PodcastEpisode]
         if isCuePlaying {
-            return cue
+            episodes = cue
+        } else {
+            episodes = selectedPodcastEpisodes
         }
-        return selectedPodcastEpisodes
+        
+        if hidePlayedEpisodes {
+            return episodes.filter { !playedEpisodesManager.hasBeenPlayed($0) }
+        }
+        return episodes
     }
     
     private var currentShowNotesEpisode: PodcastEpisode? {
@@ -198,7 +210,13 @@ struct ContentView: View {
                                 selectedPodcast: selectedPodcast,
                                 selectedIndex: $selectedEpisodeIndex,
                                 cueList: $cue,
-                                isCuePlaying: $isCuePlaying
+                                isCuePlaying: $isCuePlaying,
+                                onTranscribe: { episode in
+                                    // Set the current episode for transcription context
+                                    selectedEpisodeIndex = activeEpisodes.firstIndex(where: { $0.id == episode.id })
+                                    beginTranscription(for: episode, useCache: true)
+                                    isTranscribeVisible = true // Show the transcription popover
+                                }
                             )
                         } else {
                             // Inform the user if no episodes are available.
@@ -418,6 +436,12 @@ struct ContentView: View {
             contentLogger.info("✅ ContentView: App initialization complete")
             isInitialized = true
             refreshShowNotes()
+
+            // Warm download metadata after the player is ready to avoid startup stalls.
+            Task.detached(priority: .utility) {
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s grace after UI shows
+                DownloadManager.shared.warmDownloadsIfNeeded()
+            }
             
             // Prefetch episodes for subscribed podcasts in the background
             Task(name: "prefetch-subscribed-podcasts", priority: .background) {
@@ -647,22 +671,9 @@ struct ContentView: View {
     }
     
     private func handleTranscriptionButtonTap() {
-        guard let episode = currentShowNotesEpisode else {
-            clearTranscriptionState()
-            transcriptionErrorMessage = "Select an episode to transcribe."
-            isTranscribeVisible = true
-            return
-        }
-
-        isTranscribeVisible = true
-
-        if transcribedEpisodeID == episode.id, !transcriptionText.isEmpty, !isTranscribing {
-            // Already have a transcript for this episode; show existing text.
-            return
-        }
-
-        hasNewTranscriptionBadge = false
-        beginTranscription(for: episode, useCache: true)
+        isTranscribeVisible.toggle()
+        // The toolbar button should only open the transcription history/status popover.
+        // Transcription initiation is now handled exclusively from the episode context menu.
     }
 
     private func handleTranscriptionRetry() {
@@ -965,6 +976,7 @@ struct ContentView: View {
 
         isShowNotesLoading = true
         showNotesContent = AttributedString("Loading show notes...")
+        ZMarkupParser.shared.warmHTMLImporterIfNeeded()
 
         let targetID = loadID
         DispatchQueue.global(qos: .userInitiated).async {
@@ -1349,6 +1361,8 @@ struct EpisodeRow: View {
     var onToggleCue: (() -> Void)?
     /// Optional closure to trigger a download.
     var onDownload: (() -> Void)?
+    /// Optional closure to trigger transcription.
+    var onTranscribe: (() -> Void)?
     
     // ADD environment variable for color scheme
     @Environment(\.colorScheme) var colorScheme
@@ -1574,6 +1588,13 @@ struct EpisodeRow: View {
                             }) {
                                 Label("Pause download", systemImage: "pause.circle")
                             }
+                        }
+                    }
+
+                    // Add Transcribe option
+                    if let onTranscribe = onTranscribe {
+                        Button(action: onTranscribe) {
+                            Label("Transcribe", systemImage: "waveform.and.mic")
                         }
                     }
                 } label: {

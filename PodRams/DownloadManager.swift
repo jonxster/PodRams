@@ -15,6 +15,7 @@ import OSLog
 class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Shared singleton instance for global access.
     static let shared = DownloadManager()
+    private let stateLoadLock = NSLock()
     
     /// Enum representing the various states of a download.
     enum DownloadState: Equatable {
@@ -59,6 +60,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     private let fileOperationQueue = DispatchQueue(label: "com.podrams.fileOperations", 
                                                   qos: .utility, 
                                                   attributes: .concurrent)
+    private var didLoadDownloadStates = false
     
     /// Cache for file existence checks to reduce disk I/O
     private var fileExistenceCache: [String: (exists: Bool, timestamp: Date)] = [:]
@@ -84,10 +86,21 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     private init() {
         // Ensure required directories are available on initialization.
         createRequiredDirectories()
-        
-        // Load saved download states
-        Task {
-            await loadDownloadStates()
+    }
+
+    /// Starts a background load of persisted download states once.
+    func warmDownloadsIfNeeded() {
+        stateLoadLock.lock()
+        if didLoadDownloadStates {
+            stateLoadLock.unlock()
+            return
+        }
+        didLoadDownloadStates = true
+        stateLoadLock.unlock()
+
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self else { return }
+            await self.loadDownloadStates()
         }
     }
     
@@ -234,6 +247,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Sets up progress observation and moves the downloaded file to the Downloads directory upon completion.
     /// - Parameter episode: The podcast episode to download.
     func downloadEpisode(_ episode: PodcastEpisode) {
+        warmDownloadsIfNeeded()
         // Ensure required directories are created before beginning the download.
         createRequiredDirectories()
         
@@ -360,6 +374,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Also cleans up any associated progress observations.
     /// - Parameter episode: The podcast episode to remove.
     func removeDownload(for episode: PodcastEpisode) {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         // Invalidate and remove the progress observation.
         progressObservations[key]?.invalidate()
@@ -395,6 +410,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// - Parameter episode: The podcast episode to check.
     /// - Returns: The local URL if the episode is downloaded; otherwise, nil.
     func localURL(for episode: PodcastEpisode) -> URL? {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         
         // First check if we have the download state in memory
@@ -458,6 +474,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// - Parameter episode: The podcast episode to locate.
     /// - Returns: A file URL if the download exists, otherwise the original streaming URL.
     func playbackURL(for episode: PodcastEpisode) -> URL {
+        warmDownloadsIfNeeded()
         if let local = localURL(for: episode) {
             return local
         }
@@ -468,6 +485,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// - Parameter episode: The podcast episode to check.
     /// - Returns: True if the episode is downloaded; otherwise, false.
     func isDownloaded(_ episode: PodcastEpisode) -> Bool {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         
         // First check if we have the download state in memory
@@ -542,6 +560,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// - Parameter episode: The podcast episode to check
     /// - Returns: The current download state
     func downloadState(for episode: PodcastEpisode) -> DownloadState {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         
         // First check if we have a state in memory
@@ -573,6 +592,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Pauses an ongoing download for the specified episode.
     /// - Parameter episode: The podcast episode to pause downloading.
     func pauseDownload(for episode: PodcastEpisode) {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         
         // Check if there's an active download task for this episode
@@ -617,6 +637,7 @@ class DownloadManager: ObservableObject, @unchecked Sendable {
     /// Resumes a paused download for the specified episode.
     /// - Parameter episode: The podcast episode to resume downloading.
     func resumeDownload(for episode: PodcastEpisode) {
+        warmDownloadsIfNeeded()
         let key = episode.url.absoluteString
         
         // Check if the episode is currently paused

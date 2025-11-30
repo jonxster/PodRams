@@ -118,8 +118,7 @@ final class PodcastFetcher: ObservableObject {
         do {
             let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: cacheKey)
-            let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
+            let (allEpisodes, feedArt, channelTitle) = await parseFeedOffMain(data: data, cacheKey: cacheKey)
 
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
 
@@ -160,8 +159,7 @@ final class PodcastFetcher: ObservableObject {
         do {
             let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: cacheKey)
-            let (allEpisodes, feedArt, channelTitle) = parser.parse(data: data)
+            let (allEpisodes, feedArt, channelTitle) = await parseFeedOffMain(data: data, cacheKey: cacheKey)
 
             let limitedEpisodes = Array(allEpisodes.prefix(maxEpisodesPerFeed))
 
@@ -201,8 +199,7 @@ final class PodcastFetcher: ObservableObject {
         do {
             let (data, _) = try await URLSession.shared.data(from: sanitizedFeedURL)
 
-            let parser = FeedKitRSSParser(feedUrl: cacheKey)
-            let (_, feedArt, channelTitle) = parser.parse(data: data)
+            let (_, feedArt, channelTitle) = await parseFeedOffMain(data: data, cacheKey: cacheKey)
 
             episodeCache[cacheKey] = ([], feedArt)
             touchEpisodeCache(key: cacheKey)
@@ -222,6 +219,21 @@ final class PodcastFetcher: ObservableObject {
         searchCacheOrder.removeAll()
         episodeCacheOrder.removeAll()
         podcastFetcherLogger.info("PodcastFetcher caches cleared for memory optimization")
+    }
+
+    /// Dedicated queue for feed parsing to avoid main thread and reduce contention
+    private let parsingQueue = DispatchQueue(label: "com.podrams.feedParsing", qos: .utility)
+
+    /// Runs FeedKit parsing off the main actor to avoid UI hangs during XMLDecoder class realization.
+    /// Uses GCD as the foundation for background processing.
+    private func parseFeedOffMain(data: Data, cacheKey: String) async -> ([PodcastEpisode], URL?, String?) {
+        await withCheckedContinuation { continuation in
+            parsingQueue.async {
+                let parser = FeedKitRSSParser(feedUrl: cacheKey)
+                let result = parser.parse(data: data)
+                continuation.resume(returning: result)
+            }
+        }
     }
 
     private func shouldAttemptNetwork(for url: URL) -> Bool {

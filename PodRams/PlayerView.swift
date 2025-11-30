@@ -73,8 +73,8 @@ struct PlayerView: View {
                 // Use cached async image loading to avoid main-thread delays
                 CachedAsyncImage(
                     url: artworkURL,
-                    width: 216,
-                    height: 216
+                    width: 260,
+                    height: 260
                 )
             } else {
                 Image(systemName: "music.note")
@@ -84,7 +84,7 @@ struct PlayerView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .frame(width: 216, height: 216)
+        .frame(width: 260, height: 260)
         .compatBackgroundExtensionEffect()
         .compatGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .compatGlassEffectID("player-card", in: playerGlassNamespace)
