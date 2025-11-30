@@ -41,7 +41,8 @@ class AudioPlayer: ObservableObject {
             volumeUpdateTask?.cancel()
             volumeUpdateTask = Task { 
                 try? await Task.sleep(nanoseconds: 50_000_000) // 50ms debounce
-                await updateVolume() 
+                await updateVolume()
+                UserDefaults.standard.set(volume, forKey: "audioVolume")
             }
         }
     }
@@ -157,6 +158,12 @@ class AudioPlayer: ObservableObject {
         if let savedPan = UserDefaults.standard.object(forKey: "audioPan") as? Double {
             pan = savedPan
             audioState.lastPanValue = Float(savedPan)
+        }
+        
+        // Restore saved volume if available.
+        if let savedVolume = UserDefaults.standard.object(forKey: "audioVolume") as? Double {
+            volume = savedVolume
+            audioState.volume = Float(savedVolume)
         }
 
         if UserDefaults.standard.bool(forKey: "doubleSpeedPlayback") {
@@ -829,30 +836,28 @@ class AudioPlayer: ObservableObject {
         // Increase from 0.5s to 1.0s to halve the callback frequency
         let interval = CMTime(seconds: 1.0, preferredTimescale: 600)
         
-        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: nil) { [weak self] time in
-            guard let self = self else { return }
-            
-            let seconds = time.seconds
-            
-            // Validate that the time is finite and non-negative
-            guard seconds.isFinite && seconds >= 0 else { return }
-            
-            // CPU Optimization: Use debounced updates to reduce UI refresh frequency
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.timeUpdateTask?.cancel()
-                self.timeUpdateTask = Task { @MainActor [weak self] in
-                    guard let self = self else { return }
-
-                    // Use a larger threshold to reduce unnecessary updates
-                    let timeDifference = abs(self.currentTime - seconds)
-                    guard timeDifference > 0.5 else { return } // Increased from 0.25 to 0.5
-
-                    self.currentTime = seconds
-                    self.audioState.currentTime = seconds
-                    self.persistCurrentProgress()
-                }
+        // Run directly on the main queue to avoid extra dispatch overhead
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            // We are on the main queue, so it's safe to assume main actor isolation
+            // This avoids creating a new Task for every update, reducing signpost overhead
+            MainActor.assumeIsolated {
+                self?.handleTimeUpdate(time: time)
             }
+        }
+    }
+    
+    /// Handles time updates on the main actor
+    private func handleTimeUpdate(time: CMTime) {
+        let seconds = time.seconds
+        
+        // Validate that the time is finite and non-negative
+        guard seconds.isFinite && seconds >= 0 else { return }
+        
+        // Use a threshold to reduce unnecessary UI updates if the change is minimal
+        if abs(self.currentTime - seconds) > 0.5 {
+            self.currentTime = seconds
+            self.audioState.currentTime = seconds
+            self.persistCurrentProgress()
         }
     }
     

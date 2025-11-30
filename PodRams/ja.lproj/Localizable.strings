@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "お気に入りのポッドキャストが追加されていません。";
 "Settings" = "設定";
 "Skip silence in podcasts" = "ポッドキャストの無音部分をスキップ";
-"Reduce loud sounds" = "大きな音を軽減";
+"Reduce loud sounds" = "大きな音を抑える";
 "Audio Balance" = "オーディオバランス";
 "Left" = "左";
 "Right" = "右";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "文字起こし";
+"Hide played podcasts" = "再生済みのポッドキャストを隠す";
+
+"Play at 2× speed" = "2倍速で再生";
+
+"%d%% Left" = "左 %d%%";
+
+"%d%% Right" = "右 %d%%";
+
+"Centered" = "中央";
+
+"%d percent left" = "左 %dパーセント";
+
+"%d percent right" = "右 %d パーセント";

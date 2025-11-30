@@ -5,10 +5,10 @@
 "No favorite podcasts added." = "कोई पसंदीदा पॉडकास्ट नहीं जोड़ा गया।";
 "Settings" = "सेटिंग्स";
 "Skip silence in podcasts" = "पॉडकास्ट में खामोशी को छोड़ें";
-"Reduce loud sounds" = "तेज आवाज़ को कम करें";
-"Audio Balance" = "ऑडियो बैलेंस";
-"Left" = "बाएँ";
-"Right" = "दाएँ";
+"Reduce loud sounds" = "तेज आवाज कम करें";
+"Audio Balance" = "ऑडियो संतुलन";
+"Left" = "बायां";
+"Right" = "दायां";
 "Center" = "केंद्र";
 "Subscriptions" = "सदस्यताएँ";
 "No subscriptions added." = "कोई सदस्यता नहीं जोड़ी गई।";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "प्रतिलेखन";
+"Hide played podcasts" = "चलाए गए पॉडकास्ट छिपाएँ";
+
+"Play at 2× speed" = "2× गति पर चलाएं";
+
+"%d%% Left" = "%d%% बायां";
+
+"%d%% Right" = "%d%% दायां";
+
+"Centered" = "केंद्रित";
+
+"%d percent left" = "%d प्रतिशत बायां";
+
+"%d percent right" = "%d प्रतिशत दायां";

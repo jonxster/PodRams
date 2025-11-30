@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transkripsi";
+"Hide played podcasts" = "Sembunyikan podcast yang dimainkan";
+
+"Play at 2× speed" = "Main pada kelajuan 2×";
+
+"%d%% Left" = "%d%% Kiri";
+
+"%d%% Right" = "%d%% Kanan";
+
+"Centered" = "Tengah";
+
+"%d percent left" = "%d peratus kiri";
+
+"%d percent right" = "%d peratus kanan";

@@ -5,11 +5,11 @@
 "No favorite podcasts added." = "Nenhum podcast favorito adicionado.";
 "Settings" = "Definições";
 "Skip silence in podcasts" = "Ignorar silêncio em podcasts";
-"Reduce loud sounds" = "Reduzir sons altos";
-"Audio Balance" = "Balanço de áudio";
-"Left" = "Esquerda";
-"Right" = "Direita";
-"Center" = "Centro";
+"Reduce loud sounds" = "Reduce loud sounds";
+"Audio Balance" = "Audio Balance";
+"Left" = "Left";
+"Right" = "Right";
+"Center" = "Center";
 "Subscriptions" = "Subscrições";
 "No subscriptions added." = "Nenhuma subscrição adicionada.";
 "Loading episodes..." = "A carregar episódios...";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcrever";
+"Hide played podcasts" = "Hide played podcasts";
+
+"Play at 2× speed" = "Play at 2× speed";
+
+"%d%% Left" = "%d%% Left";
+
+"%d%% Right" = "%d%% Right";
+
+"Centered" = "Centered";
+
+"%d percent left" = "%d percent left";
+
+"%d percent right" = "%d percent right";

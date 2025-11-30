@@ -301,41 +301,64 @@ struct PersistenceManager {
     @MainActor
     static func loadSubscriptions() async -> [Podcast] {
         if let cached = state.subscriptionsCache { return cached }
-        let persisted: [PersistedPodcast]? = await loadData(from: .subscriptions)
-        let episodeSnapshot = await loadSubscriptionEpisodesSnapshot()
-        let filtered = (persisted ?? []).filter { candidate in
-            guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
-                persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl, privacy: .private)")
-                return false
-            }
-            guard isLikelyReachableFeedURL(candidate.feedUrl) else {
-                persistenceLogger.warning("Warning: Removing unreachable subscription host: \(candidate.feedUrl, privacy: .private)")
-                return false
-            }
-            return true
+        
+        struct SubscriptionData: Sendable {
+            let title: String
+            let feedUrl: String
+            let episodes: [PodcastEpisode]
+            let artworkURL: URL?
         }
+        
+        let (subscriptionData, originalCount, filteredCount) = await Task.detached {
+            let persisted: [PersistedPodcast]? = await loadData(from: .subscriptions)
+            let episodeSnapshot = await loadSubscriptionEpisodesSnapshot()
+            
+            let filtered = (persisted ?? []).filter { candidate in
+                guard !candidate.feedUrl.isEmpty, URL(string: candidate.feedUrl) != nil else {
+                    persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(candidate.feedUrl, privacy: .private)")
+                    return false
+                }
+                guard isLikelyReachableFeedURL(candidate.feedUrl) else {
+                    persistenceLogger.warning("Warning: Removing unreachable subscription host: \(candidate.feedUrl, privacy: .private)")
+                    return false
+                }
+                return true
+            }
 
-        let result = filtered.compactMap { p -> Podcast? in
-            guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
-                persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl, privacy: .private)")
-                return nil
+            let data = filtered.compactMap { p -> SubscriptionData? in
+                guard !p.feedUrl.isEmpty, URL(string: p.feedUrl) != nil else {
+                    persistenceLogger.warning("Warning: Invalid feed URL found in subscriptions: \(p.feedUrl, privacy: .private)")
+                    return nil
+                }
+                
+                let artURL = p.feedArtworkURL.flatMap { URL(string: $0) }
+                let cachedEpisodes = episodeSnapshot[p.feedUrl] ?? []
+                
+                return SubscriptionData(
+                    title: p.title,
+                    feedUrl: p.feedUrl,
+                    episodes: cachedEpisodes,
+                    artworkURL: artURL
+                )
             }
-            let podcast = Podcast(title: p.title, feedUrl: p.feedUrl)
-            if let artStr = p.feedArtworkURL, let artURL = URL(string: artStr) {
-                podcast.feedArtworkURL = artURL
-            }
-            if let cachedEpisodes = episodeSnapshot[p.feedUrl] {
-                podcast.episodes = cachedEpisodes
-            }
-            return podcast
+            
+            return (data, persisted?.count ?? 0, filtered.count)
+        }.value
+        
+        let result = subscriptionData.map { data in
+            Podcast(
+                title: data.title,
+                feedUrl: data.feedUrl,
+                episodes: data.episodes,
+                feedArtworkURL: data.artworkURL
+            )
         }
-
+        
         state.subscriptionsCache = result
-
-        if let original = persisted, original.count != filtered.count {
-            Task { @MainActor in saveSubscriptions(result) }
+        if originalCount != filteredCount {
+            saveSubscriptions(result)
         }
-
+        
         return result
     }
     

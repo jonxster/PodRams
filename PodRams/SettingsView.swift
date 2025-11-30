@@ -63,10 +63,12 @@ private extension SettingsView {
     var panStatusDescription: String {
         let offset = audioPan - 0.5
         if abs(offset) < 0.005 {
-            return "Center"
+            return NSLocalizedString("Center", comment: "")
         }
         let percentage = Int(abs(offset) * 200)
-        return offset < 0 ? "\(percentage)% Left" : "\(percentage)% Right"
+        return offset < 0 
+            ? String(format: NSLocalizedString("%d%% Left", comment: ""), percentage) 
+            : String(format: NSLocalizedString("%d%% Right", comment: ""), percentage)
     }
 
     func toggleRow(title: String, binding: Binding<Bool>) -> some View {
@@ -246,10 +248,12 @@ struct LiquidGlassSlider: View {
     private var accessibilityValueText: String {
         let offset = value - (range.lowerBound + range.span / 2)
         if abs(offset) < 0.01 {
-            return "Centered"
+            return NSLocalizedString("Centered", comment: "")
         }
         let percent = Int(abs(offset) / range.span * 200)
-        return offset < 0 ? "\(percent) percent left" : "\(percent) percent right"
+        return offset < 0 
+            ? String(format: NSLocalizedString("%d percent left", comment: ""), percent) 
+            : String(format: NSLocalizedString("%d percent right", comment: ""), percent)
     }
     
     private func fraction(for currentValue: Double, in bounds: ClosedRange<Double>) -> Double {

@@ -92,6 +92,7 @@ struct SubscribeView: View {
         .padding(18)
         .background(rowBackground)
         .overlay(loadingOverlay(for: podcast))
+        .applyFocusEffectDisabled()
     }
 
     private func subscriptionRow(for podcast: Podcast) -> some View {
@@ -322,5 +323,20 @@ struct SubscribeView: View {
             }
         }
         PersistenceManager.saveSubscriptionEpisodesSnapshot(snapshot)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }

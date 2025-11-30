@@ -19,11 +19,11 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
     @Published var episodes: [PodcastEpisode]
     @Published var feedArtworkURL: URL?
 
-    init(title: String, feedUrl: String?, episodes: [PodcastEpisode] = []) {
+    init(title: String, feedUrl: String?, episodes: [PodcastEpisode] = [], feedArtworkURL: URL? = nil) {
         self.title = title
         self.feedUrl = feedUrl
         self.episodes = episodes
-        self.feedArtworkURL = nil
+        self.feedArtworkURL = feedArtworkURL
     }
 
     nonisolated static func == (lhs: Podcast, rhs: Podcast) -> Bool {

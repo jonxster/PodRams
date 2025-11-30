@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transkribera";
+"Hide played podcasts" = "Dölj spelade poddar";
+
+"Play at 2× speed" = "Spela upp i 2× hastighet";
+
+"%d%% Left" = "%d%% Vänster";
+
+"%d%% Right" = "%d%% Höger";
+
+"Centered" = "Centrerad";
+
+"%d percent left" = "%d procent vänster";
+
+"%d percent right" = "%d procent höger";

@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "Nu există podcasturi favorite adăugate.";
 "Settings" = "Setări";
 "Skip silence in podcasts" = "Omiteți tăcerea în podcasturi";
-"Reduce loud sounds" = "Reduceți sunetele puternice";
+"Reduce loud sounds" = "Reduce sunetele puternice";
 "Audio Balance" = "Balans audio";
 "Left" = "Stânga";
 "Right" = "Dreapta";
@@ -87,3 +87,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcrie";
+"Hide played podcasts" = "Ascunde podcasturile redate";
+
+"Play at 2× speed" = "Redare la viteză 2×";
+
+"%d%% Left" = "%d%% Stânga";
+
+"%d%% Right" = "%d%% Dreapta";
+
+"Centered" = "Centrat";
+
+"%d percent left" = "%d procente stânga";
+
+"%d percent right" = "%d procente dreapta";

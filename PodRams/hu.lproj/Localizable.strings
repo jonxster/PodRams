@@ -6,7 +6,7 @@
 "Settings" = "Beállítások";
 "Skip silence in podcasts" = "Csendes részek átugrása a podcastokban";
 "Reduce loud sounds" = "Hangos hangok csökkentése";
-"Audio Balance" = "Hang egyensúly";
+"Audio Balance" = "Hangegyensúly";
 "Left" = "Bal";
 "Right" = "Jobb";
 "Center" = "Közép";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Átírás";
+"Hide played podcasts" = "Lejátszott podcastek elrejtése";
+
+"Play at 2× speed" = "Lejátszás 2× sebességgel";
+
+"%d%% Left" = "%d%% Bal";
+
+"%d%% Right" = "%d%% Jobb";
+
+"Centered" = "Középre igazítva";
+
+"%d percent left" = "%d százalék balra";
+
+"%d percent right" = "%d százalék jobbra";

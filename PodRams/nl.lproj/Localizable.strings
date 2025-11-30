@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcriberen";
+"Hide played podcasts" = "Verberg afgespeelde podcasts";
+
+"Play at 2× speed" = "Afspelen op 2× snelheid";
+
+"%d%% Left" = "%d%% Links";
+
+"%d%% Right" = "%d%% Rechts";
+
+"Centered" = "Gecentreerd";
+
+"%d percent left" = "%d procent links";
+
+"%d percent right" = "%d procent rechts";

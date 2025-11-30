@@ -143,3 +143,18 @@ Built with SwiftUI for macOS 11.0 and later.";
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcribe";
+"Hide played podcasts" = "Hide played podcasts";
+
+"Play at 2× speed" = "Play at 2× speed";
+
+"%d%% Left" = "%d%% Left";
+
+"%d%% Right" = "%d%% Right";
+
+"Centered" = "Centered";
+
+"%d percent left" = "%d percent left";
+
+"%d percent right" = "%d percent right";

@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Phiên âm";
+"Hide played podcasts" = "Ẩn podcast đã phát";
+
+"Play at 2× speed" = "Phát ở tốc độ 2×";
+
+"%d%% Left" = "%d%% Trái";
+
+"%d%% Right" = "%d%% Phải";
+
+"Centered" = "Ở giữa";
+
+"%d percent left" = "%d phần trăm trái";
+
+"%d percent right" = "%d phần trăm phải";

@@ -5,8 +5,8 @@
 "No favorite podcasts added." = "Нема додатих омиљених подкаста.";
 "Settings" = "Подешавања";
 "Skip silence in podcasts" = "Прескочи тишину у подкастима";
-"Reduce loud sounds" = "Смањи гласне звукове";
-"Audio Balance" = "Баланс звука";
+"Reduce loud sounds" = "Смањи гласне звуке";
+"Audio Balance" = "Аудио баланс";
 "Left" = "Лево";
 "Right" = "Десно";
 "Center" = "Центар";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Транскрибуј";
+"Hide played podcasts" = "Сакриј преслушане подкасте";
+
+"Play at 2× speed" = "Репродукуј 2× брзином";
+
+"%d%% Left" = "%d%% Лево";
+
+"%d%% Right" = "%d%% Десно";
+
+"Centered" = "Центрирано";
+
+"%d percent left" = "%d посто лево";
+
+"%d percent right" = "%d посто десно";

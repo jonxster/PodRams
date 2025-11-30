@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "전사";
+"Hide played podcasts" = "재생된 팟캐스트 숨기기";
+
+"Play at 2× speed" = "2배속 재생";
+
+"%d%% Left" = "왼쪽 %d%%";
+
+"%d%% Right" = "오른쪽 %d%%";
+
+"Centered" = "중앙";
+
+"%d percent left" = "왼쪽 %d 퍼센트";
+
+"%d percent right" = "오른쪽 %d 퍼센트";

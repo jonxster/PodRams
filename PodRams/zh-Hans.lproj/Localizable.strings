@@ -5,11 +5,11 @@
 "No favorite podcasts added." = "尚未添加收藏的播客。";
 "Settings" = "设置";
 "Skip silence in podcasts" = "跳过播客中的静音";
-"Reduce loud sounds" = "降低大声的声音";
+"Reduce loud sounds" = "降低高音量";
 "Audio Balance" = "音频平衡";
 "Left" = "左";
 "Right" = "右";
-"Center" = "中";
+"Center" = "中心";
 "Subscriptions" = "订阅";
 "No subscriptions added." = "尚未添加订阅。";
 "Loading episodes..." = "加载剧集中...";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "转录";
+"Hide played podcasts" = "隐藏已播放的播客";
+
+"Play at 2× speed" = "2倍速播放";
+
+"%d%% Left" = "左 %d%%";
+
+"%d%% Right" = "右 %d%%";
+
+"Centered" = "居中";
+
+"%d percent left" = "左 %d 百分比";
+
+"%d percent right" = "右 %d 百分比";

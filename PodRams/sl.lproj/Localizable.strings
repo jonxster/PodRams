@@ -6,7 +6,7 @@
 "Settings" = "Nastavitve";
 "Skip silence in podcasts" = "Preskoči tišino v podcastih";
 "Reduce loud sounds" = "Zmanjšaj glasne zvoke";
-"Audio Balance" = "Ravnovesje zvoka";
+"Audio Balance" = "Zvočno ravnovesje";
 "Left" = "Levo";
 "Right" = "Desno";
 "Center" = "Sredina";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Prepis";
+"Hide played podcasts" = "Skrij predvajane podkaste";
+
+"Play at 2× speed" = "Predvajaj z 2× hitrostjo";
+
+"%d%% Left" = "%d%% Levo";
+
+"%d%% Right" = "%d%% Desno";
+
+"Centered" = "Sredinsko";
+
+"%d percent left" = "%d odstotkov levo";
+
+"%d percent right" = "%d odstotkov desno";

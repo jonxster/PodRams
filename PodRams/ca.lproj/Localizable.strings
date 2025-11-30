@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "No s'han afegit podcasts preferits.";
 "Settings" = "Configuració";
 "Skip silence in podcasts" = "Ometre silencis en podcasts";
-"Reduce loud sounds" = "Reduir sons forts";
+"Reduce loud sounds" = "Redueix els sons forts";
 "Audio Balance" = "Balanç d'àudio";
 "Left" = "Esquerra";
 "Right" = "Dreta";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcriure";
+"Hide played podcasts" = "Amaga els podcasts reproduïts";
+
+"Play at 2× speed" = "Reprodueix a velocitat 2×";
+
+"%d%% Left" = "%d%% Esquerra";
+
+"%d%% Right" = "%d%% Dreta";
+
+"Centered" = "Centrat";
+
+"%d percent left" = "%d per cent esquerra";
+
+"%d percent right" = "%d per cent dreta";

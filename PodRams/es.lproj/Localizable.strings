@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transcribir";
+"Hide played podcasts" = "Ocultar podcasts reproducidos";
+
+"Play at 2× speed" = "Reproducir a velocidad 2×";
+
+"%d%% Left" = "%d%% Izquierda";
+
+"%d%% Right" = "%d%% Derecha";
+
+"Centered" = "Centrado";
+
+"%d percent left" = "%d por ciento izquierda";
+
+"%d percent right" = "%d por ciento derecha";

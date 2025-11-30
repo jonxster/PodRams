@@ -9,7 +9,7 @@
 "Audio Balance" = "Lydbalance";
 "Left" = "Venstre";
 "Right" = "Højre";
-"Center" = "Midt";
+"Center" = "Midte";
 "Subscriptions" = "Abonnementer";
 "No subscriptions added." = "Ingen abonnementer tilføjet.";
 "Loading episodes..." = "Indlæser episoder...";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transskriber";
+"Hide played podcasts" = "Skjul afspillede podcasts";
+
+"Play at 2× speed" = "Afspil med 2× hastighed";
+
+"%d%% Left" = "%d%% Venstre";
+
+"%d%% Right" = "%d%% Højre";
+
+"Centered" = "Centreret";
+
+"%d percent left" = "%d procent venstre";
+
+"%d percent right" = "%d procent højre";

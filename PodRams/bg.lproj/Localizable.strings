@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Транскрибиране";
+"Hide played podcasts" = "Скриване на пускани подкасти";
+
+"Play at 2× speed" = "Възпроизвеждане с 2× скорост";
+
+"%d%% Left" = "%d%% Ляво";
+
+"%d%% Right" = "%d%% Дясно";
+
+"Centered" = "Центрирано";
+
+"%d percent left" = "%d процента ляво";
+
+"%d percent right" = "%d процента дясно";

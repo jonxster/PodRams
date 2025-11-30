@@ -6,7 +6,7 @@
 "Settings" = "Pengaturan";
 "Skip silence in podcasts" = "Lewati bagian sunyi dalam podcast";
 "Reduce loud sounds" = "Kurangi suara keras";
-"Audio Balance" = "Keseimbangan audio";
+"Audio Balance" = "Keseimbangan Audio";
 "Left" = "Kiri";
 "Right" = "Kanan";
 "Center" = "Tengah";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transkripsi";
+"Hide played podcasts" = "Sembunyikan podcast yang diputar";
+
+"Play at 2× speed" = "Putar dengan kecepatan 2×";
+
+"%d%% Left" = "%d%% Kiri";
+
+"%d%% Right" = "%d%% Kanan";
+
+"Centered" = "Tengah";
+
+"%d percent left" = "%d persen kiri";
+
+"%d percent right" = "%d persen kanan";

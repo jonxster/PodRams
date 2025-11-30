@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Deşifre Et";
+"Hide played podcasts" = "Oynatılan podcast'leri gizle";
+
+"Play at 2× speed" = "2× hızda oynat";
+
+"%d%% Left" = "%d%% Sol";
+
+"%d%% Right" = "%d%% Sağ";
+
+"Centered" = "Ortalanmış";
+
+"%d percent left" = "Yüzde %d sol";
+
+"%d percent right" = "Yüzde %d sağ";

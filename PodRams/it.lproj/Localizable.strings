@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "Nessun podcast preferito aggiunto.";
 "Settings" = "Impostazioni";
 "Skip silence in podcasts" = "Salta i silenzi nei podcast";
-"Reduce loud sounds" = "Riduci i suoni forti";
+"Reduce loud sounds" = "Riduci suoni forti";
 "Audio Balance" = "Bilanciamento audio";
 "Left" = "Sinistra";
 "Right" = "Destra";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Trascrivi";
+"Hide played podcasts" = "Nascondi podcast riprodotti";
+
+"Play at 2× speed" = "Riproduci a velocità 2×";
+
+"%d%% Left" = "%d%% Sinistra";
+
+"%d%% Right" = "%d%% Destra";
+
+"Centered" = "Centrato";
+
+"%d percent left" = "%d per cento sinistra";
+
+"%d percent right" = "%d per cento destra";

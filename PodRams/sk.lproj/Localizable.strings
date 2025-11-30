@@ -5,10 +5,10 @@
 "No favorite podcasts added." = "Žiadne obľúbené podcasty neboli pridané.";
 "Settings" = "Nastavenia";
 "Skip silence in podcasts" = "Preskočiť ticho v podcastoch";
-"Reduce loud sounds" = "Znížiť hlasné zvuky";
+"Reduce loud sounds" = "Obmedziť hlasné zvuky";
 "Audio Balance" = "Vyváženie zvuku";
-"Left" = "Ľavý";
-"Right" = "Pravý";
+"Left" = "Vľavo";
+"Right" = "Vpravo";
 "Center" = "Stred";
 "Subscriptions" = "Odbery";
 "No subscriptions added." = "Žiadne odbery neboli pridané.";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Prepísať";
+"Hide played podcasts" = "Skryť prehrané podcasty";
+
+"Play at 2× speed" = "Prehrať 2× rýchlosťou";
+
+"%d%% Left" = "%d%% Vľavo";
+
+"%d%% Right" = "%d%% Vpravo";
+
+"Centered" = "Vycentrované";
+
+"%d percent left" = "%d percent vľavo";
+
+"%d percent right" = "%d percent vpravo";

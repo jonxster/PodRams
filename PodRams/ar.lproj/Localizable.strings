@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "لم تتم إضافة بودكاست مفضل.";
 "Settings" = "الإعدادات";
 "Skip silence in podcasts" = "تخطي الصمت في البودكاست";
-"Reduce loud sounds" = "تقليل الأصوات العالية";
+"Reduce loud sounds" = "تقليل الأصوات الصاخبة";
 "Audio Balance" = "توازن الصوت";
 "Left" = "يسار";
 "Right" = "يمين";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "نسخ";
+"Hide played podcasts" = "إخفاء البودكاست المشغلة";
+
+"Play at 2× speed" = "تشغيل بسرعة 2×";
+
+"%d%% Left" = "%d%% يسار";
+
+"%d%% Right" = "%d%% يمين";
+
+"Centered" = "مركزي";
+
+"%d percent left" = "%d في المئة يسار";
+
+"%d percent right" = "%d في المئة يمين";

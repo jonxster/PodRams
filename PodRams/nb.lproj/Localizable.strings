@@ -9,7 +9,7 @@
 "Audio Balance" = "Lydbalanse";
 "Left" = "Venstre";
 "Right" = "Høyre";
-"Center" = "Midten";
+"Center" = "Senter";
 "Subscriptions" = "Abonnementer";
 "No subscriptions added." = "Ingen abonnementer er lagt til.";
 "Loading episodes..." = "Laster episoder...";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Transkriber";
+"Hide played podcasts" = "Skjul avspilte podcaster";
+
+"Play at 2× speed" = "Spill av med 2× hastighet";
+
+"%d%% Left" = "%d%% Venstre";
+
+"%d%% Right" = "%d%% Høyre";
+
+"Centered" = "Sentrert";
+
+"%d percent left" = "%d prosent venstre";
+
+"%d percent right" = "%d prosent høyre";

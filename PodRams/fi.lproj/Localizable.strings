@@ -9,7 +9,7 @@
 "Audio Balance" = "Äänitasapaino";
 "Left" = "Vasen";
 "Right" = "Oikea";
-"Center" = "Keskellä";
+"Center" = "Keski";
 "Subscriptions" = "Tilaukset";
 "No subscriptions added." = "Ei lisättyjä tilauksia.";
 "Loading episodes..." = "Ladataan jaksoja...";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Litteroi";
+"Hide played podcasts" = "Piilota toistetut podcastit";
+
+"Play at 2× speed" = "Toista 2× nopeudella";
+
+"%d%% Left" = "%d%% Vasen";
+
+"%d%% Right" = "%d%% Oikea";
+
+"Centered" = "Keskitetty";
+
+"%d percent left" = "%d prosenttia vasen";
+
+"%d percent right" = "%d prosenttia oikea";

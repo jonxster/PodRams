@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Μεταγραφή";
+"Hide played podcasts" = "Απόκρυψη παιγμένων podcast";
+
+"Play at 2× speed" = "Αναπαραγωγή σε ταχύτητα 2×";
+
+"%d%% Left" = "%d%% Αριστερά";
+
+"%d%% Right" = "%d%% Δεξιά";
+
+"Centered" = "Κεντραρισμένο";
+
+"%d percent left" = "%d τοις εκατό αριστερά";
+
+"%d percent right" = "%d τοις εκατό δεξιά";

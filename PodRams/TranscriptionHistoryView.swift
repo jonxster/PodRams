@@ -205,6 +205,7 @@ struct TranscriptionHistoryView: View {
         .accentColor(primaryText)
         .padding(18)
         .background(rowBackground)
+        .applyFocusEffectDisabled()
     }
 
     private var mode: AppTheme.Mode {
@@ -295,5 +296,20 @@ struct TranscriptTextDocument: FileDocument {
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         let data = text.data(using: .utf8) ?? Data()
         return FileWrapper(regularFileWithContents: data)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }

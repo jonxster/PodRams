@@ -340,15 +340,13 @@ struct ContentView: View {
             contentLogger.info("📱 ContentView: Loaded persisted data - Favorites: \(favoritePodcasts.count, privacy: .public), Cue: \(cue.count, privacy: .public), Subscriptions: \(subscribedPodcasts.count, privacy: .public), Last episode: \(lastEpisodeTitle, privacy: .private)")
             
             // Optimize memory usage after loading data
-            Task.detached(priority: .background) {
-                await MainActor.run {
-                    // Optimize podcast episode collections to reduce memory usage
-                    for podcast in favoritePodcasts {
-                        podcast.optimizeMemoryUsage()
-                    }
-                    for podcast in subscribedPodcasts {
-                        podcast.optimizeMemoryUsage()
-                    }
+            let allPodcasts = favoritePodcasts + subscribedPodcasts
+            Task(priority: .background) {
+                // Optimize podcasts one by one, yielding to main thread to prevent UI hangs
+                for podcast in allPodcasts {
+                    await podcast.optimizeMemoryUsage()
+                    // Yield to allow the UI RunLoop to breathe between heavy operations
+                    await Task.yield() 
                 }
             }
             
@@ -976,6 +974,8 @@ struct ContentView: View {
 
         isShowNotesLoading = true
         showNotesContent = AttributedString("Loading show notes...")
+        
+        // Optimization: Only warm the parser if we're actually going to render HTML
         ZMarkupParser.shared.warmHTMLImporterIfNeeded()
 
         let targetID = loadID

@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "ถอดความ";
+"Hide played podcasts" = "ซ่อนพอดแคสต์ที่เล่นแล้ว";
+
+"Play at 2× speed" = "เล่นด้วยความเร็ว 2×";
+
+"%d%% Left" = "ซ้าย %d%%";
+
+"%d%% Right" = "ขวา %d%%";
+
+"Centered" = "ตรงกลาง";
+
+"%d percent left" = "ซ้าย %d เปอร์เซ็นต์";
+
+"%d percent right" = "ขวา %d เปอร์เซ็นต์";

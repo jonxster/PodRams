@@ -5,7 +5,7 @@
 "No favorite podcasts added." = "לא נוספו פודקאסטים מועדפים.";
 "Settings" = "הגדרות";
 "Skip silence in podcasts" = "דלג על שקט בפודקאסטים";
-"Reduce loud sounds" = "הנמך צלילים חזקים";
+"Reduce loud sounds" = "הפחת צלילים חזקים";
 "Audio Balance" = "איזון שמע";
 "Left" = "שמאל";
 "Right" = "ימין";
@@ -68,3 +68,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "תמלל";
+"Hide played podcasts" = "הסתר פודקאסטים שהושמעו";
+
+"Play at 2× speed" = "نגן במהירות 2×";
+
+"%d%% Left" = "%d%% שמאל";
+
+"%d%% Right" = "%d%% ימין";
+
+"Centered" = "ממורכז";
+
+"%d percent left" = "%d אחוזים שמאל";
+
+"%d percent right" = "%d אחוזים ימין";

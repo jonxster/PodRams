@@ -6,7 +6,7 @@
 "Settings" = "Настройки";
 "Skip silence in podcasts" = "Пропускать тишину в подкастах";
 "Reduce loud sounds" = "Уменьшить громкие звуки";
-"Audio Balance" = "Баланс звука";
+"Audio Balance" = "Аудио баланс";
 "Left" = "Левый";
 "Right" = "Правый";
 "Center" = "Центр";
@@ -86,3 +86,18 @@
 "Shortcuts.Paused" = "Paused playback.";
 "Shortcuts.NothingToPlay" = "No saved episode to play yet.";
 
+
+"Transcribe" = "Транскрибировать";
+"Hide played podcasts" = "Скрыть прослушанные подкасты";
+
+"Play at 2× speed" = "Воспроизведение на скорости 2×";
+
+"%d%% Left" = "%d%% Левый";
+
+"%d%% Right" = "%d%% Правый";
+
+"Centered" = "По центру";
+
+"%d percent left" = "%d процентов влево";
+
+"%d percent right" = "%d процентов вправо";
