@@ -21,6 +21,7 @@ struct EpisodeRowConfiguration {
     let onToggleCue: (PodcastEpisode) -> Void  // Callback to add/remove episode from cue.
     let onDownload: (PodcastEpisode) -> Void   // Callback to initiate downloading of the episode.
     let onTranscribe: (PodcastEpisode) -> Void // Callback to initiate transcription of the episode.
+    let onExport: (PodcastEpisode) -> Void     // Callback to initiate exporting of the episode.
 }
 
 /// A view that wraps an EpisodeRow using a pre-configured EpisodeRowConfiguration.
@@ -55,6 +56,10 @@ struct ConfiguredEpisodeRow: View {
             onTranscribe: {
                 // Start the transcription process for this episode.
                 config.onTranscribe(config.episode)
+            },
+            onExport: {
+                // Start the export process for this episode.
+                config.onExport(config.episode)
             }
         )
         .contentShape(Rectangle()) // Makes the entire row tappable.
@@ -73,6 +78,7 @@ struct EpisodeListView: View {
     @Binding var cueList: [PodcastEpisode]  // Binding to the play queue, enabling real-time updates.
     @Binding var isCuePlaying: Bool
     let onTranscribe: (PodcastEpisode) -> Void
+    let onExport: (PodcastEpisode) -> Void
     
     // Add a timer to force UI updates - increase frequency for smooth countdown
     @State private var refreshTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
@@ -170,7 +176,8 @@ struct EpisodeListView: View {
                         onSelect: { idx in handleEpisodeSelect(idx, episode: episode) },
                         onToggleCue: handleToggleCue,
                         onDownload: handleDownload,
-                        onTranscribe: onTranscribe
+                        onTranscribe: onTranscribe,
+                        onExport: onExport
                     )
                     
                     // Render the episode row using the configured settings.

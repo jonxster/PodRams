@@ -199,6 +199,8 @@ You can access the same controls from the Play menu and the keyboard shortcuts l
 Episode management:
 
 • Download episodes for offline listening.
+• Export episodes as audio files.
+• Share episodes with friends.
 • Add episodes to your cue (playlist).
 • Reorder episodes.
 • View episode details.

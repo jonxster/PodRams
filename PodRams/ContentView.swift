@@ -74,6 +74,8 @@ struct ContentView: View {
     @State private var expandedTranscriptionIDs: Set<String> = []
     @State private var exportCandidate: TranscriptionHistoryItem?
     @State private var isExportingTranscript = false
+    @State private var isExportingAudio = false
+    @State private var audioExportDocument: AudioFileDocument?
     @State private var previousVolume: Double = 1.0
     @State private var showNotesContent: AttributedString = AttributedString("Select an episode to view show notes.")
     @State private var showNotesEpisodeID: String?
@@ -216,6 +218,13 @@ struct ContentView: View {
                                     selectedEpisodeIndex = activeEpisodes.firstIndex(where: { $0.id == episode.id })
                                     beginTranscription(for: episode, useCache: true)
                                     isTranscribeVisible = true // Show the transcription popover
+                                },
+                                onExport: { episode in
+                                    if let localURL = DownloadManager.shared.localURL(for: episode) {
+                                        let podcastName = episode.podcastName ?? selectedPodcast?.title ?? "Podcast"
+                                        audioExportDocument = AudioFileDocument(url: localURL, podcastName: podcastName, episodeTitle: episode.title)
+                                        isExportingAudio = true
+                                    }
                                 }
                             )
                         } else {
@@ -235,6 +244,16 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .layoutPriority(1) // Give the episode list higher layout priority
+                    .fileExporter(
+                        isPresented: $isExportingAudio,
+                        document: audioExportDocument,
+                        contentType: .audio,
+                        defaultFilename: audioExportDocument?.defaultFilename ?? "episode.mp3"
+                    ) { result in
+                        if case .failure(let error) = result {
+                            contentLogger.error("Audio export failed: \(error.localizedDescription)")
+                        }
+                    }
                 }
                 .padding()
                 .frame(minWidth: 600, minHeight: 600)
@@ -805,54 +824,13 @@ struct ContentView: View {
     private func exportFilename(for item: TranscriptionHistoryItem?) -> String {
         guard let item else { return "transcription.txt" }
         let base = "\(item.podcastTitle) - \(item.episodeTitle) transcript"
-        let sanitized = sanitizeFilename(base)
-        return sanitized.isEmpty ? "transcription" : sanitized
+        return "\(base.sanitizedForFilename()).txt"
     }
-
-    private func sanitizeFilename(_ value: String) -> String {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            return sanitizeFilenameSpan(value)
-        } else {
-            // Fallback: strip disallowed characters with simple String operations.
-            let invalid = CharacterSet(charactersIn: "\\/:*?\"<>|")
-            let components = value.components(separatedBy: invalid)
-            let condensed = components.joined(separator: " ")
-                .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return String(condensed.prefix(80))
-        }
-    }
-
-    @available(macOS 26.0, iOS 26.0, *)
-    private func sanitizeFilenameSpan(_ value: String) -> String {
-        // Use UTF8Span + UnicodeScalarIterator to filter invalid characters without extra copies.
-        var utf8Span = value.utf8Span
-        _ = utf8Span.checkForASCII() // Hint fast path for all-ASCII names.
-
-        let invalid: Set<UnicodeScalar> = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|"]
-        var buffer: [UInt8] = []
-        buffer.reserveCapacity(utf8Span.count)
-
-        var previousWasSpace = false
-        var scalarIterator = utf8Span.makeUnicodeScalarIterator()
-        while let scalar = scalarIterator.next() {
-            if invalid.contains(scalar) { continue }
-            if scalar.value < 0x20 || scalar.value == 0x7F { continue } // control chars
-
-            if scalar.properties.isWhitespace {
-                if previousWasSpace { continue }
-                previousWasSpace = true
-                buffer.append(32) // space
-                continue
-            }
-
-            previousWasSpace = false
-            buffer.append(contentsOf: scalar.utf8)
-        }
-
-        while buffer.last == 32 { buffer.removeLast() }
-        return String(decoding: buffer.prefix(80), as: UTF8.self)
-    }
+    
+    // The previous sanitizeFilename methods are now in String+Filename.swift
+    // private func sanitizeFilename(_ value: String) -> String { ... }
+    // @available(macOS 26.0, iOS 26.0, *)
+    // private func sanitizeFilenameSpan(_ value: String) -> String { ... }
 
     private func handleEpisodeContextChange() {
         let currentID = currentShowNotesEpisode?.id
@@ -1363,6 +1341,8 @@ struct EpisodeRow: View {
     var onDownload: (() -> Void)?
     /// Optional closure to trigger transcription.
     var onTranscribe: (() -> Void)?
+    /// Optional closure to trigger export.
+    var onExport: (() -> Void)?
     
     // ADD environment variable for color scheme
     @Environment(\.colorScheme) var colorScheme
@@ -1424,7 +1404,7 @@ struct EpisodeRow: View {
     /// Determines if the menu should be shown based on available actions
     private var shouldShowMenu: Bool {
         // Show menu if either add to cue or download options are available
-        return onToggleCue != nil || onDownload != nil
+        return onToggleCue != nil || onDownload != nil || onTranscribe != nil || onExport != nil
     }
     
     /// Gets the current download state for this episode
@@ -1590,11 +1570,25 @@ struct EpisodeRow: View {
                             }
                         }
                     }
+                    
+                    // Add Export option if downloaded
+                    if case .downloaded = downloadState, let onExport = onExport {
+                        Button(action: onExport) {
+                            Label("Export", systemImage: "arrow.up.doc")
+                        }
+                    }
 
                     // Add Transcribe option
                     if let onTranscribe = onTranscribe {
                         Button(action: onTranscribe) {
                             Label("Transcribe", systemImage: "waveform.and.mic")
+                        }
+                    }
+                    
+                    // Add Share option
+                    if #available(macOS 13.0, *) {
+                        ShareLink(item: episode.url) {
+                            Label("Share", systemImage: "square.and.arrow.up")
                         }
                     }
                 } label: {
@@ -1624,5 +1618,35 @@ struct EpisodeRow: View {
         }
         // Use a stable ID that only changes when necessary
         .id("row-\(episode.id)-\(isPlaying)-\(audioPlayer.isPlaying)")
+    }
+}
+
+struct AudioFileDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.audio] }
+
+    var url: URL
+    let podcastName: String
+    let episodeTitle: String
+
+    init(url: URL, podcastName: String, episodeTitle: String) {
+        self.url = url
+        self.podcastName = podcastName
+        self.episodeTitle = episodeTitle
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        // We don't support reading back audio files into this document type for editing
+        throw CocoaError(.featureUnsupported)
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        return try FileWrapper(url: url, options: .immediate)
+    }
+    
+    // Computed property for the default filename
+    var defaultFilename: String {
+        let base = "\(podcastName) - \(episodeTitle)"
+        let sanitized = base.sanitizedForFilename()
+        return "\(sanitized).mp3"
     }
 }

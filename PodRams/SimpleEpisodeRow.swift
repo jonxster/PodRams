@@ -146,6 +146,12 @@ struct SimpleEpisodeRow: View {
                             Label("Pause download", systemImage: "pause.circle")
                         }
                     }
+                    
+                    if #available(macOS 13.0, *) {
+                        ShareLink(item: episode.url) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundColor(isPlaying ? AppTheme.primaryText : AppTheme.secondaryText)

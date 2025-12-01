@@ -35,6 +35,8 @@ PodRams is a native macOS podcast player built with SwiftUI, offering a clean an
 ### Episode Management
 
 - Option to **hide played episodes** from the episode list  
+- **Export Episodes**: Export downloaded episodes as audio files to any local directory  
+- **Share Episodes**: Share podcast links directly from the app  
 - Improved layout with enlarged podcast artwork  
 - Transcribe button placed directly next to each episode for easy access  
 
