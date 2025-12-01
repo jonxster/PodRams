@@ -87,3 +87,21 @@
 "Export" = "导出";
 
 "Share" = "分享";
+
+"Crossfade between episodes" = "剧集间交叉淡入淡出";
+
+"Audio Output" = "音频输出";
+
+"Show Notes" = "节目备注";
+
+"More Actions" = "更多操作";
+
+"Unsubscribe" = "取消订阅";
+
+"Download Transcript" = "下载转录";
+
+"Delete Transcript" = "删除转录";
+
+"Retry Transcription" = "重试转录";
+
+"Current output" = "当前输出";

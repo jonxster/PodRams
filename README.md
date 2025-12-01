@@ -21,6 +21,7 @@ PodRams is a native macOS podcast player built with SwiftUI, offering a clean an
 - Audio balance adjustment  
 - Playback speed control  
 - Skip silence (experimental)  
+- Crossfade between episodes (manual transitions)
 - Keyboard shortcuts:  
   - **M** to mute  
   - **+** to increase volume  

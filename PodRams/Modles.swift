@@ -32,7 +32,7 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
     
     /// Optimizes memory usage by limiting episode count and cleaning up data
     /// Reduces memory footprint for podcast collections
-    func optimizeMemoryUsage() {
+    func optimizeMemoryUsage() async {
         // Memory optimization: Limit episodes to most recent 50 to reduce memory usage
         let manager = MemoryOptimizationManager.shared
         let maxEpisodes = max(manager.maxEpisodesPerPodcast * 3, 20)
@@ -98,6 +98,20 @@ final class Podcast: Identifiable, Equatable, ObservableObject {
     }
 }
 
+struct Chapter: Identifiable, Equatable, Codable, Sendable {
+    let id: UUID
+    let title: String
+    let startTime: Double
+    let endTime: Double
+    
+    init(title: String, startTime: Double, endTime: Double) {
+        self.id = UUID()
+        self.title = title
+        self.startTime = startTime
+        self.endTime = endTime
+    }
+}
+
 struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
     // If no id is provided, use url.absoluteString as a stable identifier.
     let id: String
@@ -108,8 +122,9 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
     let showNotes: String?
     let feedUrl: String?
     var podcastName: String? // Holds the parent podcast's title
+    var chapters: [Chapter]?
 
-    init(id: String? = nil, title: String, url: URL, artworkURL: URL?, duration: Double?, showNotes: String?, feedUrl: String? = nil, podcastName: String? = nil) {
+    init(id: String? = nil, title: String, url: URL, artworkURL: URL?, duration: Double?, showNotes: String?, feedUrl: String? = nil, podcastName: String? = nil, chapters: [Chapter]? = nil) {
         self.id = id ?? url.absoluteString
         self.title = title
         self.url = url
@@ -118,11 +133,12 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
         self.showNotes = showNotes
         self.feedUrl = feedUrl
         self.podcastName = podcastName
+        self.chapters = chapters
     }
     
     // Add coding keys to handle URL encoding/decoding
     enum CodingKeys: String, CodingKey {
-        case id, title, url, artworkURL, duration, showNotes, feedUrl, podcastName
+        case id, title, url, artworkURL, duration, showNotes, feedUrl, podcastName, chapters
     }
     
     // Custom encoding to handle URL properties
@@ -136,6 +152,7 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
         try container.encode(showNotes, forKey: .showNotes)
         try container.encode(feedUrl, forKey: .feedUrl)
         try container.encode(podcastName, forKey: .podcastName)
+        try container.encodeIfPresent(chapters, forKey: .chapters)
     }
     
     // Custom decoding to handle URL properties
@@ -156,6 +173,7 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
         showNotes = try container.decodeIfPresent(String.self, forKey: .showNotes)
         feedUrl = try container.decodeIfPresent(String.self, forKey: .feedUrl)
         podcastName = try container.decodeIfPresent(String.self, forKey: .podcastName)
+        chapters = try container.decodeIfPresent([Chapter].self, forKey: .chapters)
     }
     
     static func == (lhs: PodcastEpisode, rhs: PodcastEpisode) -> Bool {
@@ -165,7 +183,8 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
         lhs.artworkURL?.absoluteString == rhs.artworkURL?.absoluteString &&
         lhs.duration == rhs.duration &&
         lhs.showNotes == rhs.showNotes &&
-        lhs.feedUrl == rhs.feedUrl
+        lhs.feedUrl == rhs.feedUrl &&
+        lhs.chapters == rhs.chapters
     }
     
     /// Calculates estimated memory usage of this episode
@@ -187,6 +206,11 @@ struct PodcastEpisode: Identifiable, Equatable, Codable, Sendable {
         
         // Show notes
         totalSize += showNotes?.utf8.count ?? 0
+        
+        // Chapters
+        if let chapters = chapters {
+            totalSize += chapters.count * 32 // rough estimate
+        }
         
         return totalSize
     }

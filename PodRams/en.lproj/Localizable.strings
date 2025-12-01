@@ -162,3 +162,21 @@ Built with SwiftUI for macOS 11.0 and later.";
 "Export" = "Export";
 
 "Share" = "Share";
+
+"Crossfade between episodes" = "Crossfade between episodes";
+
+"Audio Output" = "Audio Output";
+
+"Show Notes" = "Show Notes";
+
+"More Actions" = "More Actions";
+
+"Unsubscribe" = "Unsubscribe";
+
+"Download Transcript" = "Download Transcript";
+
+"Delete Transcript" = "Delete Transcript";
+
+"Retry Transcription" = "Retry Transcription";
+
+"Current output" = "Current output";

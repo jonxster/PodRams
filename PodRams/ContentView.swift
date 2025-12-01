@@ -465,6 +465,13 @@ struct ContentView: View {
                 await prefetchSubscribedPodcasts()
             }
         }
+        // Listen for cue updates from other parts of the app (e.g. SubscribeView)
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("CueUpdated"))) { _ in
+            Task { @MainActor in
+                cue = await PersistenceManager.loadCue()
+                contentLogger.debug("ContentView: Reloaded cue from persistence due to notification")
+            }
+        }
         // Listen for notifications to add a test podcast.
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AddTestPodcast"))) { notification in
             if let testPodcast = notification.userInfo?["podcast"] as? Podcast {
@@ -532,12 +539,13 @@ struct ContentView: View {
                 glassToolbarIcon(AudioOutputManager.shared.currentRouteIcon)
             }
             .accessibilityIdentifier("AudioOutputButton")
+            .help(LocalizedStringKey("Audio Output"))
+            .applyFocusEffectDisabled()
             .popover(isPresented: $isAudioOutputSelectionVisible) {
                 AudioOutputSelectionView()
                 .compatGlassBackgroundEffect(.sidebar)
             }
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to open the subscribe popover.
             Button {
@@ -545,6 +553,8 @@ struct ContentView: View {
             } label: {
                 glassToolbarIcon("rectangle.and.paperclip", isEnabled: !subscribedPodcasts.isEmpty)
             }
+            .help(LocalizedStringKey("Subscriptions"))
+            .applyFocusEffectDisabled()
             .popover(isPresented: $isSubscribeVisible) {
                 SubscribeView(
                     subscribedPodcasts: $subscribedPodcasts,
@@ -558,7 +568,6 @@ struct ContentView: View {
                 .compatGlassBackgroundEffect(.inspector)
             }
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to open the settings popover.
             Button {
@@ -566,12 +575,13 @@ struct ContentView: View {
             } label: {
                 glassToolbarIcon("gearshape")
             }
+            .help(LocalizedStringKey("Settings"))
+            .applyFocusEffectDisabled()
             .popover(isPresented: $isSettingsVisible) {
                 SettingsView()
                     .compatGlassBackgroundEffect(.window)
             }
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to show favorites; disabled if there are no favorites.
             Button {
@@ -580,9 +590,9 @@ struct ContentView: View {
                 glassToolbarIcon("star.fill", isEnabled: !favoritePodcasts.isEmpty)
             }
             .disabled(favoritePodcasts.isEmpty)
-            .help("Favorites (\(favoritePodcasts.count))")
+            .help(LocalizedStringKey("Favorites"))
+            .applyFocusEffectDisabled()
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to show the cue (play queue); disabled if cue is empty.
             Button {
@@ -591,9 +601,9 @@ struct ContentView: View {
                 glassToolbarIcon("list.bullet", isEnabled: !cue.isEmpty)
             }
             .disabled(cue.isEmpty)
-            .help("Cue (\(cue.count))")
+            .help(LocalizedStringKey("Cue"))
+            .applyFocusEffectDisabled()
             .buttonStyle(.plain)
-            .focusable(false)
 
             // Button to show show notes for the current episode.
             Button {
@@ -610,7 +620,8 @@ struct ContentView: View {
                 glassToolbarIcon(symbol, isEnabled: showNotesAvailable)
             }
             .disabled(!showNotesAvailable)
-            .help("Show Notes")
+            .help(LocalizedStringKey("Show Notes"))
+            .applyFocusEffectDisabled()
             .popover(isPresented: $isShowNotesVisible) {
                 ShowNotesView(
                     episodeTitle: showNotesTitle,
@@ -620,7 +631,6 @@ struct ContentView: View {
                 .compatGlassBackgroundEffect(.window)
             }
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to display transcription options.
             Button {
@@ -630,12 +640,12 @@ struct ContentView: View {
                 glassToolbarIcon(icon, isLoading: isTranscribing, showBadge: hasNewTranscriptionBadge && !isTranscribing)
             }
             .disabled(isTranscribing)
-            .help("Transcribe Episode")
+            .help(LocalizedStringKey("Transcribe"))
+            .applyFocusEffectDisabled()
             .popover(isPresented: $isTranscribeVisible) {
                 transcriptionPopover
             }
             .buttonStyle(.plain)
-            .focusable(false)
             
             // Button to toggle the search popover.
             Button {
@@ -643,9 +653,9 @@ struct ContentView: View {
             } label: {
                 glassToolbarIcon("magnifyingglass")
             }
-            .help("Search for Podcasts")
+            .help(LocalizedStringKey("Search"))
+            .applyFocusEffectDisabled()
             .buttonStyle(.plain)
-            .focusable(false)
         }
     }
 
@@ -1376,9 +1386,9 @@ struct EpisodeRow: View {
             let seconds = remainingSeconds % 60
             
             if hours > 0 {
-                return String(format: "%d:%02d:%02d remaining", hours, minutes, seconds)
+                return String(format: "%d:%02d:%02d", hours, minutes, seconds)
             } else {
-                return String(format: "%d:%02d remaining", minutes, seconds)
+                return String(format: "%02d:%02d", minutes, seconds)
             }
         } else {
             // For non-playing episodes, use the episode duration
@@ -1485,18 +1495,24 @@ struct EpisodeRow: View {
                 let titleColor = AppTheme.primaryText
                 let infoColor = AppTheme.primaryText.opacity(0.85)
                 // Simplified layout without the progress bar
-                HStack {
-                    Text(episode.title)
-                        .lineLimit(1)
-                        .foregroundColor(titleColor)
-                        .font(isPlaying ? .body.bold() : .body)
-                    Spacer()
+                HStack(spacing: 0) {
+                    ScrollingTitle(
+                        fullTitle: episode.title,
+                        truncatedTitle: episode.title.count > (isPlaying ? 65 : 70) ? String(episode.title.prefix(isPlaying ? 65 : 70)) + "..." : episode.title,
+                        font: isPlaying ? .body.bold() : .body,
+                        color: titleColor,
+                        isHovering: isHovering
+                    )
+                    
+                    Spacer(minLength: 8)
                     
                     // Single time display
                     Text(formattedTime)
                         .font(.caption)
                         .foregroundColor(isPlaying ? infoColor : infoColor.opacity(0.85))
                         .id(isPlaying ? "time-\(episode.id)-\(Int(audioPlayer.currentTime))" : "time-\(episode.id)") // Force redraw for playing episodes
+                        .frame(width: 65, alignment: .trailing)
+                        .monospacedDigit()
                 }
                 .padding(.horizontal, 8)
             }
@@ -1600,6 +1616,8 @@ struct EpisodeRow: View {
                 .menuStyle(BorderlessButtonMenuStyle())
                 .menuIndicator(.hidden) // Hide the menu indicator arrow
                 .frame(width: 40)
+                .help(LocalizedStringKey("More Actions"))
+                .applyFocusEffectDisabled()
                 // Remove trailing padding here if indicator is last element
                 // .padding(.trailing, 8)
             }
@@ -1610,7 +1628,10 @@ struct EpisodeRow: View {
             
         }
         .padding(.vertical, isPlaying ? 4 : 0)
-        .background(isHovering ? AppTheme.hoverSurface : Color.clear)
+        .background(Color.clear)
+        .scaleEffect(isHovering ? 1.02 : 1.0)
+        .opacity((isPlaying || isHovering) ? 1.0 : 0.65)
+        .animation(.easeInOut(duration: 0.1), value: isHovering)
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovering = hovering
@@ -1648,5 +1669,94 @@ struct AudioFileDocument: FileDocument {
         let base = "\(podcastName) - \(episodeTitle)"
         let sanitized = base.sanitizedForFilename()
         return "\(sanitized).mp3"
+    }
+}
+
+struct ScrollingTitle: View {
+    let fullTitle: String
+    let truncatedTitle: String
+    let font: Font
+    let color: Color
+    let isHovering: Bool
+    
+    @State private var textWidth: CGFloat = 0
+    @State private var containerWidth: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    
+    var body: some View {
+        ZStack(alignment: .leading) {
+            // 1. Invisible view to establish the layout size based on truncated title
+            Text(truncatedTitle)
+                .font(font)
+                .lineLimit(1)
+                .opacity(0)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .onAppear { containerWidth = geo.size.width }
+                            .onChange(of: geo.size.width) { _, newWidth in containerWidth = newWidth }
+                    }
+                )
+            
+            // 2. Visible content
+            Group {
+                if isHovering {
+                    // Always show full title when hovering
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        Text(fullTitle)
+                            .font(font)
+                            .foregroundColor(color)
+                            .fixedSize() // Allow text to take its natural width
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear { textWidth = geo.size.width }
+                                        .onChange(of: geo.size.width) { _, newWidth in textWidth = newWidth }
+                                }
+                            )
+                            .offset(x: offset)
+                    }
+                    .disabled(true) // Disable manual scrolling
+                    .frame(width: containerWidth) // Constrain the ScrollView to the measured container width
+                } else {
+                    // Static truncated title
+                    Text(truncatedTitle)
+                        .font(font)
+                        .foregroundColor(color)
+                        .lineLimit(1)
+                        .frame(width: containerWidth, alignment: .leading) // Ensure it takes up the same space
+                }
+            }
+        }
+        .onChange(of: isHovering) { _, hovering in
+            if hovering && textWidth > containerWidth {
+                let scrollDistance = textWidth - containerWidth + 20 // +20 padding
+                let duration = Double(scrollDistance) / 30.0 // speed
+                withAnimation(Animation.linear(duration: duration).delay(0.5).repeatForever(autoreverses: true)) {
+                    offset = -scrollDistance
+                }
+            } else {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    offset = 0
+                }
+            }
+        }
+        .frame(height: 20)
+        .clipped()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }

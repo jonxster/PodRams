@@ -77,6 +77,8 @@ struct TranscriptionHistoryView: View {
                     Button("Try Again", action: onRetry)
                         .buttonStyle(.borderedProminent)
                         .tint(AppTheme.accent)
+                        .help(LocalizedStringKey("Retry Transcription"))
+                        .applyFocusEffectDisabled()
                 }
             }
             .frame(maxWidth: .infinity)
@@ -187,6 +189,8 @@ struct TranscriptionHistoryView: View {
                         .background(controlBackground)
                         .clipShape(Circle())
                 }
+                .help(LocalizedStringKey("Download Transcript"))
+                .applyFocusEffectDisabled()
                 .buttonStyle(.plain)
 
                 Button {
@@ -199,6 +203,8 @@ struct TranscriptionHistoryView: View {
                         .background(controlBackground)
                         .clipShape(Circle())
                 }
+                .help(LocalizedStringKey("Delete Transcript"))
+                .applyFocusEffectDisabled()
                 .buttonStyle(.plain)
             }
         }

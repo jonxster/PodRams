@@ -138,6 +138,14 @@ class AudioPlayer: ObservableObject {
     /// Current playback rate (1.0 = normal speed).
     private var playbackRate: Double = 1.0
     
+    /// Internal volume multiplier for crossfading (0.0 to 1.0)
+    private var fadeMultiplier: Double = 1.0
+    
+    /// Crossfade setting
+    private var crossfadeEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "crossfadeEnabled") }
+    }
+    
     /// CPU Optimization: Batch property updates to reduce UI refresh frequency
     private var pendingPropertyUpdates: Set<String> = []
     private var propertyUpdateTask: Task<Void, Never>?
@@ -446,26 +454,28 @@ class AudioPlayer: ObservableObject {
         updatePanImmediate()
     }
     
+    private var lastAppliedVolume: Float = -1.0
+
     /// Updates the volume for the player node (immediate, non-debounced version).
     private func updateVolumeImmediate() {
         // Validate that volume is finite and within the valid range
         guard volume.isFinite else { return }
         
-        // CPU Optimization: Skip update if volume hasn't changed significantly
-        let volumeFloat = Float(volume)
-        guard abs(audioState.volume - volumeFloat) > 0.01 else { return }
-        
-        // Clamp volume to valid range
+        // Calculate target effective volume
         let safeVolume = max(0, min(1, volume))
-        let safeVolumeFloat = Float(safeVolume)
+        let effectiveVolume = Float(safeVolume) * Float(fadeMultiplier)
+        
+        // CPU Optimization: Skip update if effective volume hasn't changed significantly
+        if abs(lastAppliedVolume - effectiveVolume) < 0.005 { return }
         
         // Batch all volume updates together
-        playerNode.volume = safeVolumeFloat
-        audioEngine.mainMixerNode.outputVolume = safeVolumeFloat
-        player?.volume = safeVolumeFloat
+        playerNode.volume = effectiveVolume
+        audioEngine.mainMixerNode.outputVolume = effectiveVolume
+        player?.volume = effectiveVolume
         
         // Update the cached state
-        audioState.volume = safeVolumeFloat
+        audioState.volume = Float(safeVolume) // Keep this as base volume for other checks
+        lastAppliedVolume = effectiveVolume
     }
     
     /// Updates the volume for the player node (debounced version).
@@ -530,132 +540,237 @@ class AudioPlayer: ObservableObject {
                 playerNode.play()
                 isPlaying = true
                 audioState.isPlaying = true
+                
+                if crossfadeEnabled {
+                    fadeIn()
+                }
             }
             return
         }
-
-        if let metadataEpisode = episode {
-            currentEpisode = metadataEpisode
+        
+        // Crossfade Logic
+        if isPlaying && crossfadeEnabled {
+            Task {
+                await fadeOut()
+                await performPlay(url: normalizedURL, resumeFrom: resumePosition, episode: episode)
+            }
         } else {
-            currentEpisode = nil
-        }
-        lastPersistedPosition = resumePosition ?? 0
-        
-        // Stop existing playback and clean up resources
-        stopAudio()
-        cleanupObservers()
-        
-        // Reset playback state immediately on main thread for responsiveness
-        currentTime = 0
-        duration = 0
-        isLoading = true // Indicate loading starts
-        isPlaying = false
-        
-        currentURL = normalizedURL // Update current URL
-        
-        // Update cached state
-        audioState.currentTime = 0
-        audioState.duration = 0
-        audioState.url = normalizedURL
-        audioState.isPlaying = false
-        
-        // *** Start Asynchronous Preparation ***
-        Task(priority: .userInitiated) { 
-            do {
-                // Create player item and asset
-                let asset = AVURLAsset(url: normalizedURL)
-                let playerItem = AVPlayerItem(asset: asset)
-
-                let videoTracks = try await asset.loadTracks(withMediaType: .video)
-                if videoTracks.isEmpty {
-                    playerItem.preferredMaximumResolution = .zero
-                    playerItem.appliesPerFrameHDRDisplayMetadata = false
-                }
-                
-                // Load asset duration asynchronously
-                let loadedDuration = try await asset.load(.duration)
-                let durationSeconds = CMTimeGetSeconds(loadedDuration)
-                let safeDuration = (durationSeconds.isFinite && durationSeconds >= 0) ? durationSeconds : 0
-                
-                // Setup observers and audio mix for the item
-                await setupPlayerItemObservers(playerItem, duration: safeDuration)
-                
-                // Ensure player is created and configured on the main thread
-                await MainActor.run { 
-                    // Create a new player with the prepared item
-                    self.player = AVPlayer(playerItem: playerItem)
-                    self.player?.automaticallyWaitsToMinimizeStalling = false
-                    self.player?.volume = Float(self.volume) // Apply current volume
-                    playerItem.audioTimePitchAlgorithm = .timeDomain
-                    self.addOptimizedTimeObserver() // Add optimized time observer
-
-                    if let observer = self.playbackEndObserver {
-                        NotificationCenter.default.removeObserver(observer)
-                        self.playbackEndObserver = nil
-                    }
-                    if let item = self.player?.currentItem {
-                        self.playbackEndObserver = NotificationCenter.default.addObserver(
-                            forName: .AVPlayerItemDidPlayToEndTime,
-                            object: item,
-                            queue: .main
-                        ) { [weak self] _ in
-                            Task { @MainActor [weak self] in
-                                self?.handlePlaybackFinished()
-                            }
-                        }
-                    }
-                    
-                    // Seek before starting playback so resume positions take effect immediately
-                    if let resume = resumePosition, resume > 0.5 {
-                        self.seek(to: resume)
-                    }
-
-                    // Start playback respecting current rate
-                    self.player?.play()
-                    self.applyPlaybackRate()
-                    if self.engineConfigured {
-                        self.playerNode.play()
-                    }
-
-                    // Update final state
-                    self.isPlaying = true
-                    self.isLoading = false
-                    self.duration = safeDuration
-                    if safeDuration > 0 {
-                        self.currentEpisode?.duration = safeDuration
-                    }
-                    
-                    // Update cached state
-                    self.audioState.isPlaying = true
-                    self.audioState.isLoading = false
-                    self.audioState.duration = safeDuration
-                }
-                
-            } catch {
-                // Handle errors during async loading
-                audioLogger.error("Error preparing audio item: \(error, privacy: .public)")
-                await MainActor.run { 
-                    self.isLoading = false
-                    self.isPlaying = false
-                    // Potentially show an error state to the user
-                }
+            Task {
+                await performPlay(url: normalizedURL, resumeFrom: resumePosition, episode: episode)
             }
         }
-        // *** End Asynchronous Preparation ***
+    }
+    
+    private func performPlay(url: URL, resumeFrom resumePosition: Double?, episode: PodcastEpisode?) async {
+        await MainActor.run {
+            if let metadataEpisode = episode {
+                currentEpisode = metadataEpisode
+            } else {
+                currentEpisode = nil
+            }
+            lastPersistedPosition = resumePosition ?? 0
+            
+            // Stop existing playback and clean up resources
+            stopAudio(fade: false) // Don't fade out again if we just did
+            cleanupObservers()
+            
+            // Reset playback state immediately on main thread for responsiveness
+            currentTime = 0
+            duration = 0
+            isLoading = true // Indicate loading starts
+            isPlaying = false
+            
+            currentURL = url // Update current URL
+            
+            // Update cached state
+            audioState.currentTime = 0
+            audioState.duration = 0
+            audioState.url = url
+            audioState.isPlaying = false
+            
+            if crossfadeEnabled {
+                fadeMultiplier = 0.0 // Start silent for fade in
+                updateVolumeImmediate()
+            } else {
+                fadeMultiplier = 1.0
+                updateVolumeImmediate()
+            }
+        }
+        
+        // *** Start Asynchronous Preparation ***
+        // Note: We are already in a Task from playAudio, but priority was userInitiated.
+        // We continue directly.
+        
+        do {
+            // Create player item and asset
+            let asset = AVURLAsset(url: url)
+            let playerItem = AVPlayerItem(asset: asset)
+
+            let videoTracks = try await asset.loadTracks(withMediaType: .video)
+            if videoTracks.isEmpty {
+                playerItem.preferredMaximumResolution = .zero
+                playerItem.appliesPerFrameHDRDisplayMetadata = false
+            }
+            
+            // Load asset duration asynchronously
+            let loadedDuration = try await asset.load(.duration)
+            let durationSeconds = CMTimeGetSeconds(loadedDuration)
+            let safeDuration = (durationSeconds.isFinite && durationSeconds >= 0) ? durationSeconds : 0
+            
+            // Extract chapters
+            let chapters = await extractChapters(from: asset)
+            
+            // Setup observers and audio mix for the item
+            await setupPlayerItemObservers(playerItem, duration: safeDuration)
+            
+            // Ensure player is created and configured on the main thread
+            await MainActor.run { 
+                // Create a new player with the prepared item
+                self.player = AVPlayer(playerItem: playerItem)
+                self.player?.automaticallyWaitsToMinimizeStalling = false
+                
+                // Apply volume (which might be 0 if fading in)
+                self.updateVolumeImmediate()
+                
+                playerItem.audioTimePitchAlgorithm = .timeDomain
+                self.addOptimizedTimeObserver() // Add optimized time observer
+
+                if let observer = self.playbackEndObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    self.playbackEndObserver = nil
+                }
+                if let item = self.player?.currentItem {
+                    self.playbackEndObserver = NotificationCenter.default.addObserver(
+                        forName: .AVPlayerItemDidPlayToEndTime,
+                        object: item,
+                        queue: .main
+                    ) { [weak self] _ in
+                        Task { @MainActor [weak self] in
+                            self?.handlePlaybackFinished()
+                        }
+                    }
+                }
+                
+                // Seek before starting playback so resume positions take effect immediately
+                if let resume = resumePosition, resume > 0.5 {
+                    self.seek(to: resume)
+                }
+
+                // Start playback respecting current rate
+                self.player?.play()
+                self.applyPlaybackRate()
+                if self.engineConfigured {
+                    self.playerNode.play()
+                }
+
+                // Update final state
+                self.isPlaying = true
+                self.isLoading = false
+                self.duration = safeDuration
+                if safeDuration > 0 {
+                    self.currentEpisode?.duration = safeDuration
+                }
+                
+                // Update currentEpisode with extracted chapters
+                if !chapters.isEmpty {
+                    self.currentEpisode?.chapters = chapters
+                }
+                
+                // Update cached state
+                self.audioState.isPlaying = true
+                self.audioState.isLoading = false
+                self.audioState.duration = safeDuration
+                
+                if self.crossfadeEnabled {
+                    self.fadeIn()
+                }
+            }
+            
+        } catch {
+            // Handle errors during async loading
+            audioLogger.error("Error preparing audio item: \(error, privacy: .public)")
+            await MainActor.run { 
+                self.isLoading = false
+                self.isPlaying = false
+                // Potentially show an error state to the user
+            }
+        }
+    }
+    
+    /// Fades volume out over 2 seconds
+    private func fadeOut() async {
+        let duration = 2.0
+        let steps = 20
+        let stepDuration = duration / Double(steps) // 0.1s
+        
+        for i in 0...steps {
+            fadeMultiplier = 1.0 - (Double(i) / Double(steps))
+            updateVolumeImmediate()
+            try? await Task.sleep(nanoseconds: UInt64(stepDuration * 1_000_000_000))
+        }
+        fadeMultiplier = 0.0
+        updateVolumeImmediate()
+    }
+    
+    /// Fades volume in over 2 seconds
+    private func fadeIn() {
+        Task {
+            let duration = 2.0
+            let steps = 20
+            let stepDuration = duration / Double(steps)
+            
+            for i in 0...steps {
+                fadeMultiplier = Double(i) / Double(steps)
+                updateVolumeImmediate()
+                try? await Task.sleep(nanoseconds: UInt64(stepDuration * 1_000_000_000))
+            }
+            fadeMultiplier = 1.0
+            updateVolumeImmediate()
+        }
     }
     
     /// Pauses the audio playback.
     func pauseAudio() {
-        player?.pause()
-        playerNode.pause()
-        persistCurrentProgress(force: true)
-        
-        isPlaying = false
-        audioState.isPlaying = false
+        if crossfadeEnabled {
+            Task {
+                await fadeOut()
+                await MainActor.run {
+                    player?.pause()
+                    playerNode.pause()
+                    persistCurrentProgress(force: true)
+                    isPlaying = false
+                    audioState.isPlaying = false
+                    fadeMultiplier = 1.0 // Reset for next time
+                }
+            }
+        } else {
+            player?.pause()
+            playerNode.pause()
+            persistCurrentProgress(force: true)
+            isPlaying = false
+            audioState.isPlaying = false
+        }
     }
     
     /// Stops the audio playback and resets the position to the beginning.
     func stopAudio() {
+        stopAudio(fade: crossfadeEnabled)
+    }
+    
+    func stopAudio(fade: Bool) {
+        if fade && isPlaying {
+            Task {
+                await fadeOut()
+                await MainActor.run {
+                    performStop()
+                }
+            }
+        } else {
+            performStop()
+        }
+    }
+    
+    private func performStop() {
         persistCurrentProgress(force: true)
         player?.pause()
         if let player = player {
@@ -674,6 +789,8 @@ class AudioPlayer: ObservableObject {
         currentEpisode = nil
         lastPersistedPosition = 0
         currentURL = nil
+        fadeMultiplier = 1.0 // Reset
+        updateVolumeImmediate()
     }
     
     /// Seeks the playback to the specified time.
@@ -1064,13 +1181,16 @@ class AudioPlayer: ObservableObject {
         let floatRate = Float(playbackRate)
         configureTimePitch()
 
-        guard let player else { return }
+        // Only apply playback rate if we are currently playing (or supposed to be playing)
+        guard let player, isPlaying else { return }
+        
         player.currentItem?.audioTimePitchAlgorithm = .timeDomain
 
         switch player.timeControlStatus {
         case .playing:
             player.rate = floatRate
         case .waitingToPlayAtSpecifiedRate, .paused:
+            // Only force playback if we really mean to play
             if playbackRate == 1.0 {
                 player.rate = 1.0
             } else {
@@ -1085,6 +1205,42 @@ class AudioPlayer: ObservableObject {
         timePitchUnit.rate = Float(playbackRate)
         timePitchUnit.pitch = 0
         timePitchUnit.overlap = 8
+    }
+    
+    /// Extracts chapters from an AVAsset
+    private func extractChapters(from asset: AVAsset) async -> [Chapter] {
+        var chapters: [Chapter] = []
+        
+        do {
+            let languages = try await asset.load(.availableChapterLocales)
+            
+            if let language = languages.first {
+                let groups = try await asset.loadChapterMetadataGroups(bestMatchingPreferredLanguages: [language.identifier])
+                
+                for group in groups {
+                    let items = group.items
+                    let titleItem = items.first
+                    
+                    var title = "Chapter"
+                    if let item = titleItem {
+                        // Use load(.stringValue) for modern API
+                        if let loadedTitle = try? await item.load(.stringValue) {
+                            title = loadedTitle
+                        }
+                    }
+                    
+                    let timeRange = group.timeRange
+                    let start = CMTimeGetSeconds(timeRange.start)
+                    let end = CMTimeGetSeconds(timeRange.end)
+                    
+                    chapters.append(Chapter(title: title, startTime: start, endTime: end))
+                }
+            }
+        } catch {
+            audioLogger.debug("Failed to extract chapters: \(error)")
+        }
+        
+        return chapters
     }
 }
 

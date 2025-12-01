@@ -76,6 +76,8 @@ struct SimpleEpisodeRow: View {
             .buttonStyle(PlainButtonStyle())
             .contentShape(Rectangle())
             .frame(minWidth: 180) // Ensure minimum width for the entire button
+            .help(episode.title) // Tooltip for the row
+            .applyFocusEffectDisabled()
             
             // Show download progress indicator or ellipsis menu (outside the button)
             if case .downloading(let progress) = currentDownloadState {
@@ -151,6 +153,7 @@ struct SimpleEpisodeRow: View {
                         ShareLink(item: episode.url) {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
+                        .help(LocalizedStringKey("Share"))
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -161,6 +164,8 @@ struct SimpleEpisodeRow: View {
                 .menuStyle(BorderlessButtonMenuStyle())
                 .menuIndicator(.hidden) // Hide the menu indicator arrow
                 .frame(width: 20, height: 20) // Fixed size to prevent layout calculations
+                .help(LocalizedStringKey("More Actions"))
+                .applyFocusEffectDisabled()
             }
         }
         .frame(minWidth: 220) // Ensure overall minimum width
@@ -243,6 +248,21 @@ private extension SimpleEpisodeRow {
     var rowBackground: Color {
         if isPlaying { return AppTheme.hoverSurface }
         return isHoveringRow ? AppTheme.hoverSurface : AppTheme.surface
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }
 

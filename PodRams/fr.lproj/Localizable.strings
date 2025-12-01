@@ -88,3 +88,21 @@
 "Export" = "Exporter";
 
 "Share" = "Partager";
+
+"Crossfade between episodes" = "Fondu enchaîné entre les épisodes";
+
+"Audio Output" = "Sortie audio";
+
+"Show Notes" = "Notes de l'épisode";
+
+"More Actions" = "Plus d'actions";
+
+"Unsubscribe" = "Se désabonner";
+
+"Download Transcript" = "Télécharger la transcription";
+
+"Delete Transcript" = "Supprimer la transcription";
+
+"Retry Transcription" = "Réessayer la transcription";
+
+"Current output" = "Sortie actuelle";

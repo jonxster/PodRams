@@ -128,6 +128,8 @@ struct SubscribeView: View {
                     .background(controlBackground)
                     .clipShape(Circle())
             }
+            .help(LocalizedStringKey("Play"))
+            .applyFocusEffectDisabled()
             .buttonStyle(.plain)
 
             Button {
@@ -140,6 +142,8 @@ struct SubscribeView: View {
                     .background(controlBackground)
                     .clipShape(Circle())
             }
+            .help(LocalizedStringKey("Unsubscribe"))
+            .applyFocusEffectDisabled()
             .buttonStyle(.plain)
         }
     }

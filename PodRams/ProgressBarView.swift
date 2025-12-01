@@ -10,6 +10,7 @@ import SwiftUI
 struct ProgressBarView: View {
     let currentTime: Double
     let duration: Double
+    var chapters: [Chapter] = []
     var onSeek: ((Double) -> Void)?
     var showLabel: Bool = true
     var label: String? = nil
@@ -25,6 +26,16 @@ struct ProgressBarView: View {
                     Rectangle()
                         .fill(AppTheme.secondaryText.opacity(0.3))
                         .frame(height: 4)
+                    
+                    // Chapter markers
+                    if !chapters.isEmpty && duration > 0 {
+                        ForEach(chapters) { chapter in
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.3))
+                                .frame(width: 1, height: 4)
+                                .offset(x: (CGFloat(chapter.startTime) / CGFloat(duration)) * geometry.size.width)
+                        }
+                    }
                     
                     // Progress bar
                     Rectangle()

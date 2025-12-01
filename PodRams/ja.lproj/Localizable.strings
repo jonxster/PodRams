@@ -87,3 +87,21 @@
 "Export" = "エクスポート";
 
 "Share" = "共有";
+
+"Crossfade between episodes" = "エピソード間のクロスフェード";
+
+"Audio Output" = "オーディオ出力";
+
+"Show Notes" = "ショーノート";
+
+"More Actions" = "その他のアクション";
+
+"Unsubscribe" = "登録解除";
+
+"Download Transcript" = "文字起こしをダウンロード";
+
+"Delete Transcript" = "文字起こしを削除";
+
+"Retry Transcription" = "文字起こしを再試行";
+
+"Current output" = "現在の出力";

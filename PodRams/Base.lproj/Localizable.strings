@@ -66,3 +66,27 @@
 "Export" = "Export";
 
 "Share" = "Share";
+
+"Crossfade between episodes" = "Crossfade between episodes";
+
+"Audio Output" = "Audio Output";
+
+"Subscriptions" = "Subscriptions";
+
+"Show Notes" = "Show Notes";
+
+"More Actions" = "More Actions";
+
+"Unsubscribe" = "Unsubscribe";
+
+"Download Transcript" = "Download Transcript";
+
+"Delete Transcript" = "Delete Transcript";
+
+"Retry Transcription" = "Retry Transcription";
+
+"Clear all episodes from the cue" = "Clear all episodes from the cue";
+
+"Download all from cue" = "Download all from cue";
+
+"Current output" = "Current output";

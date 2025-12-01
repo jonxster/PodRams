@@ -105,3 +105,21 @@
 "Export" = "Экспорт";
 
 "Share" = "Поделиться";
+
+"Crossfade between episodes" = "Плавный переход между эпизодами";
+
+"Audio Output" = "Аудиовыход";
+
+"Show Notes" = "Заметки к выпуску";
+
+"More Actions" = "Дополнительные действия";
+
+"Unsubscribe" = "Отписаться";
+
+"Download Transcript" = "Скачать транскрипцию";
+
+"Delete Transcript" = "Удалить транскрипцию";
+
+"Retry Transcription" = "Повторить транскрипцию";
+
+"Current output" = "Текущий выход";

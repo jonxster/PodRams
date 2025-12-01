@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("doubleSpeedPlayback") private var doubleSpeedEnabled: Bool = false
     @AppStorage("reduceLoudSounds") private var reduceLoudSounds: Bool = false
     @AppStorage("hidePlayedEpisodes") private var hidePlayedEpisodes: Bool = false
+    @AppStorage("crossfadeEnabled") private var crossfadeEnabled: Bool = false
     @AppStorage("audioPan") private var audioPan: Double = 0.5 // 0.5 is center
     @Environment(\.colorScheme) private var colorScheme
     
@@ -20,6 +21,7 @@ struct SettingsView: View {
             VStack(spacing: 16) {
                 toggleRow(title: "Play at 2× speed", binding: $doubleSpeedEnabled)
                 toggleRow(title: "Reduce loud sounds", binding: $reduceLoudSounds)
+                toggleRow(title: "Crossfade between episodes", binding: $crossfadeEnabled)
                 toggleRow(title: "Hide played podcasts", binding: $hidePlayedEpisodes)
             }
             .padding(20)

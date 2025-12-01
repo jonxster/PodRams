@@ -38,58 +38,69 @@ struct CueSheetView: View {
                 .padding()
             
             // List displaying each episode in the cue.
-            List {
-                // Enumerate over cue episodes to obtain both index and episode.
-                ForEach(Array(cue.enumerated()), id: \.offset) { index, episode in
-                    // Render each row using CueRowView.
-                    CueRowView(episode: episode, cue: $cue)
-                        .compatGlassEffect(.regular.tint(.purple.opacity(0.4)), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        // Enable drag: set the draggedEpisode and return an NSItemProvider.
-                        .onDrag {
-                            self.draggedEpisode = episode
-                            return NSItemProvider(object: episode.title as NSString)
-                        }
-                        // Enable drop: use a custom drop delegate to handle reordering.
-                        .onDrop(of: [.text],
-                                delegate: CueDropDelegate(item: episode, cue: $cue, draggedEpisode: $draggedEpisode))
-                        // On tap, select the episode, start cue playback, and dismiss the view.
-                        .onTapGesture {
-                            selectedEpisodeIndex = index
-                            isCuePlaying = true
-                            
-                            // Ensure the episode has a podcast name before playing
-                            if episode.podcastName == nil && selectedPodcast != nil {
-                                var updatedEpisode = episode
-                                updatedEpisode.podcastName = selectedPodcast?.title
-                                
-                                // Create a new array to avoid direct binding modification
-                                var updatedCue = cue
-                                updatedCue[index] = updatedEpisode
-                                cue = updatedCue
-                                
-                                PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
-                                NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
-                                audioPlayer.playEpisode(updatedEpisode)
-                            } else {
-                                audioPlayer.playEpisode(episode)
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Iterate over cue episodes directly since they are Identifiable
+                    ForEach(cue) { episode in
+                        // Render each row using CueRowView.
+                        CueRowView(episode: episode, cue: $cue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(selectedEpisodeIndex == cue.firstIndex(of: episode) ? AppTheme.hoverSurface : Color.clear)
+                            )
+                            // Enable drag: set the draggedEpisode and return an NSItemProvider.
+                            .onDrag {
+                                self.draggedEpisode = episode
+                                return NSItemProvider(object: episode.title as NSString)
                             }
-                            dismiss()
-                        }
-                        // Change the cursor on hover to indicate interactivity.
-                        .onHover { hovering in
-                            if hovering {
-                                NSCursor.pointingHand.push()
-                            } else {
-                                NSCursor.pop()
+                            // Enable drop: use a custom drop delegate to handle reordering.
+                            .onDrop(of: [.text],
+                                    delegate: CueDropDelegate(
+                                        item: episode,
+                                        cue: $cue,
+                                        draggedEpisode: $draggedEpisode,
+                                        selectedEpisodeIndex: $selectedEpisodeIndex
+                                    ))
+                            // On tap, select the episode, start cue playback, and dismiss the view.
+                            .onTapGesture {
+                                if let index = cue.firstIndex(of: episode) {
+                                    selectedEpisodeIndex = index
+                                    isCuePlaying = true
+                                    
+                                    // Ensure the episode has a podcast name before playing
+                                    if episode.podcastName == nil && selectedPodcast != nil {
+                                        var updatedEpisode = episode
+                                        updatedEpisode.podcastName = selectedPodcast?.title
+                                        
+                                        // Create a new array to avoid direct binding modification
+                                        var updatedCue = cue
+                                        updatedCue[index] = updatedEpisode
+                                        cue = updatedCue
+                                        
+                                        PersistenceManager.saveCue(cue, feedUrl: episode.feedUrl)
+                                        NotificationCenter.default.post(name: Notification.Name("CueUpdated"), object: nil)
+                                        audioPlayer.playEpisode(updatedEpisode)
+                                    } else {
+                                        audioPlayer.playEpisode(episode)
+                                    }
+                                    dismiss()
+                                }
                             }
-                        }
-                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
-                        .listRowBackground(Color.clear) // Clear background for each row
+                            // Change the cursor on hover to indicate interactivity.
+                            .onHover { hovering in
+                                if hovering {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
+                                }
+                            }
+                    }
                 }
+                .padding(.vertical, 4)
             }
-            .listStyle(PlainListStyle()) // Use plain style to minimize default styling
-            .background(Color.clear) // Clear background for the list
-            .padding(.vertical, 4)
+            .background(Color.clear)
             
             // Display the total play time of all episodes in the cue.
             Text("Total Play Time: \(formatTotalTime(totalDuration()))")
@@ -110,7 +121,8 @@ struct CueSheetView: View {
                                 .opacity(0.7)
                         }
                         .buttonStyle(BorderlessButtonStyle())
-                        .help("Download all episodes in the cue")
+                        .help(LocalizedStringKey("Download all from cue"))
+                        .applyFocusEffectDisabled()
                         
                         Spacer().frame(width: 10)
                         
@@ -123,7 +135,8 @@ struct CueSheetView: View {
                                 .opacity(0.7)
                         }
                         .buttonStyle(BorderlessButtonStyle())
-                        .help("Clear all episodes from the cue")
+                        .help(LocalizedStringKey("Clear all episodes from the cue"))
+                        .applyFocusEffectDisabled()
                     }
                     .padding(.trailing, 20)
                     : nil,
@@ -521,6 +534,8 @@ struct CueRowView: View {
                 }
                 .menuStyle(BorderlessButtonMenuStyle())
                 .menuIndicator(.hidden) // Hide the menu indicator arrow
+                .help(LocalizedStringKey("More Actions"))
+                .applyFocusEffectDisabled()
             }
         }
         .padding(.vertical, 4)
@@ -559,6 +574,8 @@ struct CueDropDelegate: DropDelegate {
     @Binding var cue: [PodcastEpisode]
     /// Binding to the currently dragged episode.
     @Binding var draggedEpisode: PodcastEpisode?
+    /// Binding to the selected episode index to update it if items move.
+    @Binding var selectedEpisodeIndex: Int?
 
     /// Called when a dragged item enters the drop target.
     /// If valid, it moves the dragged episode to a new position within the cue.
@@ -568,12 +585,26 @@ struct CueDropDelegate: DropDelegate {
               let toIndex = cue.firstIndex(of: item) else { return }
         
         withAnimation {
+            // Track the currently playing episode before move
+            let playingEpisode = selectedEpisodeIndex.map { cue[$0] }
+            
             // Create a new array to avoid direct binding modification
             var updatedCue = cue
             let movedItem = updatedCue.remove(at: fromIndex)
-            let insertIndex = toIndex > fromIndex ? toIndex - 1 : toIndex
-            updatedCue.insert(movedItem, at: insertIndex)
+            
+            // Fix insertion logic for drag down vs drag up
+            if fromIndex < toIndex {
+                updatedCue.insert(movedItem, at: toIndex)
+            } else {
+                updatedCue.insert(movedItem, at: toIndex)
+            }
+            
             cue = updatedCue
+            
+            // Update selectedEpisodeIndex if the playing episode moved
+            if let playing = playingEpisode, let newIndex = cue.firstIndex(of: playing) {
+                selectedEpisodeIndex = newIndex
+            }
             
             // Add notification for cue update after reordering
             if let feedUrl = cue.first?.feedUrl {
@@ -598,5 +629,20 @@ struct CueDropDelegate: DropDelegate {
     /// Validates the drop operation; always returns true in this implementation.
     func validateDrop(info: DropInfo) -> Bool {
         true
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }

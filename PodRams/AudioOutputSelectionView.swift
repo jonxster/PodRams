@@ -18,7 +18,7 @@ struct AudioOutputSelectionView: View {
 
     var body: some View {
         GlassEffectContainer(spacing: 20) {
-            Text("Audio Outputs")
+            Text("Audio Output")
                 .font(.title3.weight(.semibold))
                 .foregroundColor(primaryText)
 
@@ -66,7 +66,7 @@ struct AudioOutputSelectionView: View {
                         .foregroundColor(primaryText)
                         .font(.body)
                     if isSelected {
-                        Text("Current output")
+                        Text(LocalizedStringKey("Current output"))
                             .font(.caption)
                             .foregroundColor(AppTheme.accent)
                     }

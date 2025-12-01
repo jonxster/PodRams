@@ -52,14 +52,11 @@ struct PlayerView: View {
             ProgressBarView(
                 currentTime: audioPlayer.currentTime,
                 duration: audioPlayer.duration,
+                chapters: audioPlayer.currentEpisode?.chapters ?? [],
                 onSeek: { newTime in audioPlayer.seek(to: newTime) },
                 showLabel: false
             )
             .frame(width: 220)
-
-            Text(timeRemainingText)
-                .font(.caption2)
-                .foregroundColor(AppTheme.secondaryText)
         }
         .frame(minHeight: 320)
     }
@@ -143,8 +140,9 @@ struct PlayerView: View {
                 .foregroundColor(AppTheme.primaryText)
                 .padding(4)
         }
+        .help(LocalizedStringKey("Mute/Unmute"))
+        .applyFocusEffectDisabled()
         .buttonStyle(.plain)
-        .focusable(false)
     }
 
     private var volumeIconName: String {
@@ -162,8 +160,9 @@ struct PlayerView: View {
                     .foregroundColor(AppTheme.primaryText)
             }
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == 0)
+            .help(LocalizedStringKey("Previous Episode"))
+            .applyFocusEffectDisabled()
             .keyboardShortcut(.leftArrow, modifiers: [])
-            .focusable(false)
 
             Button(action: {
                 if audioPlayer.isPlaying {
@@ -181,8 +180,9 @@ struct PlayerView: View {
                     .id("play-button-\(audioPlayer.isPlaying)-\(UUID())")
             }
             .disabled(currentEpisode == nil)
+            .help(audioPlayer.isPlaying ? LocalizedStringKey("Pause") : LocalizedStringKey("Play"))
+            .applyFocusEffectDisabled()
             .keyboardShortcut(.space, modifiers: [])
-            .focusable(false)
 
             Button(action: { playNext() }) {
                 Image(systemName: "forward.fill")
@@ -190,8 +190,9 @@ struct PlayerView: View {
                     .foregroundColor(AppTheme.primaryText)
             }
             .disabled(currentEpisodeIndex == nil || currentEpisodeIndex == episodes.count - 1)
+            .help(LocalizedStringKey("Next Episode"))
+            .applyFocusEffectDisabled()
             .keyboardShortcut(.rightArrow, modifiers: [])
-            .focusable(false)
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .offset(x: -32)
@@ -234,11 +235,6 @@ struct PlayerView: View {
             audioPlayer.playEpisode(episode)
         }
     }
-
-    private var timeRemainingText: String {
-        let remaining = max(audioPlayer.duration - audioPlayer.currentTime, 0)
-        return "\(remaining.formatAsPlaybackTime()) remaining"
-    }
 }
 
 private struct VolumeSliderView: View {
@@ -247,5 +243,20 @@ private struct VolumeSliderView: View {
     var body: some View {
         Slider(value: $volume, in: 0...1)
             .tint(AppTheme.accent)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyFocusEffectDisabled() -> some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            self.focusEffectDisabled()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 }
