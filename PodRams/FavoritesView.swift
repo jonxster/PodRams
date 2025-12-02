@@ -126,7 +126,7 @@ struct FavoritesView: View {
     }
 
     private var favoriteTint: Color {
-        colorScheme == .dark ? AppTheme.accent : Color(hex: 0xFFAA33)
+        colorScheme == .dark ? AppTheme.accent : Color.orange
     }
 
     private var rowBackground: some View {

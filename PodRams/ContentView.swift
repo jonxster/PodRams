@@ -260,7 +260,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 // Toolbar with various action buttons.
                 .toolbar { toolbarContent }
-                .toolbarBackground(AppTheme.toolbarBackground, for: .windowToolbar)
+                .toolbarBackground(.regularMaterial, for: .windowToolbar)
                 .toolbarBackground(.visible, for: .windowToolbar)
                 .toolbarColorScheme(colorScheme, for: .windowToolbar)
                 .compatGlassBackgroundEffect(.window)
@@ -282,7 +282,7 @@ struct ContentView: View {
         // These modifiers apply to both states
         .frame(minWidth: 600, minHeight: 600)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppTheme.background.ignoresSafeArea())
+        .background(.regularMaterial)
         // Popovers and other modifiers
         .popover(isPresented: $isSearching) {
             SearchSheetView(
@@ -1070,6 +1070,7 @@ struct ContentView: View {
         let showBadge: Bool
         @State private var isHovering = false
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.controlActiveState) private var controlActiveState
 
         init(systemName: String, isEnabled: Bool = true, isLoading: Bool = false, showBadge: Bool = false) {
             self.systemName = systemName
@@ -1103,6 +1104,7 @@ struct ContentView: View {
                     .onHover { hovering in
                         isHovering = hovering
                     }
+                    .opacity(controlActiveState == .key ? 1.0 : 0.5) // Dim when inactive
 
                 if showBadge {
                     Circle()
@@ -1630,7 +1632,7 @@ struct EpisodeRow: View {
         .padding(.vertical, isPlaying ? 4 : 0)
         .background(Color.clear)
         .scaleEffect(isHovering ? 1.02 : 1.0)
-        .opacity((isPlaying || isHovering) ? 1.0 : 0.65)
+        .opacity((isPlaying || isHovering) ? 1.0 : 0.5)
         .animation(.easeInOut(duration: 0.1), value: isHovering)
         .contentShape(Rectangle())
         .onHover { hovering in

@@ -87,6 +87,7 @@ struct EpisodeListView: View {
     @State private var sortedEpisodesCache: [PodcastEpisode] = []
     @State private var cachedEpisodeIDs: [String] = []
     @State private var episodeIndexMap: [String: Int] = [:]
+    @Environment(\.controlActiveState) private var controlActiveState
     
     /// Handles selection of an episode.
     /// Stops current playback, sets the new episode index, and starts playback with a slight delay.
@@ -190,6 +191,7 @@ struct EpisodeListView: View {
             .padding(.top, 10)
             .padding() // Padding around the entire list.
         }
+        .opacity(controlActiveState == .key ? 1.0 : 0.5) // Dim list when inactive
         // Force refresh the view periodically to update the time display
         .onReceive(refreshTimer) { _ in
             guard selectedIndex != nil else { return }

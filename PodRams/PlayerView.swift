@@ -15,6 +15,7 @@ struct PlayerView: View {
     @Binding var currentEpisodeIndex: Int?
     @Namespace private var playerGlassNamespace
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.controlActiveState) private var controlActiveState
     @State private var isVolumeExpanded = false
     
     /// Fallback image if the episode lacks artwork.
@@ -48,6 +49,7 @@ struct PlayerView: View {
 
             controlButtons
                 .compatGlassEffectUnion(id: "player-controls", namespace: playerGlassNamespace)
+                .opacity(controlActiveState == .key ? 1.0 : 0.5) // Dim controls when inactive
 
             ProgressBarView(
                 currentTime: audioPlayer.currentTime,
